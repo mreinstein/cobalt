@@ -336,7 +336,7 @@ function buildRenderPasses (renderer, layers, tileData) {
             if (currentLayerType === 'sprite')
                 renderPasses.push(SpriteRenderPass.create(renderer, minLayer, maxLayer))
             else if (currentLayerType === 'tile')
-                renderPasses.push(TileRenderPass.create(renderer, minLayer, maxLayer, tileData))
+                renderPasses.push(TileRenderPass.create(renderer, layers, minLayer, maxLayer, tileData))
             else
                 renderPasses.push(OverlayRenderPass.create(renderer, minLayer, maxLayer))
 
@@ -357,7 +357,7 @@ function buildRenderPasses (renderer, layers, tileData) {
         if (currentLayerType === 'sprite')
             renderPasses.push(SpriteRenderPass.create(renderer, minLayer, maxLayer))
         else if (currentLayerType === 'tile')
-            renderPasses.push(TileRenderPass.create(renderer, minLayer, maxLayer))
+            renderPasses.push(TileRenderPass.create(renderer, layers, minLayer, maxLayer))
         else
             renderPasses.push(OverlayRenderPass.create(renderer, minLayer, maxLayer))
 

@@ -1,17 +1,15 @@
-import Game from './Game.js'
-
 
 // this corresponds to a WebGPU render pass.  It may handle 1 or more tile layers.
-export function create (renderer, minLayer, maxLayer, tileData) {
+export function create (renderer, layers, minLayer, maxLayer, tileData) {
 
-	const layers = [ ]
+	const tileLayers = [ ]
 
 	// put the bind group for each tile layer between minLayer and maxLayer
 	for (let i=minLayer; i <= maxLayer; i++) {
-		const layer = Object.values(Game.layers).find((s) => s.zIndex === i)
+		const layer = Object.values(layers).find((s) => s.zIndex === i)
 
 		if (renderer.tile.tileBindGroups[layer.layer]) {
-			layers.push({
+			tileLayers.push({
 				imageData: renderer.tile.tileMaterials[layer.layer].imageData,
 				instanceIndex: renderer.tile.instanceCount,
 				bindGroup: renderer.tile.tileBindGroups[layer.layer],
@@ -29,8 +27,7 @@ export function create (renderer, minLayer, maxLayer, tileData) {
         minLayer,
         maxLayer,
 
-        // each one of these corresponds to a draw call.
-        // contains a tile bindgroup and an instance index
-        layers,
+        // each one of these corresponds to a draw call
+        layers: tileLayers,
 	}
 }

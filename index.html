@@ -114,7 +114,7 @@ async function main () {
 
 
     const world = ECS.createWorld()
-    ECS.addSystem(world, rendererSystem)
+    ECS.addSystem(world, rendererSystem(Game.renderer))
     ECS.addSystem(world, animationSystem)
 
     Game.world = world
