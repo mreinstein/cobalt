@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title class="titleText">Web GPU prototyping</title>
+        <meta name="description" content="learning WebGPU" />
+        <meta name="author" content="Mike Reinstein" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+
+        <style>
+            
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            img {
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            .viewport-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            canvas {
+                background-color: green;
+                border: none;
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            canvas::-webkit-scrollbar {
+                display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        
+        <div class="viewport-container">
+            <canvas id="viewport" width="480" height="270"></canvas>
+        </div>
+
+<script type="module">
+import Game               from './src/Game.js'
+import * as SpriteData    from './src/SpriteData.js'
+import createRenderer     from './src/create-renderer.js'
+import constants          from './src/constants.js'
+import animationSystem    from './src/system-animation.js'
+import readSpriteSheet    from './src/read-spritesheet.js'
+import rendererSystem     from './src/system-renderer.js'
+import spriteEntity       from './src/entity-sprite.js'
+import { ECS, debounce, randomInt } from './src/deps.js'
+
+
+async function fetchJson (url) {
+    const raw = await fetch(url)
+    return raw.json()
+}
+
+
+function resizeViewport (renderer, width, height) {
+
+    const { canvas } = renderer
+
+    // determine which screen dimension is most constrained
+    // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
+    // certain float values (e.g., 3.0145833333333334)
+    const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
+
+    canvas.width = Math.ceil(constants.GAME_WIDTH)
+    canvas.height = Math.ceil(constants.GAME_HEIGHT)
+
+    // TODO: call resize on the rendering framework
+    //picoApp.resize(canvas.width, canvas.height)
+
+    // https://www.khronos.org/webgl/wiki/HandlingHighDPI
+    // webgl display resolution size within canvas
+    const resolution = window.devicePixelRatio || 1
+
+    // center the canvas if native window doesn't match aspect ratio
+    canvas.style.width = canvas.width * renderScale + 'px'
+    canvas.style.height = canvas.height * renderScale + 'px'
+    
+    canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
+    canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
+}
+
+
+async function main () {
+
+    const [ spritesheetJson, layers ] = await Promise.all([
+        fetchJson('./assets/spritesheet.json'),
+        SpriteData.loadSpriteLayers('assets/sprite-layers.xt')
+    ])
+
+    Game.spritesheet = readSpriteSheet(spritesheetJson)
+    Game.layers = layers
+
+    const canvas = document.querySelector('canvas')
+
+    const spriteTextureUrl = 'assets/spritesheet.png'
+
+    const tileData = {
+        spriteTextureUrl: 'assets/spelunky-tiles-extruded.png',
+        tileSize: 16,
+        tileScale: 1.0,
+        layers: {
+            details: {
+                textureUrl: 'assets/spelunky0.png',
+                scrollScale: 1.0
+            },
+            background2: {
+                textureUrl: 'assets/spelunky1.png',
+                scrollScale: 0.6
+            }
+        }
+    }
+
+    Game.renderer = await createRenderer(canvas, Game.spritesheet, Game.layers, spriteTextureUrl, tileData)
+
+    // use resizeViewport to init values on load:
+    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+
+    // window resize is *expensive* - best to debounce:
+    const debouncedResize = debounce(function () {
+       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+    }, 50)
+
+    window.addEventListener('resize', debouncedResize, { passive: true })
+
+
+    const world = ECS.createWorld()
+    ECS.addSystem(world, rendererSystem)
+    ECS.addSystem(world, animationSystem)
+
+    Game.world = world
+
+    // some temporary test sprites
+    for (let i=0; i < constants.MAX_SPRITES; i++)
+        spriteEntity(world, { name: 'bucky_repeater_shoot_forward-0.png', position: [ randomInt(64, 256), randomInt(64, 256) ], layer: 4 })
+
+    const gameLoop = function () {
+        tick(Game)
+        requestAnimationFrame(gameLoop)
+    }
+
+    requestAnimationFrame(gameLoop)
+}
+
+
+function tick (context) {
+    const newTime = performance.now()
+    const frameTime = newTime - context.lastFrameTime
+    context.lastFrameTime = newTime
+    ECS.update(context.world, frameTime)
+    ECS.cleanup(context.world)
+}
+
+
+main()
+
+</script>
+
+
+    </body>
+</html>

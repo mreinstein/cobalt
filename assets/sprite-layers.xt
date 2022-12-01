@@ -1,0 +1,26 @@
+// layer name    z-index        type   cast shadow   recv shadow
+// ----------------------------------------------------------------
+background2         0           tile         false          true
+background          1           tile         false          true
+details3            2           tile          true          true
+details2            3           tile          true          true
+movingplatformback  4         sprite          true          true
+details             5           tile          true          true
+chests              6         sprite          true          true
+breakables          7           tile          true          true
+particles           8         sprite         false         false
+projectiles         9         sprite         false         false
+enemies            10         sprite          true         false
+platforms2         11           tile          true          true
+platforms          12           tile          true          true
+hero               13         sprite          true         false
+frontdetails       14           tile         false         false
+water              15           tile         false          true
+movingwater        16         sprite         false         false
+effects            17         sprite         false         false
+closingdoor        18           tile         false          true
+walls              19           tile         false         false
+uibackground       20         sprite         false         false
+ui                 21         sprite         false         false
+hud                22        overlay         false         false
+overlay            23        overlay         false         false
