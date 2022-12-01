@@ -10,7 +10,6 @@ const SPRITE = [ 'sprite' ]
 // @param Object renderer Cobalt render state
 export default function createRendererSystem (renderer) {
 
-    console.log('hehe')
     // temporary variables, allocated once to avoid garbage collection
     const _tmpMat4 = mat4.create()
     const _tmpVec3 = vec3.create()
@@ -26,10 +25,10 @@ export default function createRendererSystem (renderer) {
             const renderPasses = renderer.renderPasses
 
             for (const newSprite of ECS.getEntities(world, SPRITE, 'added'))
-                SpriteRenderPass.addSprite(newSprite, renderer)
+                SpriteRenderPass.addSprite(renderer, newSprite)
 
             for (const newSprite of ECS.getEntities(world, SPRITE, 'removed'))
-                SpriteRenderPass.removeSprite(newSprite, renderer)
+                SpriteRenderPass.removeSprite(renderer, newSprite)
 
 
             // camera stuff

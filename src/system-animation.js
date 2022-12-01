@@ -28,16 +28,16 @@ export default function animationSystem (world) {
 
             if (e.animation.accumulator % 7 === 0) {
                 setNextSpriteFrame(e, tmp, lookup)
-                SpriteRenderPass.updateSpriteAnimation(e, Game.renderer)
+                SpriteRenderPass.updateSpriteAnimation(Game.renderer, e)
             } else {
                 e.sprite.rotation += 0.01
                 //e.sprite.scale[0] += 0.01
                 //e.sprite.scale[1] += 0.01
-                SpriteRenderPass.updateSpriteRotation(e, Game.renderer)
+                SpriteRenderPass.updateSpriteRotation(Game.renderer, e)
             }
 
-            // copying the entire sprite is actually quite a bit slower
-            //SpriteRenderPass.updateSprite(e, Game.renderer)
+            // copying the entire sprite is quite a bit slower when dealing with high sprite counts
+            //SpriteRenderPass.updateSprite(Game.renderer, e)
         }
     }
 

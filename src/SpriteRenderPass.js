@@ -98,7 +98,7 @@ export function create (renderer, minLayer, maxLayer) {
 }
 
 
-export function addSprite (spriteEntity, renderer) {
+export function addSprite (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
 
     // find the place in our spriteData where this sprite belongs.
@@ -132,7 +132,7 @@ export function addSprite (spriteEntity, renderer) {
 }
 
 
-export function removeSprite (spriteEntity, renderer) {
+export function removeSprite (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
 
     const removeIdx = spriteEntity.sprite.dataIndex
@@ -157,14 +157,14 @@ export function removeSprite (spriteEntity, renderer) {
 }
 
 
-export function updateSprite (spriteEntity, renderer) {
+export function updateSprite (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
     copySpriteDataToBuffer(spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
     renderPass.dirty = true
 }
 
 
-export function updateSpriteAnimation (spriteEntity, renderer) {
+export function updateSpriteAnimation (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
     const SPRITE_DATA = Game.spritesheet
 
@@ -182,7 +182,7 @@ export function updateSpriteAnimation (spriteEntity, renderer) {
 }
 
 
-export function updateSpriteRotation (spriteEntity, renderer) {
+export function updateSpriteRotation (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
     const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
 
