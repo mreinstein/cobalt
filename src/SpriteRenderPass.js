@@ -1,4 +1,3 @@
-import Game               from './Game.js'
 import sortedBinaryInsert from './sorted-binary-insert.js'
 import toWorld            from './transform-to-world.js'
 import { vec4 }           from './deps.js'
@@ -120,7 +119,7 @@ export function addSprite (renderer, spriteEntity) {
         offset
     )
 
-    copySpriteDataToBuffer(spriteEntity, renderPass, insertIdx)
+    copySpriteDataToBuffer(renderer.spritesheet, spriteEntity, renderPass, insertIdx)
     
     // store the location of this sprite's data in the renderer's float32array so that we can 
     // reference it later, when we need to remove or update this sprite component
@@ -159,17 +158,15 @@ export function removeSprite (renderer, spriteEntity) {
 
 export function updateSprite (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    copySpriteDataToBuffer(spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
+    copySpriteDataToBuffer(renderer.spritesheet, spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
     renderPass.dirty = true
 }
 
 
 export function updateSpriteAnimation (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    const SPRITE_DATA = Game.spritesheet
-
-    const SPRITE_WIDTH = SPRITE_DATA.spriteMeta[spriteEntity.sprite.name].w
-    const SPRITE_HEIGHT = SPRITE_DATA.spriteMeta[spriteEntity.sprite.name].h
+    const SPRITE_WIDTH = renderer.spritesheet.spriteMeta[spriteEntity.sprite.name].w
+    const SPRITE_HEIGHT = renderer.spritesheet.spriteMeta[spriteEntity.sprite.name].h
 
     const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
 
@@ -191,14 +188,12 @@ export function updateSpriteRotation (renderer, spriteEntity) {
 
 
 // copy data from the ECS based sprite entity into the webgpu renderpass
-function copySpriteDataToBuffer (spriteEntity, renderPass, insertIdx) {
+function copySpriteDataToBuffer (spritesheet, spriteEntity, renderPass, insertIdx) {
     const offset = insertIdx * FLOAT32S_PER_SPRITE
     //  TODO: handle linked relativeTo fields in transform
 
-    const SPRITE_DATA = Game.spritesheet
-
-    const SPRITE_WIDTH = SPRITE_DATA.spriteMeta[spriteEntity.sprite.name].w
-    const SPRITE_HEIGHT = SPRITE_DATA.spriteMeta[spriteEntity.sprite.name].h
+    const SPRITE_WIDTH = spritesheet.spriteMeta[spriteEntity.sprite.name].w
+    const SPRITE_HEIGHT = spritesheet.spriteMeta[spriteEntity.sprite.name].h
 
     // recurse down through the data structure to follow relativeTo as far as it'll go
     // e.g., text characters are relativeTo textEntity, textEntity is relativeTo npcEntity
