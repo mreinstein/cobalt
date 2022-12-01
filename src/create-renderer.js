@@ -39,7 +39,7 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
         tile,    // common data related to all tile render passes
 
         spritesheet,
-        
+
         // key is layerId, value is the index of the renderPass responsible for drawing this layer
         renderPassLookup: [ ],
 
@@ -50,6 +50,7 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
         clearValue: { r: 0.5, g: 0.0, b: 0.25, a: 1.0 },
 
         viewport: {
+            zoom: 1.0,
             position: [ 0, 0 ]  // TODO: ehh is this the top left or center point of the viewport?
         },
     }

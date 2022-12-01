@@ -61,7 +61,11 @@ export default function createRendererSystem (renderer) {
             const projection = mat4.create()
             //                out    left   right    bottom   top     near     far
             //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
-            mat4.ortho(projection,    0,    constants.GAME_WIDTH,   constants.GAME_HEIGHT,    0,   -10.0,   10.0)
+
+            const GAME_WIDTH = Math.round(constants.GAME_WIDTH * renderer.viewport.zoom)
+            const GAME_HEIGHT = Math.round(constants.GAME_HEIGHT * renderer.viewport.zoom)
+
+            mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
             //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
         
@@ -94,8 +98,8 @@ export default function createRendererSystem (renderer) {
 
             // TODO: everything after buf[1] doesn't need to be updated every frame
 
-            buf[2] = constants.GAME_WIDTH / tileScale          // viewportSize[0]
-            buf[3] = constants.GAME_HEIGHT / tileScale         // viewportSize[1]
+            buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
+            buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
 
             buf[4] = 1 / tile.spritesMaterial.imageData.width  // inverseSpriteTextureSize[0]
             buf[5] = 1 / tile.spritesMaterial.imageData.height // inverseSpriteTextureSize[1]
