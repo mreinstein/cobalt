@@ -38,8 +38,6 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
         sprite,  // common data related to all sprite render passes
         tile,    // common data related to all tile render passes
 
-        spritesheet,
-
         // key is layerId, value is the index of the renderPass responsible for drawing this layer
         renderPassLookup: [ ],
 
@@ -158,6 +156,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
         triangleMesh,
         material,
         bindGroupLayout,
+        spritesheet,
     }
 }
 

@@ -119,7 +119,7 @@ export function addSprite (renderer, spriteEntity) {
         offset
     )
 
-    copySpriteDataToBuffer(renderer.spritesheet, spriteEntity, renderPass, insertIdx)
+    copySpriteDataToBuffer(renderer.sprite.spritesheet, spriteEntity, renderPass, insertIdx)
     
     // store the location of this sprite's data in the renderer's float32array so that we can 
     // reference it later, when we need to remove or update this sprite component
@@ -158,15 +158,15 @@ export function removeSprite (renderer, spriteEntity) {
 
 export function updateSprite (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    copySpriteDataToBuffer(renderer.spritesheet, spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
+    copySpriteDataToBuffer(renderer.sprite.spritesheet, spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
     renderPass.dirty = true
 }
 
 
 export function updateSpriteAnimation (renderer, spriteEntity) {
     const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    const SPRITE_WIDTH = renderer.spritesheet.spriteMeta[spriteEntity.sprite.name].w
-    const SPRITE_HEIGHT = renderer.spritesheet.spriteMeta[spriteEntity.sprite.name].h
+    const SPRITE_WIDTH = renderer.sprite.spritesheet.spriteMeta[spriteEntity.sprite.name].w
+    const SPRITE_HEIGHT = renderer.sprite.spritesheet.spriteMeta[spriteEntity.sprite.name].h
 
     const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
 
