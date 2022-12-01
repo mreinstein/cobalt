@@ -1,6 +1,6 @@
-import * as SpriteRenderPass      from './SpriteRenderPass.js'
-import Game                       from './Game.js'
-import { ECS }                    from './deps.js'
+import * as SpriteRenderPass from './SpriteRenderPass.js'
+import Game                  from './Game.js'
+import { ECS }               from './deps.js'
 
 
 const SPRITE = [ 'sprite' ]

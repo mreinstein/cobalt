@@ -1,13 +1,10 @@
 import Game               from './Game.js'
-import constants          from './constants.js'
 import sortedBinaryInsert from './sorted-binary-insert.js'
 import toWorld            from './transform-to-world.js'
 import { vec4 }           from './deps.js'
 
 
-const MAX_SPRITE_COUNT = constants.MAX_SPRITES  // max number of sprites in a single sprite render pass
 const FLOAT32S_PER_SPRITE = 12 // translate + scale + tint + opacity 
-
 
 const _tmpVec4 = vec4.create()
 
@@ -15,6 +12,8 @@ const _tmpVec4 = vec4.create()
 // this corresponds to a WebGPU render pass.  It may handle 1 or more sprite layers.
 export function create (renderer, minLayer, maxLayer) {
     const device = renderer.device
+
+    const MAX_SPRITE_COUNT = 16192  // max number of sprites in a single sprite render pass
 
     const numInstances = MAX_SPRITE_COUNT
 

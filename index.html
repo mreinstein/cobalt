@@ -70,40 +70,6 @@ import spriteEntity       from './src/entity-sprite.js'
 import { ECS, debounce, randomInt } from './src/deps.js'
 
 
-async function fetchJson (url) {
-    const raw = await fetch(url)
-    return raw.json()
-}
-
-
-function resizeViewport (renderer, width, height) {
-
-    const { canvas } = renderer
-
-    // determine which screen dimension is most constrained
-    // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
-    // certain float values (e.g., 3.0145833333333334)
-    const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
-
-    canvas.width = Math.ceil(constants.GAME_WIDTH)
-    canvas.height = Math.ceil(constants.GAME_HEIGHT)
-
-    // TODO: call resize on the rendering framework
-    //picoApp.resize(canvas.width, canvas.height)
-
-    // https://www.khronos.org/webgl/wiki/HandlingHighDPI
-    // webgl display resolution size within canvas
-    const resolution = window.devicePixelRatio || 1
-
-    // center the canvas if native window doesn't match aspect ratio
-    canvas.style.width = canvas.width * renderScale + 'px'
-    canvas.style.height = canvas.height * renderScale + 'px'
-    
-    canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
-    canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
-}
-
-
 async function main () {
 
     const [ spritesheetJson, layers ] = await Promise.all([
@@ -154,7 +120,7 @@ async function main () {
     Game.world = world
 
     // some temporary test sprites
-    for (let i=0; i < constants.MAX_SPRITES; i++)
+    for (let i=0; i < 16192; i++)
         spriteEntity(world, { name: 'bucky_repeater_shoot_forward-0.png', position: [ randomInt(64, 256), randomInt(64, 256) ], layer: 4 })
 
     const gameLoop = function () {
@@ -172,6 +138,40 @@ function tick (context) {
     context.lastFrameTime = newTime
     ECS.update(context.world, frameTime)
     ECS.cleanup(context.world)
+}
+
+
+async function fetchJson (url) {
+    const raw = await fetch(url)
+    return raw.json()
+}
+
+
+function resizeViewport (renderer, width, height) {
+
+    const { canvas } = renderer
+
+    // determine which screen dimension is most constrained
+    // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
+    // certain float values (e.g., 3.0145833333333334)
+    const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
+
+    canvas.width = Math.ceil(constants.GAME_WIDTH)
+    canvas.height = Math.ceil(constants.GAME_HEIGHT)
+
+    // TODO: call resize on the rendering framework
+    //picoApp.resize(canvas.width, canvas.height)
+
+    // https://www.khronos.org/webgl/wiki/HandlingHighDPI
+    // webgl display resolution size within canvas
+    const resolution = window.devicePixelRatio || 1
+
+    // center the canvas if native window doesn't match aspect ratio
+    canvas.style.width = canvas.width * renderScale + 'px'
+    canvas.style.height = canvas.height * renderScale + 'px'
+    
+    canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
+    canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
 }
 
 

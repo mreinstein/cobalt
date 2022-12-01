@@ -1,7 +1,6 @@
 import * as OverlayRenderPass   from './OverlayRenderPass.js'
 import * as SpriteRenderPass    from './SpriteRenderPass.js'
 import * as TileRenderPass      from './TileRenderPass.js'
-import constants                from './constants.js'
 import fetchShader              from './fetch-shader.js'
 import createSpriteTriangleMesh from './sprite-triangle-mesh.js'
 import createTileTriangleMesh   from './tile-triangle-mesh.js'

@@ -12,7 +12,6 @@ const _tmpMat4 = mat4.create()
 const _tmpVec3 = vec3.create()
 const _tmpVec4 = vec4.create()
 const buf = new Float32Array(136)  // tile instance data stored in a UBO
-const _counts = new Array(constants.MAX_SPRITES) // store instance counts per sprite type
 
 
 export default function rendererSystem (world) {
@@ -44,7 +43,7 @@ export default function rendererSystem (world) {
         }
         */
 
-        // general write tile metadata to UBO
+        // write tile metadata to UBO
         const elapsed = performance.now()
         const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
         const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
@@ -65,7 +64,7 @@ export default function rendererSystem (world) {
         //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
     
         const view = mat4.create()
-        // set x,y camera position
+        // set x,y,z camera position
         vec3.set(_tmpVec3, -Game.renderer.viewport.position[0], -Game.renderer.viewport.position[1], 0)
         mat4.fromTranslation(view, _tmpVec3)
     
@@ -87,22 +86,20 @@ export default function rendererSystem (world) {
         const textureView = context.getCurrentTexture().createView()
         
         // viewOffset.  [ 0, 0 ] is the top left corner of the level
-        buf[0] = Game.renderer.viewport.position[0] //Math.floor(x * tileScale)  // viewoffset[0] 
-        buf[1] = Game.renderer.viewport.position[1] //Math.floor(y * tileScale) // viewOffset[1]
+        buf[0] = Game.renderer.viewport.position[0] // viewoffset[0] 
+        buf[1] = Game.renderer.viewport.position[1] // viewOffset[1]
 
 
         // TODO: everything after buf[1] doesn't need to be updated every frame
 
-        //buf[2] = Game.renderer.canvas.width / tileScale            // viewportSize[0]
-        //buf[3] = Game.renderer.canvas.height / tileScale            // viewportSize[1]
-        buf[2] = constants.GAME_WIDTH / tileScale            // viewportSize[0]
-        buf[3] = constants.GAME_HEIGHT / tileScale            // viewportSize[1]
+        buf[2] = constants.GAME_WIDTH / tileScale          // viewportSize[0]
+        buf[3] = constants.GAME_HEIGHT / tileScale         // viewportSize[1]
 
         buf[4] = 1 / tile.spritesMaterial.imageData.width  // inverseSpriteTextureSize[0]
         buf[5] = 1 / tile.spritesMaterial.imageData.height // inverseSpriteTextureSize[1]
 
         buf[6] = tileSize
-        buf[7] = 1.0 / tileSize             // inverseTileSize
+        buf[7] = 1.0 / tileSize                            // inverseTileSize
 
         // copy each tile layer's instance data into the UBO
         let i = 8
