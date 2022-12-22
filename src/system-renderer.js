@@ -1,6 +1,6 @@
-import * as SpriteRenderPass           from './SpriteRenderPass.js'
-import constants                       from './constants.js'
-import { ECS, mat4, vec2, vec3, vec4 } from './deps.js'
+import * as SpriteRenderPass     from './SpriteRenderPass.js'
+import constants                 from './constants.js'
+import { ECS, mat4, vec2, vec3 } from './deps.js'
 
 
 const UP_VECTOR = [ 0, 0, 1 ]
@@ -11,9 +11,7 @@ const SPRITE = [ 'sprite' ]
 export default function createRendererSystem (renderer) {
 
     // temporary variables, allocated once to avoid garbage collection
-    const _tmpMat4 = mat4.create()
     const _tmpVec3 = vec3.create()
-    const _tmpVec4 = vec4.create()
     const buf = new Float32Array(136)  // tile instance data stored in a UBO
 
     return function rendererSystem (world) {
