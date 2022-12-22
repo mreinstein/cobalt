@@ -164,7 +164,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
 async function buildTilePipeline (device, canvas, format, tileData) {
     const quad = createTileQuad(device)
 
-    const spritesMaterial = await createTexture(device, tileData.spriteTextureUrl)
+    const atlasMaterial = await createTexture(device, tileData.atlasTextureUrl)
 
     const shader = await fetchShader('/src/tile.wgsl')
 
@@ -173,7 +173,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
-    const spriteBindGroupLayout = device.createBindGroupLayout({
+    const atlasBindGroupLayout = device.createBindGroupLayout({
         entries: [
             {
                 binding: 0,
@@ -193,8 +193,8 @@ async function buildTilePipeline (device, canvas, format, tileData) {
         ],
     })
 
-    const spriteBindGroup = device.createBindGroup({
-        layout: spriteBindGroupLayout,
+    const atlasBindGroup = device.createBindGroup({
+        layout: atlasBindGroupLayout,
         entries: [
             {
                 binding: 0,
@@ -204,11 +204,11 @@ async function buildTilePipeline (device, canvas, format, tileData) {
             },
             {
                 binding: 1,
-                resource: spritesMaterial.view
+                resource: atlasMaterial.view
             },
             {
                 binding: 2,
-                resource: spritesMaterial.sampler
+                resource: atlasMaterial.sampler
             }
         ]
     })
@@ -229,7 +229,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
     })
 
     const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ tileBindGroupLayout, spriteBindGroupLayout ]
+        bindGroupLayouts: [ tileBindGroupLayout, atlasBindGroupLayout ]
     })
 
     const pipeline = device.createRenderPipeline({
@@ -277,7 +277,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
     const tileMaterials = { }
 
     for (const layerName in tileData.layers) {
-        const tileLayerMaterial = await createTexture(device, tileData.layers[layerName].textureUrl)
+        const tileLayerMaterial = await createTexture(device, tileData.layers[layerName].mapTextureUrl)
 
         const tileBindGroup = device.createBindGroup({
             layout: tileBindGroupLayout,
@@ -300,8 +300,8 @@ async function buildTilePipeline (device, canvas, format, tileData) {
     return {
         pipeline,
         uniformBuffer,
-        spriteBindGroup,   // sprite texture, transform UBO
-        spritesMaterial,
+        atlasBindGroup,   // tile atlas texture, transform UBO
+        atlasMaterial,
 
         tileBindGroupLayout,
 

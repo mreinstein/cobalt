@@ -82,24 +82,23 @@ async function main () {
 
     const canvas = document.querySelector('canvas')
 
-    const spriteTextureUrl = 'assets/spritesheet.png'
-
     const tileData = {
-        spriteTextureUrl: 'assets/spelunky-tiles-extruded.png',
+        atlasTextureUrl: 'assets/spelunky-tiles-extruded.png',
         tileSize: 16,
         tileScale: 1.0,
         layers: {
             details: {
-                textureUrl: 'assets/spelunky0.png',
+                mapTextureUrl: 'assets/spelunky0.png',
                 scrollScale: 1.0
             },
             background2: {
-                textureUrl: 'assets/spelunky1.png',
+                mapTextureUrl: 'assets/spelunky1.png',
                 scrollScale: 0.6
             }
         }
     }
 
+    const spriteTextureUrl = 'assets/spritesheet.png'
     Game.renderer = await createRenderer(canvas, Game.spritesheet, Game.layers, spriteTextureUrl, tileData)
 
     // use resizeViewport to init values on load:

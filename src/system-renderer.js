@@ -101,8 +101,8 @@ export default function createRendererSystem (renderer) {
             buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
             buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
 
-            buf[4] = 1 / tile.spritesMaterial.imageData.width  // inverseSpriteTextureSize[0]
-            buf[5] = 1 / tile.spritesMaterial.imageData.height // inverseSpriteTextureSize[1]
+            buf[4] = 1 / tile.atlasMaterial.imageData.width  // inverseAtlasTextureSize[0]
+            buf[5] = 1 / tile.atlasMaterial.imageData.height // inverseAtlasTextureSize[1]
 
             buf[6] = tileSize
             buf[7] = 1.0 / tileSize                            // inverseTileSize
@@ -148,8 +148,8 @@ export default function createRendererSystem (renderer) {
                     renderpass.setPipeline(tile.pipeline)
                     renderpass.setVertexBuffer(0, tile.quad.buffer)
         
-                    // common stuff; the transform data and the sprite texture
-                    renderpass.setBindGroup(1, tile.spriteBindGroup)
+                    // common stuff; the transform data and the tile atlas texture
+                    renderpass.setBindGroup(1, tile.atlasBindGroup)
 
                     // render each of the tile layers
                     for (let j=0; j < renderPass.layers.length; j++) {
