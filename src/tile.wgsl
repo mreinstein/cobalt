@@ -40,7 +40,8 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 
 	var output : Fragment;
 
-	var inverseTileTextureSize = transformUBO.tileLayers[i_id].inverseTileTextureSize;
+	let inverseTileTextureSize = 1 / vec2<f32>(textureDimensions(tileTexture, 0));  // transformUBO.tileLayers[i_id].inverseTileTextureSize;
+
 	var scrollScale = transformUBO.tileLayers[i_id].scrollScale;
 
 	var viewOffset : vec2<f32> = transformUBO.viewOffset * scrollScale;
@@ -68,7 +69,10 @@ fn fs_main (@location(0) TexCoord: vec2<f32>, @location(1) PixelCoord: vec2<f32>
 	extrudeOffset[0] = floor(tile.x * 256.0) * 2 + 1;
 	extrudeOffset[1] = floor(tile.y * 256.0) * 2 + 1;
 
-    var spriteOffset : vec2<f32> = floor(tile.xy * 256.0) * transformUBO.tileSize;
+  var spriteOffset : vec2<f32> = floor(tile.xy * 256.0) * transformUBO.tileSize;
 	var spriteCoord : vec2<f32> = PixelCoord % transformUBO.tileSize;
-	return textureSample(spriteTexture, spriteSampler, (extrudeOffset + spriteOffset + spriteCoord) * transformUBO.inverseSpriteTextureSize);
+
+	let inverseSpriteTextureSize = 1 / vec2<f32>(textureDimensions(spriteTexture, 0));  //transformUBO.inverseSpriteTextureSize;
+	
+	return textureSample(spriteTexture, spriteSampler, (extrudeOffset + spriteOffset + spriteCoord) * inverseSpriteTextureSize);
 }

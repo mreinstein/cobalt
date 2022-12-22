@@ -217,7 +217,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
         entries: [
             {
                 binding: 0,
-                visibility: GPUShaderStage.FRAGMENT,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                 texture:  { }
             },
             {

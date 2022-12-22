@@ -1,6 +1,6 @@
-import * as SpriteRenderPass from './SpriteRenderPass.js'
-import Game                  from './Game.js'
-import { ECS }               from './deps.js'
+import * as SpriteRenderPass from '../src/SpriteRenderPass.js'
+import Game                  from '../src/Game.js'
+import ECS                   from 'https://cdn.skypack.dev/ecs'
 
 
 const SPRITE = [ 'sprite' ]
