@@ -1,4 +1,4 @@
-export default function createTileTriangleMesh (device) {
+export default function createTileQuad (device) {
 
     const vertices = new Float32Array([
        //x   y  u  v  

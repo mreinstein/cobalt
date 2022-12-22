@@ -1,10 +1,10 @@
-import * as OverlayRenderPass   from './OverlayRenderPass.js'
-import * as SpriteRenderPass    from './SpriteRenderPass.js'
-import * as TileRenderPass      from './TileRenderPass.js'
-import fetchShader              from './fetch-shader.js'
-import createSpriteTriangleMesh from './sprite-triangle-mesh.js'
-import createTileTriangleMesh   from './tile-triangle-mesh.js'
-import { createMaterial }       from './material.js'
+import * as OverlayRenderPass from './OverlayRenderPass.js'
+import * as SpriteRenderPass  from './SpriteRenderPass.js'
+import * as TileRenderPass    from './TileRenderPass.js'
+import fetchShader            from './fetch-shader.js'
+import createSpriteQuads      from './create-sprite-quads.js'
+import createTileQuad         from './create-tile-quad.js'
+import { createTexture }      from './create-texture.js'
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -60,9 +60,9 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
 
 
 async function buildSpritePipeline (device, canvas, format, spritesheet, spriteTextureUrl) {
-    const triangleMesh = createSpriteTriangleMesh(device, spritesheet)
+    const quads = createSpriteQuads(device, spritesheet)
 
-    const material = await createMaterial(device, spriteTextureUrl)
+    const material = await createTexture(device, spriteTextureUrl)
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'
@@ -111,7 +111,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
                 code: shader
             }),
             entryPoint: 'vs_main',
-            buffers: [ triangleMesh.bufferLayout ]
+            buffers: [ quads.bufferLayout ]
         },
 
         fragment: {
@@ -153,7 +153,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
     return {
         pipeline,
         uniformBuffer, // perspective and view matrices for the camera
-        triangleMesh,
+        quads,
         material,
         bindGroupLayout,
         spritesheet,
@@ -162,9 +162,9 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
 
 
 async function buildTilePipeline (device, canvas, format, tileData) {
-    const triangleMesh = createTileTriangleMesh(device)
+    const quad = createTileQuad(device)
 
-    const spritesMaterial = await createMaterial(device, tileData.spriteTextureUrl)
+    const spritesMaterial = await createTexture(device, tileData.spriteTextureUrl)
 
     const shader = await fetchShader('/src/tile.wgsl')
 
@@ -238,7 +238,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
                 code: shader
             }),
             entryPoint: 'vs_main',
-            buffers: [ triangleMesh.bufferLayout ]
+            buffers: [ quad.bufferLayout ]
         },
 
         fragment: {
@@ -277,7 +277,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
     const tileMaterials = { }
 
     for (const layerName in tileData.layers) {
-        const tileLayerMaterial = await createMaterial(device, tileData.layers[layerName].textureUrl)
+        const tileLayerMaterial = await createTexture(device, tileData.layers[layerName].textureUrl)
 
         const tileBindGroup = device.createBindGroup({
             layout: tileBindGroupLayout,
@@ -308,7 +308,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
         tileMaterials,  // key is layer name, value is the material
         tileBindGroups, // key is layer name, value is a bind group
 
-        triangleMesh,
+        quad,
 
         tileSize: tileData.tileSize,
         tileScale: tileData.tileScale,

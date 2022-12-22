@@ -1,5 +1,5 @@
 
-export async function createMaterial (device, url) {
+export async function createTexture (device, url) {
     
     const response = await fetch(url)
     const blob = await response.blob()

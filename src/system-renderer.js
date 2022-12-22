@@ -146,7 +146,7 @@ export default function createRendererSystem (renderer) {
                     })
 
                     renderpass.setPipeline(tile.pipeline)
-                    renderpass.setVertexBuffer(0, tile.triangleMesh.buffer)
+                    renderpass.setVertexBuffer(0, tile.quad.buffer)
         
                     // common stuff; the transform data and the sprite texture
                     renderpass.setBindGroup(1, tile.spriteBindGroup)
@@ -184,7 +184,7 @@ export default function createRendererSystem (renderer) {
                 
                     renderpass.setPipeline(renderer.sprite.pipeline)
                     renderpass.setBindGroup(0, renderPass.bindGroup)
-                    renderpass.setVertexBuffer(0, renderer.sprite.triangleMesh.buffer)
+                    renderpass.setVertexBuffer(0, renderer.sprite.quads.buffer)
 
                     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
                     //      renderpass.draw(6,  1,  0, 0)  //  1 hero instance

@@ -1,4 +1,4 @@
-export default function createSpriteTriangleMesh (device, spritesheet) {
+export default function createSpriteQuads (device, spritesheet) {
 
     // u,v coordinates specify top left as 0,0  bottom right as 1,1
     
