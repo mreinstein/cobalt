@@ -59,15 +59,16 @@
         </div>
 
 <script type="module">
-import Game               from '../src/Game.js'
+import Game               from './Game.js'
 import * as SpriteData    from '../src/SpriteData.js'
 import createRenderer     from '../src/create-renderer.js'
 import constants          from '../src/constants.js'
+import debounce           from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
 import animationSystem    from './system-animation.js'
 import readSpriteSheet    from '../src/read-spritesheet.js'
 import rendererSystem     from '../src/system-renderer.js'
 import spriteEntity       from '../src/entity-sprite.js'
-import { ECS, debounce, randomInt } from '../src/deps.js'
+import { ECS, randomInt } from '../src/deps.js'
 
 
 async function main () {

@@ -1,4 +1,3 @@
-import Game                from './Game.js'
 import animationComponent  from './component-animation.js'
 import transformComponent  from './component-transform.js'
 import { ECS, vec3, vec4 } from './deps.js'
@@ -17,7 +16,10 @@ export default function spriteEntity (world, opts) {
 
     ECS.addComponentToEntity(world, ENTITY, 'sprite', {
         name: opts.name,
-        spriteType: Game.spritesheet.locations.indexOf(opts.name),
+
+        // filled in at run time by the renderer when the sprite is created. declares the position of this sprite in the vertex array
+        spriteType: -1,
+
         layer: opts.layer,
         rotation: 0, // radians
         scale: vec3.fromValues(1, 1, 1),

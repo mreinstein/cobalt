@@ -24,8 +24,10 @@ export default function createRendererSystem (renderer) {
             const context = renderer.context
             const renderPasses = renderer.renderPasses
 
-            for (const newSprite of ECS.getEntities(world, SPRITE, 'added'))
+            for (const newSprite of ECS.getEntities(world, SPRITE, 'added')) {
+                newSprite.sprite.spriteType = renderer.spritesheet.locations.indexOf(newSprite.sprite.name)
                 SpriteRenderPass.addSprite(renderer, newSprite)
+            }
 
             for (const newSprite of ECS.getEntities(world, SPRITE, 'removed'))
                 SpriteRenderPass.removeSprite(renderer, newSprite)

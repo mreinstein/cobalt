@@ -4,7 +4,6 @@ export default {
     spritesheet: undefined,  // texture/animation
     
     layers: undefined,       // tile/sprite/overlay layer definitions
-    world: undefined,        // ECS instance
 
     // timekeeping (in milliseconds)
     lastFrameTime: 0,        // local time the last frame ran

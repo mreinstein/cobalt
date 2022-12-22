@@ -1,5 +1,5 @@
 import * as SpriteRenderPass from '../src/SpriteRenderPass.js'
-import Game                  from '../src/Game.js'
+import Game                  from './Game.js'
 import ECS                   from 'https://cdn.skypack.dev/ecs'
 
 

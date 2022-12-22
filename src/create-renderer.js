@@ -28,6 +28,7 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
 
     const renderer = {
         canvas,
+        spritesheet,
 
         // device/context objects
         adapter,
