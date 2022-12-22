@@ -1,6 +1,6 @@
 # Cobalt
 
-![A chunk of cobalt](cobalt.jpeg)
+![A chunk of cobalt](cobalt2.jpeg)
 
 An opinionated 2D renderer based on WebGpu, designed for sprite and tile games that minimizes CPU usage and maximizes frame rate.
 
