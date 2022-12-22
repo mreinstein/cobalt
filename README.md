@@ -33,6 +33,8 @@ for each layer represented in this renderpass.
 Here's an example of how the data for some specific layers might look:
 
 ```
+        game layers                       what cobalt produces to render these
+      ______________             _________________________________________________________  
 
      [ background   ]     ->    {
                                     renderpasses: [
