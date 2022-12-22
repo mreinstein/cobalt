@@ -1,9 +1,8 @@
 # Cobalt
 
-An opinionated 2D renderer based on WebGpu, designed for sprite and tile games that minimizes CPU usage and maximizes frame rate.
-
-
 ![A chunk of cobalt](cobalt.jpeg)
+
+An opinionated 2D renderer based on WebGpu, designed for sprite and tile games that minimizes CPU usage and maximizes frame rate.
 
 
 ## Required Goals
