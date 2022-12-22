@@ -3,13 +3,16 @@
 An opinionated 2D renderer based on WebGpu, designed for sprite and tile games that minimizes CPU usage and maximizes frame rate.
 
 
+![alt text](cobalt.jpeg "A chunk of cobalt" =200x)
+
+
 ## Required Goals
 
-* pure webgpu: no fallbacks to webgl or canvas
+* pure WebGpu: no fallbacks to WebGl or canvas
 * minimal abstractions: provide very light abstractions over what webgpu provides
 * data oriented: ECS for all of it's performance and maintainability gains over scene graph and OOP nonsense
 * gl-matrix compatible: use primitives compatible with how webgpu and webgl store rendering data (float32 arrays)
-* gc friendly: does not thrash the garbage collector. uses API design that won't allocate memory all over the place
+* GC friendly: does not thrash the garbage collector. uses API design that won't allocate memory all over the place
 * back-to-front z-indexing
 
 
@@ -18,8 +21,7 @@ An opinionated 2D renderer based on WebGpu, designed for sprite and tile games t
 Dunno if these will make the cut but things to strongly consider
 
 * primitive drawing (lines, rectangles, ellipses, paths, etc.)
-* ECS agnostic: could we expose pure arrays/data structures as the core API rather than demanding my particular ecs module?
-* text based intuitive render graph for highly configurable shaders
+* intuitive render graph for highly configurable shaders
 
 
 ## Architecture
