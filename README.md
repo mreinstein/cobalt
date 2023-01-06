@@ -94,41 +94,48 @@ avoid creating a lot of extra objects.  Declaring arrays and other object types 
 and that invokes the wrath of the garbage collector.
 
 
-TODO: design the actual public API :)
+API design (this isn't implemented yet):
 
-### init
+```js
+import * as Cobalt from 'cobalt'
 
-```javascript
+
+// general calls
+const c = Cobalt.createRenderer(canvas)
+Cobalt.draw(c)
+
+
+// TODO: camera/viewport related calls
+
+
+// sprite calls
+const spriteId = Cobalt.addSprite(c, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+
+Cobalt.setSpriteData(c, spriteId, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+
+Cobalt.setSpriteType(c, spriteId, name)
+
+Cobalt.setSpritePosition(c, spriteId, position)
+
+Cobalt.setSpriteDimensions(c, spriteId, width, height)
+
+Cobalt.setSpriteScale(c, spriteId, scale)
+
+Cobalt.setSpriteTint(c, spriteId, tint)
+
+Cobalt.setSpriteOpacity(c, spriteId, opacity)
+
+Cobalt.setSpriteRotation(c, spriteId, rotation)
+
+Cobalt.setSpriteZIndex(c, spriteId, zIndex)
+
+Cobalt.removeSprite(c, spriteId)
+
+
+// tile calls
+const tileLayerId = Cobalt.addTileLayer(c, width, height, scrollScale, tileScale, tileSize, tileAtlas, tileMap, zIndex)
+
+Cobalt.removeTilelayer(c, tileLayerId)
+
 ```
-
-### loadTileLayers
-
-```javascript
-```
-
-### addSprite
-
-```javascript
-```
-
-### removeSprite
-
-```javascript
-```
-
-### updateSprite
-
-```javascript
-```
-
-### draw
-
-```javascript
-```
-
-
-## Examples 
-
-
-
 

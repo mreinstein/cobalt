@@ -89,6 +89,7 @@ export default function createRendererSystem (renderer) {
 
 
             const commandEncoder = device.createCommandEncoder()
+
             const textureView = context.getCurrentTexture().createView()
             
             // viewOffset.  [ 0, 0 ] is the top left corner of the level
@@ -165,7 +166,7 @@ export default function createRendererSystem (renderer) {
                     actualRenderCount++
 
                     if (renderPass.dirty) {
-                        rebuildDrawCalls(renderPass)
+                        rebuildSpriteDrawCalls(renderPass)
                         renderPass.dirty = false
                     }
 
@@ -220,7 +221,7 @@ export default function createRendererSystem (renderer) {
 
 
 // build instancedDrawCalls
-function rebuildDrawCalls (renderPass) {
+function rebuildSpriteDrawCalls (renderPass) {
     let currentSpriteType = -1
     let instanceCount = 0
     renderPass.instancedDrawCallCount = 0
