@@ -1,5 +1,4 @@
 import * as SpriteRenderPass     from './SpriteRenderPass.js'
-import constants                 from './constants.js'
 import { ECS, mat4, vec2, vec3 } from './deps.js'
 
 
@@ -30,17 +29,16 @@ export default function createRendererSystem (renderer) {
             for (const newSprite of ECS.getEntities(world, SPRITE, 'removed'))
                 SpriteRenderPass.removeSprite(renderer, newSprite)
 
-
             // camera stuff
             /* 
             const Camera = {
-                position: vec2.fromValues(constants.GAME_WIDTH / 2, constants.GAME_HEIGHT / 2),
+                position: vec2.fromValues(renderer.viewport.width / 2, renderer.viewport.height / 2),
                 shake: vec2.create()
             }
             const viewport = {
                 position: vec2.fromValues(
-                    -round(Camera.position[0] + Camera.shake[0]) + constants.GAME_WIDTH / 2,
-                    -round(Camera.position[1] + Camera.shake[1]) + constants.GAME_HEIGHT / 2
+                    -round(Camera.position[0] + Camera.shake[0]) + renderer.viewport.width / 2,
+                    -round(Camera.position[1] + Camera.shake[1]) + renderer.viewport.height / 2
                 )
             }
             */
@@ -62,8 +60,8 @@ export default function createRendererSystem (renderer) {
             //                out    left   right    bottom   top     near     far
             //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
 
-            const GAME_WIDTH = Math.round(constants.GAME_WIDTH * renderer.viewport.zoom)
-            const GAME_HEIGHT = Math.round(constants.GAME_HEIGHT * renderer.viewport.zoom)
+            const GAME_WIDTH = Math.round(renderer.viewport.width * renderer.viewport.zoom)
+            const GAME_HEIGHT = Math.round(renderer.viewport.height * renderer.viewport.zoom)
 
             mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 

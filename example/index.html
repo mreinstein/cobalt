@@ -62,7 +62,7 @@
 import Game               from './Game.js'
 import * as SpriteData    from '../src/SpriteData.js'
 import createRenderer     from '../src/create-renderer.js'
-import constants          from '../src/constants.js'
+import constants          from './constants.js'
 import debounce           from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
 import animationSystem    from './system-animation.js'
 import readSpriteSheet    from '../src/read-spritesheet.js'
@@ -100,7 +100,9 @@ async function main () {
     }
 
     const spriteTextureUrl = 'assets/spritesheet.png'
-    Game.renderer = await createRenderer(canvas, Game.spritesheet, Game.layers, spriteTextureUrl, tileData)
+    const viewportWidth = constants.GAME_WIDTH
+    const viewportHeight = constants.GAME_HEIGHT
+    Game.renderer = await createRenderer(canvas, viewportWidth, viewportHeight, Game.spritesheet, Game.layers, spriteTextureUrl, tileData)
 
     // use resizeViewport to init values on load:
     resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)

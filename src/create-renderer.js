@@ -9,7 +9,7 @@ import { createTexture }      from './create-texture.js'
 
 // create and initialize a WebGPU renderer for a given canvas
 // returns the data structure containing all WebGPU related stuff
-export default async function createRenderer (canvas, spritesheet, layers, spriteTextureUrl, tileData) {
+export default async function createRenderer (canvas, viewportWidth, viewportHeight, spritesheet, layers, spriteTextureUrl, tileData) {
 
     const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
 
@@ -49,6 +49,8 @@ export default async function createRenderer (canvas, spritesheet, layers, sprit
         clearValue: { r: 0.5, g: 0.0, b: 0.25, a: 1.0 },
 
         viewport: {
+            width: viewportWidth,
+            height: viewportHeight,
             zoom: 1.0,
             position: [ 0, 0 ]  // TODO: ehh is this the top left or center point of the viewport?
         },
