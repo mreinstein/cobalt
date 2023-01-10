@@ -15,7 +15,8 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
 
     const device = await adapter?.requestDevice()
     const context = canvas.getContext('webgpu')
-    const format = 'bgra8unorm'
+
+    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
     context.configure({
         device,
@@ -25,6 +26,8 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
 
     const sprite = await buildSpritePipeline(device, canvas, format, spritesheet, spriteTextureUrl)
     const tile = await buildTilePipeline(device, canvas, format, tileData)
+    
+    const postProcessing = await buildPostProcessingPipeline(device, viewportWidth, viewportHeight)
 
     const renderer = {
         canvas,
@@ -45,6 +48,9 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
         // ordered list of WebGPU render passes.  available types:  TILE | SPRITE | OVERLAY
         renderPasses: [ ],
 
+        // all the sprite/tile renderpasses draw to this texture except the overlay layers
+        postProcessing,
+
         // used in the color attachments of renderpass
         clearValue: { r: 0.5, g: 0.0, b: 0.25, a: 1.0 },
 
@@ -59,6 +65,81 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
     buildRenderPasses(renderer, layers, tileData)
 
     return renderer
+}
+
+
+async function buildPostProcessingPipeline (device, viewportWidth, viewportHeight) {
+    const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
+    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
+
+    const postProcessingTexture = device.createTexture({
+        size: [ viewportWidth, viewportHeight, 1 ],
+        format,
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    const postProcessingTextureView = postProcessingTexture.createView({
+        format,
+        dimension: '2d',
+        aspect: 'all',
+        baseMipLevel: 0,
+        mipLevelCount: 1,
+        baseArrayLayer: 0,
+        arrayLayerCount: 1
+    })
+
+    const fullscreenQuadPipeline = device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: device.createShaderModule({
+            code: shader,
+          }),
+          entryPoint: 'vert_main',
+        },
+        fragment: {
+          module: device.createShaderModule({
+            code: shader,
+          }),
+          entryPoint: 'frag_main',
+          targets: [
+            {
+              format,
+            },
+          ],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+    })
+
+    const sampler = device.createSampler({
+        magFilter: 'nearest',
+        minFilter: 'nearest',
+    })
+
+    const bindGroup = device.createBindGroup({
+        layout: fullscreenQuadPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: sampler,
+          },
+          {
+            binding: 1,
+            resource: postProcessingTextureView,
+          },
+        ],
+    })
+
+    return {
+        bindGroup,
+        pipeline: fullscreenQuadPipeline,
+        texture: postProcessingTexture,
+        textureView: postProcessingTextureView
+    }
 }
 
 

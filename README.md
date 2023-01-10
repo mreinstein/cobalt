@@ -133,9 +133,22 @@ Cobalt.removeSprite(c, spriteId)
 
 
 // tile calls
-const tileLayerId = Cobalt.addTileLayer(c, width, height, scrollScale, tileScale, tileSize, tileAtlas, tileMap, zIndex)
+const tileLayerId = Cobalt.addTileLayer(c, width, height, scrollScale, tileScale, tileSize, tileAtlasUrl, tileMapUrl, zIndex)
 
 Cobalt.removeTilelayer(c, tileLayerId)
+
+
+// postProcessing calls
+const filterId = Cobalt.addPostProcessingFilter({
+     init: function (renderer) { },
+     render: function (renderer, commandEncoder) { } // called each render frame to do the drawing
+})
+
+Cobalt.removePostProcessingFilter(filterid)
+
+
+// TODO: sprite overlay layers (these render after post-processing filters)
+// perhaps this would be better implemented as an argument to Cobalt.addSprite(...), like an overlay flag, rather than a duplicate call?
 
 ```
 

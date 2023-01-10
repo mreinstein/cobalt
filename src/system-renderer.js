@@ -19,7 +19,6 @@ export default function createRendererSystem (renderer) {
      
             const device = renderer.device
             const context = renderer.context
-            const renderPasses = renderer.renderPasses
 
             for (const newSprite of ECS.getEntities(world, SPRITE, 'added')) {
                 newSprite.sprite.spriteType = renderer.spritesheet.locations.indexOf(newSprite.sprite.name)
@@ -124,19 +123,17 @@ export default function createRendererSystem (renderer) {
 
             let actualRenderCount = 0 // number of renderpasses taht actually activated so far
 
-            for (const renderPass of renderPasses) {
+            for (const renderPass of renderer.renderPasses) {
 
                 const loadOp = (actualRenderCount < 1) ? 'clear' : 'load'
 
                 if (renderPass.type === 'tile' && renderPass.layers.length) {
                     actualRenderCount++
-                    //const commandEncoder = device.createCommandEncoder()
-                    //const textureView = context.getCurrentTexture().createView()
-
+                    
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
                             {
-                                view: textureView,
+                                view: renderer.postProcessing.textureView, //textureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -173,7 +170,7 @@ export default function createRendererSystem (renderer) {
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
                             {
-                                view: textureView,
+                                view: renderer.postProcessing.textureView, //textureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -209,6 +206,30 @@ export default function createRendererSystem (renderer) {
                     renderpass.end()
                 }
             }
+
+
+            // render full screen quad with postProcessing
+            const renderpass = commandEncoder.beginRenderPass({
+                colorAttachments: [
+                    {
+                        view: textureView,
+                        clearValue: renderer.clearValue,
+                        loadOp: 'clear',
+                        storeOp: 'store'
+                    }
+                ]
+            })
+
+            renderpass.setPipeline(renderer.postProcessing.pipeline)
+            renderpass.setBindGroup(0, renderer.postProcessing.bindGroup)
+            renderpass.draw(6, 1, 0, 0)
+            renderpass.end()
+            
+
+
+            // TODO: render all layers on top of the postProcessing here (UI layers)
+
+
 
             device.queue.submit([ commandEncoder.finish() ])
         }
