@@ -72,7 +72,6 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
     const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
-
     const postProcessingTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
         format,
@@ -91,8 +90,6 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         baseArrayLayer: 0,
         arrayLayerCount: 1
     })
-
-
 
     const blurWGSL = await fetchShader('/src/blur.wgsl')
 
@@ -174,7 +171,6 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         ],
     })
 
-
     const computeBindGroup0 = device.createBindGroup({
         layout: blurPipeline.getBindGroupLayout(1),
         entries: [
@@ -235,11 +231,9 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         ],
     })
 
-
-    // Contants from the blur.wgsl shader.
+    // Constants from the blur.wgsl shader.
     const tileDim = 128
     const batch = [ 4, 4 ]
-
 
     const settings = {
         filterSize: 5,
@@ -253,8 +247,6 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         0,
         new Uint32Array([ settings.filterSize, blockDim ])
     )
-
-
 
     const fullscreenQuadPipeline = device.createRenderPipeline({
         layout: 'auto',
