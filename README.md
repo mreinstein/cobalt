@@ -105,7 +105,9 @@ const c = Cobalt.createRenderer(canvas)
 Cobalt.draw(c)
 
 
-// TODO: camera/viewport related calls
+// camera/viewport related calls
+Cobalt.setViewportDimensions(c, width, height)
+Cobalt.setViewportPosition(c, pos)
 
 
 // sprite calls
@@ -140,15 +142,31 @@ Cobalt.removeTilelayer(c, tileLayerId)
 
 // postProcessing calls
 const filterId = Cobalt.addPostProcessingFilter({
-     init: function (renderer) { },
-     render: function (renderer, commandEncoder) { } // called each render frame to do the drawing
+     // called once to initialize the data structures needed at render time
+     init: function (renderer) {
+          // TODO: return whatever data this filter needs to access at render time.
+          return { }
+     },
+
+     // called each frame to do the drawing
+     // @param Object filterData created by the init function
+     render: function (renderer, commandEncoder, filterData) {
+          // TODO: constuct render passes here to render the filter
+     },
+
+     // called whenever the renderer's dimensions change
+     onResize: function (renderer, filterData) {
+
+     },
 })
 
 Cobalt.removePostProcessingFilter(filterid)
 
 
 // TODO: sprite overlay layers (these render after post-processing filters)
-// perhaps this would be better implemented as an argument to Cobalt.addSprite(...), like an overlay flag, rather than a duplicate call?
+// perhaps this would be better implemented as a spriteType argument in Cobalt.addSprite(...) rather than a duplicate call
+// e.g.,  Cobalt.SPRITE_TYPE = { NORMAL: 0, OVERLAY: 1 }
+//        Cobalt.addSprite(c, name, position, width, height, scale, tint, opacity, rotation, zIndex, Cobalt.)
 
 ```
 

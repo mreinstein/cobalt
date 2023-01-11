@@ -86,8 +86,6 @@ export default function createRendererSystem (renderer) {
 
 
             const commandEncoder = device.createCommandEncoder()
-
-            const textureView = context.getCurrentTexture().createView()
             
             // viewOffset.  [ 0, 0 ] is the top left corner of the level
             buf[0] = renderer.viewport.position[0] // viewoffset[0] 
@@ -207,28 +205,12 @@ export default function createRendererSystem (renderer) {
                 }
             }
 
+            // render all the post processing filters
+            renderBlurFilter(renderer, commandEncoder, renderer.postProcessing.blurStuff)
 
-            // render full screen quad with postProcessing
-            const renderpass = commandEncoder.beginRenderPass({
-                colorAttachments: [
-                    {
-                        view: textureView,
-                        clearValue: renderer.clearValue,
-                        loadOp: 'clear',
-                        storeOp: 'store'
-                    }
-                ]
-            })
-
-            renderpass.setPipeline(renderer.postProcessing.pipeline)
-            renderpass.setBindGroup(0, renderer.postProcessing.bindGroup)
-            renderpass.draw(6, 1, 0, 0)
-            renderpass.end()
-            
-
+            //renderPixelationFilter(renderer, commandEncoder, renderer.postProcessing.pixelationStuff)
 
             // TODO: render all layers on top of the postProcessing here (UI layers)
-
 
 
             device.queue.submit([ commandEncoder.finish() ])
@@ -236,6 +218,86 @@ export default function createRendererSystem (renderer) {
 
         return { onUpdate }
     }
+}
+
+
+function renderBlurFilter (renderer, commandEncoder, filterData) {
+
+    const blockDim = filterData.blockDim
+    const batch = filterData.batch
+    const srcWidth = renderer.viewport.width
+    const srcHeight = renderer.viewport.height
+
+    const computePass = commandEncoder.beginComputePass()
+    computePass.setPipeline(filterData.blurPipeline)
+    computePass.setBindGroup(0, filterData.computeConstants)
+
+    computePass.setBindGroup(1, filterData.computeBindGroup0)
+    computePass.dispatchWorkgroups(
+      Math.ceil(srcWidth / blockDim),
+      Math.ceil(srcHeight / batch[1])
+    )
+
+    computePass.setBindGroup(1, filterData.computeBindGroup1)
+    computePass.dispatchWorkgroups(
+      Math.ceil(srcHeight / blockDim),
+      Math.ceil(srcWidth / batch[1])
+    )
+
+    for (let i = 0; i < filterData.settings.iterations - 1; ++i) {
+      computePass.setBindGroup(1, filterData.computeBindGroup2)
+      computePass.dispatchWorkgroups(
+        Math.ceil(srcWidth / blockDim),
+        Math.ceil(srcHeight / batch[1])
+      )
+
+      computePass.setBindGroup(1, filterData.computeBindGroup1)
+      computePass.dispatchWorkgroups(
+        Math.ceil(srcHeight / blockDim),
+        Math.ceil(srcWidth / batch[1])
+      )
+    }
+
+    computePass.end()
+
+
+    const textureView = renderer.context.getCurrentTexture().createView()
+
+    const passEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: textureView,
+          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    });
+
+    passEncoder.setPipeline(renderer.postProcessing.pipeline) //fullscreenQuadPipeline);
+    passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup) //showResultBindGroup);
+    passEncoder.draw(6, 1, 0, 0)
+    passEncoder.end()
+
+    /*
+    // render full screen quad with postProcessing
+    
+    const renderpass = commandEncoder.beginRenderPass({
+        colorAttachments: [
+            {
+                view: textureView,
+                clearValue: renderer.clearValue,
+                loadOp: 'clear',
+                storeOp: 'store'
+            }
+        ]
+    })
+
+    renderpass.setPipeline(renderer.postProcessing.pipeline)
+    renderpass.setBindGroup(0, renderer.postProcessing.bindGroup)
+    renderpass.draw(6, 1, 0, 0)
+    renderpass.end()  
+    */   
 }
 
 

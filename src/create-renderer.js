@@ -72,6 +72,7 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
     const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
+
     const postProcessingTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
         format,
@@ -90,6 +91,170 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         baseArrayLayer: 0,
         arrayLayerCount: 1
     })
+
+
+
+    const blurWGSL = await fetchShader('/src/blur.wgsl')
+
+    const blurPipeline = device.createComputePipeline({
+        layout: 'auto',
+        compute: {
+            module: device.createShaderModule({
+                code: blurWGSL,
+            }),
+            entryPoint: 'main',
+        },
+    })
+
+    const textures = [0, 1].map(() => {
+        return device.createTexture({
+            size: {
+                width: viewportWidth,
+                height: viewportHeight,
+            },
+            format: 'rgba8unorm',
+            usage:
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.STORAGE_BINDING |
+            GPUTextureUsage.TEXTURE_BINDING,
+        })
+    })
+
+    const buffer0 = (() => {
+        const buffer = device.createBuffer({
+            size: 4,
+            mappedAtCreation: true,
+            usage: GPUBufferUsage.UNIFORM,
+        })
+        new Uint32Array(buffer.getMappedRange())[0] = 0
+        buffer.unmap()
+        return buffer
+    })()
+
+    const buffer1 = (() => {
+        const buffer = device.createBuffer({
+          size: 4,
+          mappedAtCreation: true,
+          usage: GPUBufferUsage.UNIFORM,
+      });
+        new Uint32Array(buffer.getMappedRange())[0] = 1
+        buffer.unmap()
+        return buffer
+    })()
+
+    const blurParamsBuffer = device.createBuffer({
+        size: 8,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+    })
+
+    const sampler = device.createSampler({
+        magFilter: 'nearest',
+        minFilter: 'nearest',
+    })
+    /*
+    const sampler = device.createSampler({
+        magFilter: 'linear',
+        minFilter: 'linear',
+    })
+    */
+
+    const computeConstants = device.createBindGroup({
+        layout: blurPipeline.getBindGroupLayout(0),
+        entries: [
+            {
+                binding: 0,
+                resource: sampler,
+            },
+            {
+                binding: 1,
+                resource: {
+                    buffer: blurParamsBuffer,
+                },
+            },
+        ],
+    })
+
+
+    const computeBindGroup0 = device.createBindGroup({
+        layout: blurPipeline.getBindGroupLayout(1),
+        entries: [
+            {
+                binding: 1,
+                resource: postProcessingTextureView,
+            },
+            {
+                binding: 2,
+                resource: textures[0].createView(),
+            },
+            {
+                binding: 3,
+                resource: {
+                    buffer: buffer0,
+                },
+            },
+        ],
+    })
+
+    const computeBindGroup1 = device.createBindGroup({
+        layout: blurPipeline.getBindGroupLayout(1),
+        entries: [
+          {
+            binding: 1,
+            resource: textures[0].createView(),
+          },
+          {
+            binding: 2,
+            resource: textures[1].createView(),
+          },
+          {
+            binding: 3,
+            resource: {
+              buffer: buffer1,
+            },
+          },
+        ],
+    })
+
+    const computeBindGroup2 = device.createBindGroup({
+        layout: blurPipeline.getBindGroupLayout(1),
+        entries: [
+            {
+                binding: 1,
+                resource: textures[1].createView(),
+            },
+            {
+                binding: 2,
+                resource: textures[0].createView(),
+            },
+            {
+                binding: 3,
+                resource: {
+                  buffer: buffer0,
+                },
+            },
+        ],
+    })
+
+
+    // Contants from the blur.wgsl shader.
+    const tileDim = 128
+    const batch = [ 4, 4 ]
+
+
+    const settings = {
+        filterSize: 5,
+        iterations: 2,
+    }
+
+    let blockDim = tileDim - (settings.filterSize - 1)
+
+    device.queue.writeBuffer(
+        blurParamsBuffer,
+        0,
+        new Uint32Array([ settings.filterSize, blockDim ])
+    )
+
+
 
     const fullscreenQuadPipeline = device.createRenderPipeline({
         layout: 'auto',
@@ -115,10 +280,12 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         },
     })
 
+    /*
     const sampler = device.createSampler({
         magFilter: 'nearest',
         minFilter: 'nearest',
     })
+    */
 
     const bindGroup = device.createBindGroup({
         layout: fullscreenQuadPipeline.getBindGroupLayout(0),
@@ -129,7 +296,7 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
           },
           {
             binding: 1,
-            resource: postProcessingTextureView,
+            resource: textures[1].createView(), //postProcessingTextureView,
           },
         ],
     })
@@ -138,7 +305,18 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         bindGroup,
         pipeline: fullscreenQuadPipeline,
         texture: postProcessingTexture,
-        textureView: postProcessingTextureView
+        textureView: postProcessingTextureView,
+
+        blurStuff: {
+            blurPipeline,
+            computeConstants,
+            computeBindGroup0,
+            computeBindGroup1,
+            computeBindGroup2,
+            blockDim,
+            batch,
+            settings,
+        }
     }
 }
 
