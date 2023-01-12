@@ -57,7 +57,11 @@ export function create (renderer, minLayer, maxLayer) {
                 resource: {
                     buffer: spriteBuffer
                 }
-            }
+            },
+            {
+                binding: 4,
+                resource: renderer.sprite.emissiveTexture.view
+            },
         ]
     })
 

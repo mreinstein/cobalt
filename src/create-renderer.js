@@ -9,7 +9,7 @@ import { createTexture }      from './create-texture.js'
 
 // create and initialize a WebGPU renderer for a given canvas
 // returns the data structure containing all WebGPU related stuff
-export default async function createRenderer (canvas, viewportWidth, viewportHeight, spritesheet, layers, spriteTextureUrl, tileData) {
+export default async function createRenderer (canvas, viewportWidth, viewportHeight, spritesheet, layers, spriteTextureUrl, emissiveSpriteTextureUrl, tileData) {
 
     const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
 
@@ -24,7 +24,7 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
         alphaMode: 'opaque'
     })
 
-    const sprite = await buildSpritePipeline(device, canvas, format, spritesheet, spriteTextureUrl)
+    const sprite = await buildSpritePipeline(device, canvas, format, spritesheet, spriteTextureUrl, emissiveSpriteTextureUrl)
     const tile = await buildTilePipeline(device, canvas, format, tileData)
     
     const postProcessing = await buildPostProcessingPipeline(device, viewportWidth, viewportHeight)
@@ -72,7 +72,7 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
     const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
-    const postProcessingTexture = device.createTexture({
+    const colorTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
         format,
         usage:
@@ -81,7 +81,7 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
           GPUTextureUsage.RENDER_ATTACHMENT,
     })
 
-    const postProcessingTextureView = postProcessingTexture.createView({
+    const colorTextureView = colorTexture.createView({
         format,
         dimension: '2d',
         aspect: 'all',
@@ -90,6 +90,26 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         baseArrayLayer: 0,
         arrayLayerCount: 1
     })
+
+    const emissiveTexture = device.createTexture({
+        size: [ viewportWidth, viewportHeight, 1 ],
+        format,
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    const emissiveTextureView = emissiveTexture.createView({
+        format,
+        dimension: '2d',
+        aspect: 'all',
+        baseMipLevel: 0,
+        mipLevelCount: 1,
+        baseArrayLayer: 0,
+        arrayLayerCount: 1
+    })
+
 
     const blurWGSL = await fetchShader('/src/blur.wgsl')
 
@@ -145,15 +165,9 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
     })
 
     const sampler = device.createSampler({
-        magFilter: 'nearest',
-        minFilter: 'nearest',
+        magFilter: 'nearest', // 'linear'
+        minFilter: 'nearest', // 'linear'
     })
-    /*
-    const sampler = device.createSampler({
-        magFilter: 'linear',
-        minFilter: 'linear',
-    })
-    */
 
     const computeConstants = device.createBindGroup({
         layout: blurPipeline.getBindGroupLayout(0),
@@ -176,7 +190,7 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         entries: [
             {
                 binding: 1,
-                resource: postProcessingTextureView,
+                resource: emissiveTextureView, //colorTextureView,
             },
             {
                 binding: 2,
@@ -272,13 +286,6 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
         },
     })
 
-    /*
-    const sampler = device.createSampler({
-        magFilter: 'nearest',
-        minFilter: 'nearest',
-    })
-    */
-
     const bindGroup = device.createBindGroup({
         layout: fullscreenQuadPipeline.getBindGroupLayout(0),
         entries: [
@@ -286,9 +293,15 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
             binding: 0,
             resource: sampler,
           },
+          // color
           {
             binding: 1,
-            resource: textures[1].createView(), //postProcessingTextureView,
+            resource: colorTextureView,
+          },
+          // emissive
+          {
+            binding: 2,
+            resource: textures[1].createView(),
           },
         ],
     })
@@ -296,8 +309,12 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
     return {
         bindGroup,
         pipeline: fullscreenQuadPipeline,
-        texture: postProcessingTexture,
-        textureView: postProcessingTextureView,
+
+        colorTexture,
+        colorTextureView,
+
+        emissiveTexture,
+        emissiveTextureView,
 
         blurStuff: {
             blurPipeline,
@@ -313,10 +330,13 @@ async function buildPostProcessingPipeline (device, viewportWidth, viewportHeigh
 }
 
 
-async function buildSpritePipeline (device, canvas, format, spritesheet, spriteTextureUrl) {
+async function buildSpritePipeline (device, canvas, format, spritesheet, spriteTextureUrl, emissiveSpriteTextureUrl) {
     const quads = createSpriteQuads(device, spritesheet)
 
-    const material = await createTexture(device, spriteTextureUrl)
+    const [ material, emissiveTexture ] = await Promise.all([
+        createTexture(device, spriteTextureUrl),
+        createTexture(device, emissiveSpriteTextureUrl),
+    ])
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'
@@ -351,7 +371,12 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
                 buffer: {
                     type: 'read-only-storage'
                 }
-            }
+            },
+            {
+                binding: 4,
+                visibility: GPUShaderStage.FRAGMENT,
+                texture:  { }
+            },
         ],
     })
 
@@ -374,6 +399,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
             }),
             entryPoint: 'fs_main',
             targets: [
+                // color
                 {
                     format,
                     blend: {
@@ -386,6 +412,11 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
                             dstFactor: 'one'
                         }
                     }
+                },
+
+                // emissive
+                {
+                    format,
                 }
             ]
         },
@@ -409,6 +440,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
         uniformBuffer, // perspective and view matrices for the camera
         quads,
         material,
+        emissiveTexture,
         bindGroupLayout,
         spritesheet,
     }

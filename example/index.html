@@ -88,21 +88,26 @@ async function main () {
         tileSize: 16,
         tileScale: 1.0,
         layers: {
+            /*
             details: {
                 mapTextureUrl: 'assets/spelunky0.png',
                 scrollScale: 1.0
             },
+            */
+            
             background2: {
                 mapTextureUrl: 'assets/spelunky1.png',
                 scrollScale: 0.6
             }
+            
         }
     }
 
     const spriteTextureUrl = 'assets/spritesheet.png'
+    const emissiveSpriteTextureUrl = 'assets/spritesheet_emissive.png'
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await createRenderer(canvas, viewportWidth, viewportHeight, Game.spritesheet, Game.layers, spriteTextureUrl, tileData)
+    Game.renderer = await createRenderer(canvas, viewportWidth, viewportHeight, Game.spritesheet, Game.layers, spriteTextureUrl, emissiveSpriteTextureUrl, tileData)
 
     // use resizeViewport to init values on load:
     resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
@@ -121,9 +126,10 @@ async function main () {
 
     Game.world = world
 
+    // this is disabled to test bloom work
     // some temporary test sprites
-    for (let i=0; i < 16192; i++)
-        spriteEntity(world, { name: 'bucky_repeater_shoot_forward-0.png', position: [ randomInt(64, 256), randomInt(64, 256) ], layer: 4 })
+    //for (let i=0; i < 16192; i++)
+        spriteEntity(world, { name: 'health-0.png', position: [ randomInt(64, 256), randomInt(64, 256) ], layer: 4 })
 
     const gameLoop = function () {
         tick(Game)

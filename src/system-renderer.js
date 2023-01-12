@@ -119,7 +119,7 @@ export default function createRendererSystem (renderer) {
             
             device.queue.writeBuffer(tile.uniformBuffer, 0, buf, 0, i)
 
-            let actualRenderCount = 0 // number of renderpasses taht actually activated so far
+            let actualRenderCount = 0 // number of renderpasses that actually activated so far
 
             for (const renderPass of renderer.renderPasses) {
 
@@ -131,7 +131,7 @@ export default function createRendererSystem (renderer) {
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
                             {
-                                view: renderer.postProcessing.textureView, //textureView,
+                                view: renderer.postProcessing.colorTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -154,7 +154,6 @@ export default function createRendererSystem (renderer) {
 
                     renderpass.end()
 
-
                 } else if (renderPass.type === 'sprite' && renderPass.spriteCount > 0) {
                     actualRenderCount++
 
@@ -167,8 +166,17 @@ export default function createRendererSystem (renderer) {
 
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
+                            // color
                             {
-                                view: renderer.postProcessing.textureView, //textureView,
+                                view: renderer.postProcessing.colorTextureView,
+                                clearValue: renderer.clearValue,
+                                loadOp,
+                                storeOp: 'store'
+                            },
+
+                            // emissive
+                            {
+                                view: renderer.postProcessing.emissiveTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -260,7 +268,6 @@ function renderBlurFilter (renderer, commandEncoder, filterData) {
 
     computePass.end()
 
-
     const textureView = renderer.context.getCurrentTexture().createView()
 
     const passEncoder = commandEncoder.beginRenderPass({
@@ -278,26 +285,6 @@ function renderBlurFilter (renderer, commandEncoder, filterData) {
     passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup) //showResultBindGroup);
     passEncoder.draw(6, 1, 0, 0)
     passEncoder.end()
-
-    /*
-    // render full screen quad with postProcessing
-    
-    const renderpass = commandEncoder.beginRenderPass({
-        colorAttachments: [
-            {
-                view: textureView,
-                clearValue: renderer.clearValue,
-                loadOp: 'clear',
-                storeOp: 'store'
-            }
-        ]
-    })
-
-    renderpass.setPipeline(renderer.postProcessing.pipeline)
-    renderpass.setBindGroup(0, renderer.postProcessing.bindGroup)
-    renderpass.draw(6, 1, 0, 0)
-    renderpass.end()  
-    */   
 }
 
 

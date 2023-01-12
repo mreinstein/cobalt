@@ -18,6 +18,7 @@ struct SpritesBuffer {
 @binding(1) @group(0) var myTexture: texture_2d<f32>;
 @binding(2) @group(0) var mySampler: sampler;
 @binding(3) @group(0) var<storage, read> sprites : SpritesBuffer;
+@binding(4) @group(0) var emissiveTexture: texture_2d<f32>;
 
 
 struct Fragment {
@@ -26,6 +27,13 @@ struct Fragment {
 	@location(1) Tint : vec4<f32>,
 	@location(2) Opacity: f32,
 };
+
+// multiple render targets
+struct GBufferOutput {
+  @location(0) color : vec4<f32>,
+  @location(1) emissive : vec4<f32>,
+}
+
 
 @vertex
 fn vs_main (@builtin(instance_index) i_id : u32, 
@@ -45,7 +53,7 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 	var tz: f32 = 0;
 
 	var s = sin(rot);
-    var c = cos(rot);
+  var c = cos(rot);
 
 	// https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html
 
@@ -60,7 +68,6 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 									    0.0, 0.0, 1.0, 0.0,
     								     tx,  ty,  tz, 1.0) * scaleM;
 
-	
 	//output.Position = transformUBO.projection * transformUBO.view * sprites.models[i_id].modelMatrix * vec4<f32>(vertexPosition, 1.0);
 	output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 1.0);
 
@@ -74,8 +81,15 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 @fragment
 fn fs_main (@location(0) TexCoord: vec2<f32>,
             @location(1) Tint: vec4<f32>,
-			@location(2) Opacity: f32) -> @location(0) vec4<f32> {
+			@location(2) Opacity: f32) -> GBufferOutput {
 	
+
+	var output : GBufferOutput;
+
 	var outColor: vec4<f32> = textureSample(myTexture, mySampler, TexCoord);
-	return vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
+	output.color = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
+
+	output.emissive = textureSample(emissiveTexture, mySampler, TexCoord);
+
+	return output;
 }

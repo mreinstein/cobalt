@@ -22,6 +22,10 @@ export default function animationSystem (world) {
         lookup[Game.spritesheet.locations[l]] = parseInt(l, 10)
 
     const onUpdate = function (dt) {
+        // TODO: remove this short-circuit after bloom is finished
+        // temporarily shutting off animation because we're testing an emissive sprite which only has 1 frame
+        return
+
         for (const e of ECS.getEntities(world, SPRITE)) {
                
             e.animation.accumulator++
