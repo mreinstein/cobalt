@@ -35,51 +35,71 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 }
 
 
+// can be optimized into lut (compute can gen it)
+fn GTTonemap_point(x: f32) -> f32{
+  let m: f32 = 0.22; // linear section start
+  let a: f32 = 1.0;  // contrast
+  let c: f32 = 1.33; // black brightness
+  let P: f32 = 1.0;  // maximum brightness
+  let l: f32 = 0.4;  // linear section length
+  let l0: f32 = ((P-m)*l) / a; // 0.312
+  let S0: f32 = m + l0; // 0.532
+  let S1: f32 = m + a * l0; // 0.532
+  let C2: f32 = (a*P) / (P - S1); // 2.13675213675
+  let L: f32 = m + a * (x - m);
+  let T: f32 = m * pow(x/m, c);
+  let S: f32 = P - (P - S1) * exp(-C2*(x - S0)/P);
+  let w0: f32 = 1.0 - smoothstep(0.0, m, x);
+  var w2: f32 = 1.0;
+  if (x < m+l) {
+    w2 = 0.0;
+  }
+  let w1: f32 = 1.0 - w0 - w2;
+  return f32(T * w0 + L * w1 + S * w2);
+}
+
+// this costs about 0.2-0.3ms more than aces, as-is
+fn GTTonemap(x: vec3<f32>) -> vec3<f32>{
+  return vec3<f32>(GTTonemap_point(x.r), GTTonemap_point(x.g), GTTonemap_point(x.b));
+}
+
+
+fn aces(x: vec3<f32>) -> vec3<f32> {
+  let a: f32 = 2.51;
+  let b: f32 = 0.03;
+  let c: f32 = 2.43;
+  let d: f32 = 0.59;
+  let e: f32 = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
+
 @fragment
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
-  // super crappy pixelation effect
+  let hdr_color = textureSample(colorTexture, mySampler, fragUV);
+  let bloom_color = textureSample(emissiveTexture, mySampler, fragUV);
+
+  // TODO: remove these after testing
+  //return hdr_color;
+  //return bloom_color;
+
+  // TODO: remove this after testing. only bloom_color tone mapped
   /*
-  let pixelation = 4.0;
-  let size = vec2<f32>(pixelation/480.0, pixelation / 270.0);
-  let coord = floor( fragUV / size ) * size;
-  return textureSample(colorTexture, mySampler, coord);
+  let mapped_color = GTTonemap(bloom_color.rgb);
+  let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
+  return vec4<f32>(gamma_corrected_color, 1.0);
   */
-
-
-  // super crappy bloom effect
-  
-  let intensity = 1.5;
-  let blurSize = 4.0 / 512.0;
-  var sum = vec4<f32>(0,0,0,0);
-
-  // take nine samples, with the distance blurSize between them
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x - 4.0*blurSize, fragUV.y)) * 0.05;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x - 3.0*blurSize, fragUV.y)) * 0.09;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x - 2.0*blurSize, fragUV.y)) * 0.12;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x - blurSize, fragUV.y)) * 0.15;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y)) * 0.16;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x + blurSize, fragUV.y)) * 0.15;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x + 2.0*blurSize, fragUV.y)) * 0.12;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x + 3.0*blurSize, fragUV.y)) * 0.09;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x + 4.0*blurSize, fragUV.y)) * 0.05;
-
-  // take nine samples, with the distance blurSize between them
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y - 4.0*blurSize)) * 0.05;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y - 3.0*blurSize)) * 0.09;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y - 2.0*blurSize)) * 0.12;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y - blurSize)) * 0.15;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y)) * 0.16;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y + blurSize)) * 0.15;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y + 2.0*blurSize)) * 0.12;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y + 3.0*blurSize)) * 0.09;
-  sum += textureSample(emissiveTexture, mySampler, vec2<f32>(fragUV.x, fragUV.y + 4.0*blurSize)) * 0.05;
-
-  // increase blur with intensity
-  return (sum * intensity + textureSample(emissiveTexture, mySampler, fragUV)) + textureSample(colorTexture, mySampler, fragUV);
-  //return sum * intensity + textureSample(emissiveTexture, mySampler, fragUV);
   
 
-  // additive blend the emissive glow with the original color
-  //return textureSample(emissiveTexture, mySampler, fragUV) + textureSample(colorTexture, mySampler, fragUV);
+  let bloom_intensity = 4.0;
+  let bloom_combine_constant = 0.68;
+  
+  let combined_color = ((bloom_color * bloom_intensity) * bloom_combine_constant) + hdr_color;
+
+  let mapped_color = GTTonemap(combined_color.rgb);
+  //let mapped_color = aces(combined_color.rgb);
+  let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
+
+  return vec4<f32>(gamma_corrected_color, 1.0);
 }

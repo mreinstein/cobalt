@@ -1,5 +1,6 @@
 import * as SpriteRenderPass     from './SpriteRenderPass.js'
 import { ECS, mat4, vec2, vec3 } from './deps.js'
+import { render_bloom }          from './bloom.js'
 
 
 const UP_VECTOR = [ 0, 0, 1 ]
@@ -42,18 +43,6 @@ export default function createRendererSystem (renderer) {
             }
             */
 
-            // write tile metadata to UBO
-            const elapsed = performance.now()
-            const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
-            const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
-
-            const tile = renderer.tile
-            const tileScale = tile.tileScale
-            const tileSize = tile.tileSize
-
-            vec2.set(renderer.viewport.position, Math.floor(x * tileScale), Math.floor(y * tileScale))
-
-
             // TODO: I think zoom can be achieved by adjusting the left/right/bottom/top based on scale factor
             const projection = mat4.create()
             //                out    left   right    bottom   top     near     far
@@ -93,6 +82,8 @@ export default function createRendererSystem (renderer) {
 
 
             // TODO: everything after buf[1] doesn't need to be updated every frame
+            const tile = renderer.tile
+            const { tileScale, tileSize } = tile
 
             buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
             buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
@@ -131,7 +122,7 @@ export default function createRendererSystem (renderer) {
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
                             {
-                                view: renderer.postProcessing.colorTextureView,
+                                view: renderer.bloom.hdr_texture.view, //renderer.postProcessing.colorTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -168,7 +159,7 @@ export default function createRendererSystem (renderer) {
                         colorAttachments: [
                             // color
                             {
-                                view: renderer.postProcessing.colorTextureView,
+                                view: renderer.bloom.hdr_texture.view, //renderer.postProcessing.colorTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -176,7 +167,7 @@ export default function createRendererSystem (renderer) {
 
                             // emissive
                             {
-                                view: renderer.postProcessing.emissiveTextureView,
+                                view: renderer.postProcessing.emissiveTextureView, //renderer.bloom.bind_groups_textures[2].view, //renderer.postProcessing.emissiveTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -213,10 +204,30 @@ export default function createRendererSystem (renderer) {
                 }
             }
 
-            // render all the post processing filters
-            renderBlurFilter(renderer, commandEncoder, renderer.postProcessing.blurStuff)
+
+            render_bloom(renderer, commandEncoder)   // OMG, the advanced fancy bloom :o
+
+
+            // combine emissive and color textures and draw as post processing fullscreen quad
+            const passEncoder = commandEncoder.beginRenderPass({
+              colorAttachments: [
+                {
+                  view: renderer.context.getCurrentTexture().createView(),
+                  clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+                  loadOp: 'clear',
+                  storeOp: 'store',
+                },
+              ],
+            })
+
+            passEncoder.setPipeline(renderer.postProcessing.pipeline)
+            passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup)
+            passEncoder.draw(6, 1, 0, 0)
+            passEncoder.end()
+
 
             //renderPixelationFilter(renderer, commandEncoder, renderer.postProcessing.pixelationStuff)
+
 
             // TODO: render all layers on top of the postProcessing here (UI layers)
 
@@ -228,7 +239,7 @@ export default function createRendererSystem (renderer) {
     }
 }
 
-
+/*
 function renderBlurFilter (renderer, commandEncoder, filterData) {
 
     const blockDim = filterData.blockDim
@@ -286,6 +297,7 @@ function renderBlurFilter (renderer, commandEncoder, filterData) {
     passEncoder.draw(6, 1, 0, 0)
     passEncoder.end()
 }
+*/
 
 
 // build instancedDrawCalls

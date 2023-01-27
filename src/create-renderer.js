@@ -1,10 +1,13 @@
-import * as OverlayRenderPass from './OverlayRenderPass.js'
-import * as SpriteRenderPass  from './SpriteRenderPass.js'
-import * as TileRenderPass    from './TileRenderPass.js'
-import fetchShader            from './fetch-shader.js'
-import createSpriteQuads      from './create-sprite-quads.js'
-import createTileQuad         from './create-tile-quad.js'
-import { createTexture }      from './create-texture.js'
+import * as OverlayRenderPass  from './OverlayRenderPass.js'
+import * as SpriteRenderPass   from './SpriteRenderPass.js'
+import * as TileRenderPass     from './TileRenderPass.js'
+import fetchShader             from './fetch-shader.js'
+import createSpriteQuads       from './create-sprite-quads.js'
+import createTileQuad          from './create-tile-quad.js'
+import { createTexture }       from './create-texture.js'
+import { WebGPUTextureLoader } from 'https://cdn.jsdelivr.net/gh/toji/web-texture-tool/src/webgpu-texture-loader.js'
+import { initBloom }           from './bloom.js'
+import { initFinal }           from './final.js'
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -27,7 +30,9 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
     const sprite = await buildSpritePipeline(device, canvas, format, spritesheet, spriteTextureUrl, emissiveSpriteTextureUrl)
     const tile = await buildTilePipeline(device, canvas, format, tileData)
     
-    const postProcessing = await buildPostProcessingPipeline(device, viewportWidth, viewportHeight)
+    const bloom = await initBloom(device, canvas, viewportWidth, viewportHeight)
+
+    const postProcessing = await initFinal(device, viewportWidth, viewportHeight, bloom)
 
     const renderer = {
         canvas,
@@ -51,6 +56,8 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
         // all the sprite/tile renderpasses draw to this texture except the overlay layers
         postProcessing,
 
+        bloom, // bloom v2, the sexy one
+
         // used in the color attachments of renderpass
         clearValue: { r: 0.5, g: 0.0, b: 0.25, a: 1.0 },
 
@@ -64,269 +71,8 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
 
     buildRenderPasses(renderer, layers, tileData)
 
+    console.log('wow', renderer)
     return renderer
-}
-
-
-async function buildPostProcessingPipeline (device, viewportWidth, viewportHeight) {
-    const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
-    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
-
-    const colorTexture = device.createTexture({
-        size: [ viewportWidth, viewportHeight, 1 ],
-        format,
-        usage:
-          GPUTextureUsage.TEXTURE_BINDING |
-          GPUTextureUsage.COPY_DST |
-          GPUTextureUsage.RENDER_ATTACHMENT,
-    })
-
-    const colorTextureView = colorTexture.createView({
-        format,
-        dimension: '2d',
-        aspect: 'all',
-        baseMipLevel: 0,
-        mipLevelCount: 1,
-        baseArrayLayer: 0,
-        arrayLayerCount: 1
-    })
-
-    const emissiveTexture = device.createTexture({
-        size: [ viewportWidth, viewportHeight, 1 ],
-        format,
-        usage:
-          GPUTextureUsage.TEXTURE_BINDING |
-          GPUTextureUsage.COPY_DST |
-          GPUTextureUsage.RENDER_ATTACHMENT,
-    })
-
-    const emissiveTextureView = emissiveTexture.createView({
-        format,
-        dimension: '2d',
-        aspect: 'all',
-        baseMipLevel: 0,
-        mipLevelCount: 1,
-        baseArrayLayer: 0,
-        arrayLayerCount: 1
-    })
-
-
-    const blurWGSL = await fetchShader('/src/blur.wgsl')
-
-    const blurPipeline = device.createComputePipeline({
-        layout: 'auto',
-        compute: {
-            module: device.createShaderModule({
-                code: blurWGSL,
-            }),
-            entryPoint: 'main',
-        },
-    })
-
-    const textures = [0, 1].map(() => {
-        return device.createTexture({
-            size: {
-                width: viewportWidth,
-                height: viewportHeight,
-            },
-            format: 'rgba8unorm',
-            usage:
-            GPUTextureUsage.COPY_DST |
-            GPUTextureUsage.STORAGE_BINDING |
-            GPUTextureUsage.TEXTURE_BINDING,
-        })
-    })
-
-    const buffer0 = (() => {
-        const buffer = device.createBuffer({
-            size: 4,
-            mappedAtCreation: true,
-            usage: GPUBufferUsage.UNIFORM,
-        })
-        new Uint32Array(buffer.getMappedRange())[0] = 0
-        buffer.unmap()
-        return buffer
-    })()
-
-    const buffer1 = (() => {
-        const buffer = device.createBuffer({
-          size: 4,
-          mappedAtCreation: true,
-          usage: GPUBufferUsage.UNIFORM,
-      });
-        new Uint32Array(buffer.getMappedRange())[0] = 1
-        buffer.unmap()
-        return buffer
-    })()
-
-    const blurParamsBuffer = device.createBuffer({
-        size: 8,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
-    })
-
-    const sampler = device.createSampler({
-        magFilter: 'nearest', // 'linear'
-        minFilter: 'nearest', // 'linear'
-    })
-
-    const computeConstants = device.createBindGroup({
-        layout: blurPipeline.getBindGroupLayout(0),
-        entries: [
-            {
-                binding: 0,
-                resource: sampler,
-            },
-            {
-                binding: 1,
-                resource: {
-                    buffer: blurParamsBuffer,
-                },
-            },
-        ],
-    })
-
-    const computeBindGroup0 = device.createBindGroup({
-        layout: blurPipeline.getBindGroupLayout(1),
-        entries: [
-            {
-                binding: 1,
-                resource: emissiveTextureView, //colorTextureView,
-            },
-            {
-                binding: 2,
-                resource: textures[0].createView(),
-            },
-            {
-                binding: 3,
-                resource: {
-                    buffer: buffer0,
-                },
-            },
-        ],
-    })
-
-    const computeBindGroup1 = device.createBindGroup({
-        layout: blurPipeline.getBindGroupLayout(1),
-        entries: [
-          {
-            binding: 1,
-            resource: textures[0].createView(),
-          },
-          {
-            binding: 2,
-            resource: textures[1].createView(),
-          },
-          {
-            binding: 3,
-            resource: {
-              buffer: buffer1,
-            },
-          },
-        ],
-    })
-
-    const computeBindGroup2 = device.createBindGroup({
-        layout: blurPipeline.getBindGroupLayout(1),
-        entries: [
-            {
-                binding: 1,
-                resource: textures[1].createView(),
-            },
-            {
-                binding: 2,
-                resource: textures[0].createView(),
-            },
-            {
-                binding: 3,
-                resource: {
-                  buffer: buffer0,
-                },
-            },
-        ],
-    })
-
-    // Constants from the blur.wgsl shader.
-    const tileDim = 128
-    const batch = [ 4, 4 ]
-
-    const settings = {
-        filterSize: 5,
-        iterations: 2,
-    }
-
-    let blockDim = tileDim - (settings.filterSize - 1)
-
-    device.queue.writeBuffer(
-        blurParamsBuffer,
-        0,
-        new Uint32Array([ settings.filterSize, blockDim ])
-    )
-
-    const fullscreenQuadPipeline = device.createRenderPipeline({
-        layout: 'auto',
-        vertex: {
-          module: device.createShaderModule({
-            code: shader,
-          }),
-          entryPoint: 'vert_main',
-        },
-        fragment: {
-          module: device.createShaderModule({
-            code: shader,
-          }),
-          entryPoint: 'frag_main',
-          targets: [
-            {
-              format,
-            },
-          ],
-        },
-        primitive: {
-          topology: 'triangle-list',
-        },
-    })
-
-    const bindGroup = device.createBindGroup({
-        layout: fullscreenQuadPipeline.getBindGroupLayout(0),
-        entries: [
-          {
-            binding: 0,
-            resource: sampler,
-          },
-          // color
-          {
-            binding: 1,
-            resource: colorTextureView,
-          },
-          // emissive
-          {
-            binding: 2,
-            resource: textures[1].createView(),
-          },
-        ],
-    })
-
-    return {
-        bindGroup,
-        pipeline: fullscreenQuadPipeline,
-
-        colorTexture,
-        colorTextureView,
-
-        emissiveTexture,
-        emissiveTextureView,
-
-        blurStuff: {
-            blurPipeline,
-            computeConstants,
-            computeBindGroup0,
-            computeBindGroup1,
-            computeBindGroup2,
-            blockDim,
-            batch,
-            settings,
-        }
-    }
 }
 
 
@@ -401,7 +147,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
             targets: [
                 // color
                 {
-                    format,
+                    format: 'rgba16float',
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',
@@ -416,7 +162,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
 
                 // emissive
                 {
-                    format,
+                    format, //'rgba16float',
                 }
             ]
         },
@@ -534,7 +280,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
             entryPoint: 'fs_main',
             targets: [
                 {
-                    format,
+                    format: 'rgba16float',
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',

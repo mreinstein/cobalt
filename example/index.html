@@ -68,7 +68,7 @@ import animationSystem    from './system-animation.js'
 import readSpriteSheet    from '../src/read-spritesheet.js'
 import rendererSystem     from '../src/system-renderer.js'
 import spriteEntity       from '../src/entity-sprite.js'
-import { ECS, randomInt } from '../src/deps.js'
+import { ECS, randomInt, vec2 } from '../src/deps.js'
 
 
 async function main () {
@@ -124,12 +124,28 @@ async function main () {
     ECS.addSystem(world, rendererSystem(Game.renderer))
     ECS.addSystem(world, animationSystem)
 
+    
+    ECS.addSystem(world, function cameraLoopSystem(world) {
+        const onUpdate = function (dt) {
+            const elapsed = performance.now()
+            const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
+            const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
+
+            const { tileScale } = Game.renderer.tile
+
+            vec2.set(Game.renderer.viewport.position, Math.floor(x * tileScale), Math.floor(y * tileScale))
+        }
+
+        return { onUpdate }
+    })
+    
+
     Game.world = world
 
-    // this is disabled to test bloom work
-    // some temporary test sprites
-    //for (let i=0; i < 16192; i++)
-        spriteEntity(world, { name: 'health-0.png', position: [ randomInt(64, 256), randomInt(64, 256) ], layer: 4 })
+    // temporary test sprite
+    const x = 240 //randomInt(64, 256)
+    const y = 135 //randomInt(64, 256)
+    spriteEntity(world, { name: 'health-0.png', position: [ x, y ], layer: 4 })
 
     const gameLoop = function () {
         tick(Game)
