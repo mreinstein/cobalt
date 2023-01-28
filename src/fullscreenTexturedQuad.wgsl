@@ -79,28 +79,17 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   let hdr_color = textureSample(colorTexture, mySampler, fragUV);
   let bloom_color = textureSample(emissiveTexture, mySampler, fragUV);
-
-  // TODO: remove these after testing
-  //return hdr_color;
-  //return bloom_color;
-
-  // TODO: remove this after testing. only bloom_color tone mapped
-  /*
-  let mapped_color = GTTonemap(bloom_color.rgb);
-  let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
-  return vec4<f32>(gamma_corrected_color, 1.0);
-  */
   
   
   let bloom_intensity = 40.0;
   let bloom_combine_constant = 0.68;
   
-  let combined_color = ((bloom_color * bloom_intensity) * bloom_combine_constant) + hdr_color;
+  let combined_color = ((bloom_color * bloom_intensity) * bloom_combine_constant);
 
   let mapped_color = GTTonemap(combined_color.rgb);
   //let mapped_color = aces(combined_color.rgb);
   let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
 
-  return vec4<f32>(gamma_corrected_color, 1.0);
+  return vec4<f32>(gamma_corrected_color + hdr_color.rgb, 1.0);
   
 }
