@@ -27,25 +27,6 @@ export async function initFinal (device, viewportWidth, viewportHeight, bloom_ma
     })
     */
 
-    const emissiveTexture = device.createTexture({
-        size: [ viewportWidth, viewportHeight, 1 ],
-        format,
-        usage:
-          GPUTextureUsage.TEXTURE_BINDING |
-          GPUTextureUsage.COPY_DST |
-          GPUTextureUsage.RENDER_ATTACHMENT,
-    })
-
-    const emissiveTextureView = emissiveTexture.createView({
-        format,
-        dimension: '2d',
-        aspect: 'all',
-        baseMipLevel: 0,
-        mipLevelCount: 1,
-        baseArrayLayer: 0,
-        arrayLayerCount: 1
-    })
-
     /*
     const blurWGSL = await fetchShader('/src/blur.wgsl')
 
@@ -246,6 +227,5 @@ export async function initFinal (device, viewportWidth, viewportHeight, bloom_ma
     return {
         bindGroup,
         pipeline,
-        emissiveTextureView,
     }
 }

@@ -53,6 +53,27 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
         //lodMaxClamp: 1000.0,
     })
 
+    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
+    const emissiveTexture = device.createTexture({
+        size: [ viewportWidth, viewportHeight, 1 ],
+        format,
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    const emissiveTextureView = emissiveTexture.createView({
+        format,
+        dimension: '2d',
+        aspect: 'all',
+        baseMipLevel: 0,
+        mipLevelCount: 1,
+        baseArrayLayer: 0,
+        arrayLayerCount: 1
+    })
+
+
     const bloom_mat = {
         //render_pipeline: null,
         compute_pipeline: null,
@@ -62,6 +83,9 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
         bind_groups_textures: [ ],
         hdr_texture,
         hdr_sampler,
+
+        // where sprites draw their emission pixels to
+        emissiveTextureView,
     }
 
     const layout = device.createBindGroupLayout({
@@ -229,7 +253,7 @@ function set_all_bind_group (device, bloom_mat) {
         device,
         bloom_mat,
         bloom_mat.bind_groups_textures[0].mip_view[0],
-        bloom_mat.hdr_texture.view,
+        bloom_mat.emissiveTextureView, //bloom_mat.hdr_texture.view,
         bloom_mat.hdr_texture.view, // unused here, only for upsample passes
         bloom_mat.hdr_sampler,
         MODE_PREFILTER << 16 | 0, // mode_lod value

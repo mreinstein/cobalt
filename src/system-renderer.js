@@ -122,7 +122,7 @@ export default function createRendererSystem (renderer) {
                     const renderpass = commandEncoder.beginRenderPass({
                         colorAttachments: [
                             {
-                                view: renderer.bloom.hdr_texture.view, //renderer.postProcessing.colorTextureView,
+                                view: renderer.bloom.hdr_texture.view,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -159,7 +159,7 @@ export default function createRendererSystem (renderer) {
                         colorAttachments: [
                             // color
                             {
-                                view: renderer.bloom.hdr_texture.view, //renderer.postProcessing.colorTextureView,
+                                view: renderer.bloom.hdr_texture.view,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'
@@ -167,7 +167,7 @@ export default function createRendererSystem (renderer) {
 
                             // emissive
                             {
-                                view: renderer.postProcessing.emissiveTextureView, //renderer.bloom.bind_groups_textures[2].view, //renderer.postProcessing.emissiveTextureView,
+                                view: renderer.bloom.emissiveTextureView,
                                 clearValue: renderer.clearValue,
                                 loadOp,
                                 storeOp: 'store'

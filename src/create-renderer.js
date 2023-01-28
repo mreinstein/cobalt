@@ -29,7 +29,7 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
 
     const sprite = await buildSpritePipeline(device, canvas, format, spritesheet, spriteTextureUrl, emissiveSpriteTextureUrl)
     const tile = await buildTilePipeline(device, canvas, format, tileData)
-    
+
     const bloom = await initBloom(device, canvas, viewportWidth, viewportHeight)
 
     const postProcessing = await initFinal(device, viewportWidth, viewportHeight, bloom)

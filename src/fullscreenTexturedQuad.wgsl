@@ -91,8 +91,8 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   return vec4<f32>(gamma_corrected_color, 1.0);
   */
   
-
-  let bloom_intensity = 4.0;
+  
+  let bloom_intensity = 40.0;
   let bloom_combine_constant = 0.68;
   
   let combined_color = ((bloom_color * bloom_intensity) * bloom_combine_constant) + hdr_color;
@@ -102,4 +102,5 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
 
   return vec4<f32>(gamma_corrected_color, 1.0);
+  
 }
