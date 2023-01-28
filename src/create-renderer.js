@@ -59,7 +59,7 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
         bloom, // bloom v2, the sexy one
 
         // used in the color attachments of renderpass
-        clearValue: { r: 0.5, g: 0.0, b: 0.25, a: 1.0 },
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
 
         viewport: {
             width: viewportWidth,

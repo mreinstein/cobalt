@@ -111,6 +111,7 @@ export default function createRendererSystem (renderer) {
             device.queue.writeBuffer(tile.uniformBuffer, 0, buf, 0, i)
 
             let actualRenderCount = 0 // number of renderpasses that actually activated so far
+            let actualSpriteRenderCount = 0 // number of sprite renderpasses that actually activated so far
 
             for (const renderPass of renderer.renderPasses) {
 
@@ -147,6 +148,7 @@ export default function createRendererSystem (renderer) {
 
                 } else if (renderPass.type === 'sprite' && renderPass.spriteCount > 0) {
                     actualRenderCount++
+                    actualSpriteRenderCount++
 
                     if (renderPass.dirty) {
                         rebuildSpriteDrawCalls(renderPass)
@@ -169,7 +171,7 @@ export default function createRendererSystem (renderer) {
                             {
                                 view: renderer.bloom.emissiveTextureView,
                                 clearValue: renderer.clearValue,
-                                loadOp,
+                                loadOp: (actualSpriteRenderCount < 2) ? 'clear' : 'load',
                                 storeOp: 'store'
                             }
                         ]
