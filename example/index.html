@@ -135,22 +135,18 @@ async function main () {
     }
 
     gui.add(config, 'bloom_intensity', 0, 200).onChange((v) => {
-        config.bloom_intensity = v
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
     })
 
     gui.add(config, 'bloom_combine_constant', 0.0, 1.0).onChange((v) => {
-        config.bloom_combine_constant = v
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
     })
 
-    gui.add(config, 'bloom_knee', 0.0, 1.0).onChange((v) => {
-        config.bloom_knee = v
+    gui.add(config, 'bloom_knee', 0.0, 50.0).onChange((v) => {
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
     })
 
     gui.add(config, 'bloom_threshold', 0.0, 1.0).onChange((v) => {
-        config.bloom_threshold = v
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
     })
 
@@ -202,7 +198,10 @@ async function main () {
     // temporary test sprite
     const x = 240 //randomInt(64, 256)
     const y = 135 //randomInt(64, 256)
-    spriteEntity(world, { name: 'health-0.png', position: [ x, y ], layer: 4 })
+    const s = spriteEntity(world, { name: 'health-0.png', position: [ x, y ], layer: 4 })
+
+    //s.sprite.scale[0] = 2
+    //s.sprite.scale[1] = 2
 
     const gameLoop = function () {
         tick(Game)
