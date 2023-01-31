@@ -241,66 +241,6 @@ export default function createRendererSystem (renderer) {
     }
 }
 
-/*
-function renderBlurFilter (renderer, commandEncoder, filterData) {
-
-    const blockDim = filterData.blockDim
-    const batch = filterData.batch
-    const srcWidth = renderer.viewport.width
-    const srcHeight = renderer.viewport.height
-
-    const computePass = commandEncoder.beginComputePass()
-    computePass.setPipeline(filterData.blurPipeline)
-    computePass.setBindGroup(0, filterData.computeConstants)
-
-    computePass.setBindGroup(1, filterData.computeBindGroup0)
-    computePass.dispatchWorkgroups(
-      Math.ceil(srcWidth / blockDim),
-      Math.ceil(srcHeight / batch[1])
-    )
-
-    computePass.setBindGroup(1, filterData.computeBindGroup1)
-    computePass.dispatchWorkgroups(
-      Math.ceil(srcHeight / blockDim),
-      Math.ceil(srcWidth / batch[1])
-    )
-
-    for (let i = 0; i < filterData.settings.iterations - 1; ++i) {
-      computePass.setBindGroup(1, filterData.computeBindGroup2)
-      computePass.dispatchWorkgroups(
-        Math.ceil(srcWidth / blockDim),
-        Math.ceil(srcHeight / batch[1])
-      )
-
-      computePass.setBindGroup(1, filterData.computeBindGroup1)
-      computePass.dispatchWorkgroups(
-        Math.ceil(srcHeight / blockDim),
-        Math.ceil(srcWidth / batch[1])
-      )
-    }
-
-    computePass.end()
-
-    const textureView = renderer.context.getCurrentTexture().createView()
-
-    const passEncoder = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: textureView,
-          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-    });
-
-    passEncoder.setPipeline(renderer.postProcessing.pipeline)
-    passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup)
-    passEncoder.draw(6, 1, 0, 0)
-    passEncoder.end()
-}
-*/
-
 
 // build instancedDrawCalls
 function rebuildSpriteDrawCalls (renderPass) {
