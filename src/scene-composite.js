@@ -1,8 +1,8 @@
 import fetchShader from './fetch-shader.js'
 
 
-export async function initFinal (device, viewportWidth, viewportHeight, bloom_mat) {
-    const shader = await fetchShader('/src/fullscreenTexturedQuad.wgsl')
+export async function initSceneComposite (device, viewportWidth, viewportHeight, bloom_mat) {
+    const shader = await fetchShader('/src/scene-composite.wgsl')
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
     /*

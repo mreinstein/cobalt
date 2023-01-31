@@ -294,8 +294,8 @@ function renderBlurFilter (renderer, commandEncoder, filterData) {
       ],
     });
 
-    passEncoder.setPipeline(renderer.postProcessing.pipeline) //fullscreenQuadPipeline);
-    passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup) //showResultBindGroup);
+    passEncoder.setPipeline(renderer.postProcessing.pipeline)
+    passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup)
     passEncoder.draw(6, 1, 0, 0)
     passEncoder.end()
 }

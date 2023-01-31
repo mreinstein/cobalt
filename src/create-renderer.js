@@ -7,7 +7,7 @@ import createTileQuad          from './create-tile-quad.js'
 import { createTexture }       from './create-texture.js'
 import { WebGPUTextureLoader } from 'https://cdn.jsdelivr.net/gh/toji/web-texture-tool/src/webgpu-texture-loader.js'
 import { initBloom }           from './bloom.js'
-import { initFinal }           from './final.js'
+import { initSceneComposite }           from './scene-composite.js'
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -32,7 +32,7 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
 
     const bloom = await initBloom(device, canvas, viewportWidth, viewportHeight)
 
-    const postProcessing = await initFinal(device, viewportWidth, viewportHeight, bloom)
+    const postProcessing = await initSceneComposite(device, viewportWidth, viewportHeight, bloom)
 
     const renderer = {
         canvas,
