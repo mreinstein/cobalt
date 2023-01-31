@@ -244,9 +244,36 @@ function newTexture (device, label, width, height, mip_count, sample_count, dime
 
 function set_all_bind_group (device, bloom_mat) {
 
-    // create a dynamic bind group and store a value for each unique mode_lod value
+    // create a buffer that holds static parameters, shared across all bloom bind groups
+    const bloom_threshold = 0.1//1.0
+    const bloom_knee = 0.2
+    const combine_constant = 0.68
+
+    const dat = new Float32Array([ bloom_threshold,
+                                bloom_threshold - bloom_knee,
+                                bloom_knee * 2.0,
+                                0.25 / bloom_knee,
+                                combine_constant,
+                                // require byte alignment bs
+                                0,
+                                0,
+                                0,
+                                ])
+
+    const params_buf = device.createBuffer({
+        label: 'bloom static parameters buffer',
+        size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
+        mappedAtCreation: true,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+
+    new Float32Array(params_buf.getMappedRange()).set(dat)
+
+    params_buf.unmap()
+
 
     bloom_mat.bind_group.length = 0
+    bloom_mat.params_buf = params_buf
 
     // Prefilter bind group
     bloom_mat.bind_group.push(create_bloom_bind_group(
@@ -256,24 +283,9 @@ function set_all_bind_group (device, bloom_mat) {
         bloom_mat.emissiveTextureView, //bloom_mat.hdr_texture.view,
         bloom_mat.hdr_texture.view, // unused here, only for upsample passes
         bloom_mat.hdr_sampler,
+        params_buf,
         MODE_PREFILTER << 16 | 0, // mode_lod value
     ));
-
-    /*
-    // this is my experimental simplified downsample.
-    // the faithful port is commented below temporarily
-    for ( let i=1; i < BLOOM_MIP_COUNT; i++) {
-        bloom_mat.bind_group.push(create_bloom_bind_group(
-            device,
-            bloom_mat,
-            bloom_mat.bind_groups_textures[0].mip_view[i],
-            bloom_mat.bind_groups_textures[0].mip_view[i-1],
-            bloom_mat.hdr_texture.view, // unused here, only for upsample passes
-            bloom_mat.hdr_sampler,
-            MODE_DOWNSAMPLE << 16 | (i), // mode_lod value
-        ))
-    }
-    */
 
     // Downsample bind groups
     for ( let i=1; i < BLOOM_MIP_COUNT; i++) {
@@ -285,6 +297,7 @@ function set_all_bind_group (device, bloom_mat) {
             bloom_mat.bind_groups_textures[0].view,
             bloom_mat.hdr_texture.view, // unused here, only for upsample passes
             bloom_mat.hdr_sampler,
+            params_buf,
             MODE_DOWNSAMPLE << 16 | (i - 1), // mode_lod value
         ))
 
@@ -296,6 +309,7 @@ function set_all_bind_group (device, bloom_mat) {
             bloom_mat.bind_groups_textures[1].view,
             bloom_mat.hdr_texture.view, // unused here, only for upsample passes
             bloom_mat.hdr_sampler,
+            params_buf,
             MODE_DOWNSAMPLE << 16 | i, // mode_lod value
         ))
     }
@@ -308,6 +322,7 @@ function set_all_bind_group (device, bloom_mat) {
         bloom_mat.bind_groups_textures[0].view,
         bloom_mat.hdr_texture.view,  // unused here, only for upsample passes
         bloom_mat.hdr_sampler,
+        params_buf,
         MODE_UPSAMPLE_FIRST << 16 | (BLOOM_MIP_COUNT - 2), // mode_lod value
     ))
 
@@ -323,6 +338,7 @@ function set_all_bind_group (device, bloom_mat) {
                 bloom_mat.bind_groups_textures[0].view,
                 bloom_mat.bind_groups_textures[2].view,
                 bloom_mat.hdr_sampler,
+                params_buf,
                 MODE_UPSAMPLE << 16 | i, // mode_lod value
             ))
             o = false
@@ -334,6 +350,7 @@ function set_all_bind_group (device, bloom_mat) {
                 bloom_mat.bind_groups_textures[0].view,
                 bloom_mat.bind_groups_textures[1].view,
                 bloom_mat.hdr_sampler,
+                params_buf,
                 MODE_UPSAMPLE << 16 | i, // mode_lod value
             ))
             o = true
@@ -342,34 +359,7 @@ function set_all_bind_group (device, bloom_mat) {
 }
 
 
-function create_bloom_bind_group (device, bloom_mat, output_image, input_image, bloom_image, sampler, mode_lod) {
-
-	const bloom_threshold = 0.1//1.0
-    const bloom_knee = 0.2
-    const combine_constant = 0.68
-
-    const dat = new Float32Array([ bloom_threshold,
-                                bloom_threshold - bloom_knee,
-                                bloom_knee * 2.0,
-                                0.25 / bloom_knee,
-                                combine_constant,
-                                // required alignment bullshit
-                                mode_lod,
-                               	0,
-                               	0,
-                                ])
-
-    const params_buf = device.createBuffer({
-    	label: 'bloom static parameters buffer',
-        size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
-        mappedAtCreation: true,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-
-    new Float32Array(params_buf.getMappedRange()).set(dat)
-
-    params_buf.unmap()
-
+function create_bloom_bind_group (device, bloom_mat, output_image, input_image, bloom_image, sampler, params_buf, mode_lod) {
 
     const dat2 = new Uint32Array([ mode_lod ])
 
@@ -380,12 +370,9 @@ function create_bloom_bind_group (device, bloom_mat, output_image, input_image, 
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
-
-
     new Uint32Array(lod_buf.getMappedRange()).set(dat2)
 
     lod_buf.unmap()
-
 
     return device.createBindGroup({
     	label: 'bloom bind group layout',

@@ -180,6 +180,21 @@ export async function initFinal (device, viewportWidth, viewportHeight, bloom_ma
     )
     */
 
+
+    const bloom_intensity = 40.0
+    const bloom_combine_constant = 0.68
+    const dat = new Float32Array([ bloom_intensity, bloom_combine_constant ])
+    const params_buf = device.createBuffer({
+        label: 'final params buffer',
+        size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
+        mappedAtCreation: true,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+
+    new Float32Array(params_buf.getMappedRange()).set(dat)
+
+    params_buf.unmap()
+
     const pipeline = device.createRenderPipeline({
         layout: 'auto',
         vertex: {
@@ -221,11 +236,18 @@ export async function initFinal (device, viewportWidth, viewportHeight, bloom_ma
             binding: 2,
             resource: bloom_mat.bind_groups_textures[2].mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[3], // should be 0
           },
+          {
+            binding: 3,
+            resource: {
+                buffer: params_buf,
+            },
+          },
         ],
     })
 
     return {
         bindGroup,
         pipeline,
+        params_buf,
     }
 }

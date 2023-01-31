@@ -63,6 +63,7 @@ import Game               from './Game.js'
 import * as SpriteData    from '../src/SpriteData.js'
 import createRenderer     from '../src/create-renderer.js'
 import constants          from './constants.js'
+import dat                from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
 import debounce           from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
 import animationSystem    from './system-animation.js'
 import readSpriteSheet    from '../src/read-spritesheet.js'
@@ -124,7 +125,62 @@ async function main () {
     ECS.addSystem(world, rendererSystem(Game.renderer))
     ECS.addSystem(world, animationSystem)
 
+
+    const gui = new dat.GUI()
+    const config = {
+        bloom_intensity: 40.0,
+        bloom_combine_constant: 0.68,
+        bloom_knee: 0.2,
+        bloom_threshold: 0.1, // 1.0
+    }
+
+    gui.add(config, 'bloom_intensity', 0, 200).onChange((v) => {
+        config.bloom_intensity = v
+        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
+    })
+
+    gui.add(config, 'bloom_combine_constant', 0.0, 1.0).onChange((v) => {
+        config.bloom_combine_constant = v
+        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
+    })
+
+    gui.add(config, 'bloom_knee', 0.0, 1.0).onChange((v) => {
+        config.bloom_knee = v
+        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
+    })
+
+    gui.add(config, 'bloom_threshold', 0.0, 1.0).onChange((v) => {
+        config.bloom_threshold = v
+        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
+    })
+
+    const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
+        const device = Game.renderer.device
+        const params_buf = Game.renderer.postProcessing.params_buf
+
+        device.queue.writeBuffer(
+            params_buf,
+            0,
+            new Float32Array([ bloom_intensity, bloom_combine_constant ])
+        )
+
+        device.queue.writeBuffer(
+            Game.renderer.bloom.params_buf,
+            0,
+            new Float32Array([ bloom_threshold,
+                                bloom_threshold - bloom_knee,
+                                bloom_knee * 2.0,
+                                0.25 / bloom_knee,
+                                bloom_combine_constant,
+                                // require byte alignment bs
+                                0,
+                                0,
+                                0, ])
+        )
+    }
     
+
+    /*
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
             const elapsed = performance.now()
@@ -138,6 +194,7 @@ async function main () {
 
         return { onUpdate }
     })
+    */
     
 
     Game.world = world

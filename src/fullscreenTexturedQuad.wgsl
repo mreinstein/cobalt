@@ -1,6 +1,13 @@
+
+struct BloomComposite {
+  bloom_intensity: f32,
+  bloom_combine_constant: f32,
+}
+
 @group(0) @binding(0) var mySampler : sampler;
 @group(0) @binding(1) var colorTexture : texture_2d<f32>;
 @group(0) @binding(2) var emissiveTexture : texture_2d<f32>;
+@group(0) @binding(3) var<uniform> composite_parameter: BloomComposite;
 
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
@@ -80,11 +87,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let hdr_color = textureSample(colorTexture, mySampler, fragUV);
   let bloom_color = textureSample(emissiveTexture, mySampler, fragUV);
   
-  
-  let bloom_intensity = 40.0;
-  let bloom_combine_constant = 0.68;
-  
-  let combined_color = ((bloom_color * bloom_intensity) * bloom_combine_constant);
+  let combined_color = ((bloom_color * composite_parameter.bloom_intensity) * composite_parameter.bloom_combine_constant);
 
   let mapped_color = GTTonemap(combined_color.rgb);
   //let mapped_color = aces(combined_color.rgb);
