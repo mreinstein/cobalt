@@ -80,8 +80,8 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
     const quads = createSpriteQuads(device, spritesheet)
 
     const [ material, emissiveTexture ] = await Promise.all([
-        createTexture(device, spriteTextureUrl),
-        createTexture(device, emissiveSpriteTextureUrl),
+        createTexture(device, spriteTextureUrl, 'rgba8unorm'),
+        createTexture(device, emissiveSpriteTextureUrl, 'rgba16float'),
     ])
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
@@ -131,6 +131,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
     })
 
     const pipeline = device.createRenderPipeline({
+        label: 'sprite',
         vertex: {
             module: device.createShaderModule({
                 code: shader
@@ -162,7 +163,7 @@ async function buildSpritePipeline (device, canvas, format, spritesheet, spriteT
 
                 // emissive
                 {
-                    format, //'rgba16float',
+                    format: 'rgba16float',
                 }
             ]
         },
@@ -265,6 +266,7 @@ async function buildTilePipeline (device, canvas, format, tileData) {
     })
 
     const pipeline = device.createRenderPipeline({
+        label: 'tile',
         vertex: {
             module: device.createShaderModule({
                 code: shader

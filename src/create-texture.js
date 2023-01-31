@@ -1,5 +1,5 @@
 
-export async function createTexture (device, url) {
+export async function createTexture (device, url, format='rgba8unorm') {
     
     const response = await fetch(url)
     const blob = await response.blob()
@@ -11,7 +11,7 @@ export async function createTexture (device, url) {
             width: imageData.width,
             height: imageData.height
         },
-        format: 'rgba8unorm',
+        format,
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
     }
     
@@ -24,7 +24,7 @@ export async function createTexture (device, url) {
     )
 
     const viewDescriptor = {
-        format: 'rgba8unorm',
+        format,
         dimension: '2d',
         aspect: 'all',
         baseMipLevel: 0,

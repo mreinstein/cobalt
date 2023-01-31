@@ -26,6 +26,8 @@ export default function spriteEntity (world, opts) {
         opacity: 1,  // 0 is transparent, 1 is opaque
         tint: vec4.fromValues(0, 0, 0, 0),
 
+        emissiveIntensity: opts.emissiveIntensity ?? 0.0,
+
         // location in the spriteRenderPass's Float32Array. we store this so
         // we can update or remove the render data as the sprite component changes
         dataIndex: -1,

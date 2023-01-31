@@ -25,10 +25,10 @@ export function create (renderer, minLayer, maxLayer) {
     const tintFloatCount = 4 // vec4
     const tintSize = Float32Array.BYTES_PER_ELEMENT * tintFloatCount // in bytes
 
-    const opacityFloatCount = 4 // vec4. technically we only need 1 float but that screws up data alignment in the shader
+    const opacityFloatCount = 4 // vec4. technically we only need 3 floats (opacity, rotation, emissiveIntensity) but that screws up data alignment in the shader
     const opacitySize = Float32Array.BYTES_PER_ELEMENT * opacityFloatCount  // in bytes
 
-    // instanced sprite data (scale, translation, tint, opacity, rotation)
+    // instanced sprite data (scale, translation, tint, opacity, rotation, emissiveIntensity)
     const spriteBuffer = device.createBuffer({
         size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances, // 4x4 matrix with 4 bytes per float32, per instance
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -190,9 +190,17 @@ export function updateSpriteRotation (renderer, spriteEntity) {
     renderPass.spriteData[offset+9] = spriteEntity.sprite.rotation
 }
 
+export function updateSpriteEmissiveIntensity (renderer, spriteEntity) {
+    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
+    const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset+10] = spriteEntity.sprite.emissiveIntensity
+}
+
 
 // copy data from the ECS based sprite entity into the webgpu renderpass
 function copySpriteDataToBuffer (spritesheet, spriteEntity, renderPass, insertIdx) {
+
     const offset = insertIdx * FLOAT32S_PER_SPRITE
     //  TODO: handle linked relativeTo fields in transform
 
@@ -213,4 +221,5 @@ function copySpriteDataToBuffer (spritesheet, spriteEntity, renderPass, insertId
     renderPass.spriteData[offset+7] = spriteEntity.sprite.tint[3]
     renderPass.spriteData[offset+8] = spriteEntity.sprite.opacity
     renderPass.spriteData[offset+9] = spriteEntity.sprite.rotation
+    renderPass.spriteData[offset+10] = spriteEntity.sprite.emissiveIntensity
 }

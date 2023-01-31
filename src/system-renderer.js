@@ -310,15 +310,17 @@ function rebuildSpriteDrawCalls (renderPass) {
 
     for (let i=0; i < renderPass.spriteCount; i++) {
         const s = renderPass.spriteEntities[i].sprite
+
         if (s.spriteType !== currentSpriteType) {
-            if (instanceCount > 0) {
-                renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2]     = s.spriteType
-                renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount
-                renderPass.instancedDrawCallCount++
-            }
             currentSpriteType = s.spriteType
+            instanceCount = 0
         }
+
         instanceCount++
+
+        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2]     = s.spriteType
+        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount
+        renderPass.instancedDrawCallCount++
     }
 
     if (instanceCount > 0) {

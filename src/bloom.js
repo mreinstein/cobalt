@@ -56,7 +56,7 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
     const emissiveTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
-        format,
+        format: 'rgba16float',
         usage:
           GPUTextureUsage.TEXTURE_BINDING |
           GPUTextureUsage.COPY_DST |
@@ -64,7 +64,7 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
     })
 
     const emissiveTextureView = emissiveTexture.createView({
-        format,
+        format: 'rgba16float',
         dimension: '2d',
         aspect: 'all',
         baseMipLevel: 0,

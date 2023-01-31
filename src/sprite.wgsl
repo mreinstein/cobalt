@@ -7,7 +7,7 @@ struct Sprite {
 	translate: vec2<f32>,
 	scale: vec2<f32>,
 	tint: vec4<f32>,
-	opacity: vec4<f32>,  // opacity[0] is opacity,  opacity[1] is rotation
+	opacity: vec4<f32>,  // opacity[0] is opacity,  opacity[1] is rotation, opacity[2] is emissive intensity
 };
 
 struct SpritesBuffer {
@@ -26,6 +26,7 @@ struct Fragment {
 	@location(0) TexCoord : vec2<f32>,
 	@location(1) Tint : vec4<f32>,
 	@location(2) Opacity: f32,
+	@location(3) EmissiveIntensity: f32,
 };
 
 // multiple render targets
@@ -74,6 +75,7 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 	output.TexCoord = vertexTexCoord;
 	output.Tint = sprites.models[i_id].tint;
 	output.Opacity = sprites.models[i_id].opacity[0];
+	output.EmissiveIntensity = sprites.models[i_id].opacity[2];
 	//output.Opacity = 1.0;
 	return output;
 }
@@ -81,7 +83,8 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 @fragment
 fn fs_main (@location(0) TexCoord: vec2<f32>,
             @location(1) Tint: vec4<f32>,
-			@location(2) Opacity: f32) -> GBufferOutput {
+			      @location(2) Opacity: f32,
+			      @location(3) EmissiveIntensity: f32) -> GBufferOutput {
 	
 
 	var output : GBufferOutput;
@@ -89,7 +92,7 @@ fn fs_main (@location(0) TexCoord: vec2<f32>,
 	var outColor: vec4<f32> = textureSample(myTexture, mySampler, TexCoord);
 	output.color = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
 
-	output.emissive = textureSample(emissiveTexture, mySampler, TexCoord);
+	output.emissive = textureSample(emissiveTexture, mySampler, TexCoord) * EmissiveIntensity;
 
 	return output;
 }
