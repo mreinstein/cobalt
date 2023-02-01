@@ -65,13 +65,13 @@ export default async function createRenderer (canvas, viewportWidth, viewportHei
             width: viewportWidth,
             height: viewportHeight,
             zoom: 1.0,
-            position: [ 0, 0 ]  // TODO: ehh is this the top left or center point of the viewport?
+            position: [ 0, 0 ]  // top left point of the viewport
         },
     }
 
     buildRenderPasses(renderer, layers, tileData)
 
-    console.log('wow', renderer)
+    console.log('renderer:', renderer)
     return renderer
 }
 

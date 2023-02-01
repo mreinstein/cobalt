@@ -75,3 +75,23 @@ export async function initSceneComposite (device, viewportWidth, viewportHeight,
         params_buf,
     }
 }
+
+
+// combine bloom and color textures and draw to a fullscreen quad
+export function render_scene_composite (renderer, commandEncoder) {
+    const passEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: renderer.context.getCurrentTexture().createView(),
+          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    passEncoder.setPipeline(renderer.postProcessing.pipeline)
+    passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup)
+    passEncoder.draw(6, 1, 0, 0)
+    passEncoder.end()
+}

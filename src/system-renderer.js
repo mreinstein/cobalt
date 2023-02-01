@@ -1,6 +1,7 @@
-import * as SpriteRenderPass     from './SpriteRenderPass.js'
-import { ECS, mat4, vec2, vec3 } from './deps.js'
-import { render_bloom }          from './bloom.js'
+import * as SpriteRenderPass      from './SpriteRenderPass.js'
+import { ECS, mat4, vec2, vec3 }  from './deps.js'
+import { render_bloom }           from './bloom.js'
+import { render_scene_composite } from './scene-composite.js'
 
 
 const UP_VECTOR = [ 0, 0, 1 ]
@@ -206,33 +207,14 @@ export default function createRendererSystem (renderer) {
                 }
             }
 
+            render_bloom(renderer, commandEncoder)
 
-            render_bloom(renderer, commandEncoder)   // OMG, the advanced fancy bloom :o
+            //renderPixelationFilter(renderer, commandEncoder)
 
-
-            // combine emissive and color textures and draw as post processing fullscreen quad
-            const passEncoder = commandEncoder.beginRenderPass({
-              colorAttachments: [
-                {
-                  view: renderer.context.getCurrentTexture().createView(),
-                  clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                  loadOp: 'clear',
-                  storeOp: 'store',
-                },
-              ],
-            })
-
-            passEncoder.setPipeline(renderer.postProcessing.pipeline)
-            passEncoder.setBindGroup(0, renderer.postProcessing.bindGroup)
-            passEncoder.draw(6, 1, 0, 0)
-            passEncoder.end()
-
-
-            //renderPixelationFilter(renderer, commandEncoder, renderer.postProcessing.pixelationStuff)
-
+            // combine bloom and color textures and draw to a fullscreen quad
+            render_scene_composite(renderer, commandEncoder)
 
             // TODO: render all layers on top of the postProcessing here (UI layers)
-
 
             device.queue.submit([ commandEncoder.finish() ])
         }
