@@ -59,18 +59,16 @@
         </div>
 
 <script type="module">
-import Game               from './Game.js'
-import * as SpriteData    from '../src/SpriteData.js'
-import * as SpriteRenderPass   from '../src/SpriteRenderPass.js'
-import createRenderer     from '../src/create-renderer.js'
-import constants          from './constants.js'
-import dat                from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
-import debounce           from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
-import animationSystem    from './system-animation.js'
-import readSpriteSheet    from '../src/read-spritesheet.js'
-import rendererSystem     from '../src/system-renderer.js'
-import spriteEntity       from '../src/entity-sprite.js'
-import { ECS, randomInt, vec2 } from '../src/deps.js'
+import Game             from './Game.js'
+import * as SpriteData  from './SpriteData.js'
+import * as Cobalt      from '../src/cobalt.js'
+import constants        from './constants.js'
+import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
+import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
+import animationSystem  from './system-animation.js'
+import rendererSystem   from './system-renderer.js'
+import spriteEntity     from './entity-sprite.js'
+import { ECS, vec2 }    from './deps.js'
 
 
 async function main () {
@@ -80,36 +78,69 @@ async function main () {
         SpriteData.loadSpriteLayers('assets/sprite-layers.xt')
     ])
 
-    Game.spritesheet = readSpriteSheet(spritesheetJson)
-    Game.layers = layers
+    Game.layers = new Array(Object.keys(layers).length)
+
+    for (const layerName in layers) {
+        const layer = layers[layerName]
+        Game.layers[layer.zIndex] = { name: layerName, type: layer.type}
+    }
+
+    
+    //Game.spritesheet = readSpriteSheet(spritesheetJson)
 
     const canvas = document.querySelector('canvas')
 
-    const tileData = {
-        atlasTextureUrl: 'assets/spelunky-tiles-extruded.png',
-        tileSize: 16,
-        tileScale: 1.0,
-        layers: {
-            /*
-            details: {
-                mapTextureUrl: 'assets/spelunky0.png',
-                scrollScale: 1.0
-            },
-            */
-            
-            background2: {
-                mapTextureUrl: 'assets/spelunky1.png',
-                scrollScale: 0.6
-            }
-            
-        }
-    }
+    const viewportWidth = constants.GAME_WIDTH
+    const viewportHeight = constants.GAME_HEIGHT
+    Game.renderer = await Cobalt.create(canvas, viewportWidth, viewportHeight)
+
+    //Cobalt.setViewportDimensions(Game.renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
 
     const spriteTextureUrl = 'assets/spritesheet.png'
     const emissiveSpriteTextureUrl = 'assets/spritesheet_emissive.png'
-    const viewportWidth = constants.GAME_WIDTH
-    const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await createRenderer(canvas, viewportWidth, viewportHeight, Game.spritesheet, Game.layers, spriteTextureUrl, emissiveSpriteTextureUrl, tileData)
+    //const spritesheetJson = await fetchJson('/assets/spritesheet.json')
+    await Cobalt.configureSpriteRenderer(Game.renderer, spritesheetJson, spriteTextureUrl, emissiveSpriteTextureUrl)
+
+    
+    Cobalt.configureLayers(Game.renderer, Game.layers)
+    /*
+    Cobalt.configureLayers(Renderer.cobalt, [
+        { name: 'background2', type: 'tile' },
+        { name: 'background', type: 'tile' },
+        { name: 'details3', type: 'tile' },
+        { name: 'details2', type: 'tile' },
+        { name: 'movingplatformback', type: 'sprite' },
+        { name: 'details', type: 'tile' },
+        { name: 'chests', type: 'sprite' },
+        { name: 'breakables', type: 'tile' },
+        { name: 'particles', type: 'sprite' },
+        { name: 'projectiles', type: 'sprite' },
+        { name: 'enemies', type: 'sprite' },
+        { name: 'platforms2', type: 'tile' },
+        { name: 'platforms', type: 'tile' },
+        { name: 'hero', type: 'sprite' },
+        { name: 'frontdetails', type: 'tile' },
+        { name: 'water', type: 'tile' },
+        { name: 'movingwater', type: 'sprite' },
+        { name: 'effects', type: 'sprite' },
+        { name: 'closingdoor', type: 'tile' },
+        { name: 'walls', type: 'tile' },
+        { name: 'uibackground', type: 'sprite' },
+        { name: 'ui', type: 'sprite' },
+        { name: 'hud', type: 'overlay' },
+        { name: 'overlay', type: 'overlay' },
+    ])
+    */
+
+    //                                                  atlasTextureUrl                         tileSize  tileScale
+    await Cobalt.configureTileRenderer(Game.renderer, `assets/spelunky-tiles-extruded.png`,   16,       1.0)
+
+    //                                       scrollScale  tileMapTextureUrl                       zIndex
+    //await Cobalt.addTileLayer(Game.renderer, 1.0,         `data:image/png;base64,${b64Encoded}`,  zIndex)
+    await Cobalt.addTileLayer(Game.renderer, 1.0,         `assets/spelunky0.png`,  5)
+    await Cobalt.addTileLayer(Game.renderer, 0.6,         `assets/spelunky1.png`,  0)
+
+
 
     // use resizeViewport to init values on load:
     resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
@@ -184,26 +215,7 @@ async function main () {
                                 0,
                                 0, ])
         )
-    }
-
-    const inst = gui.addFolder('sprite instance 1')
-    inst.add(config.sprite_instances[0], 'emissive_intensity', 0, 10.0).onChange((v) => {
-        s.sprite.emissiveIntensity = v
-        //SpriteRenderPass.updateSpriteEmissiveIntensity(Game.renderer, s)
-        SpriteRenderPass.updateSprite(Game.renderer, s)
-    })
-
-    inst.open()
-
-    const inst2 = gui.addFolder('sprite instance 2')
-    inst2.add(config.sprite_instances[1], 'emissive_intensity', 0, 10.0).onChange((v) => {
-        s2.sprite.emissiveIntensity = v
-        //SpriteRenderPass.updateSpriteEmissiveIntensity(Game.renderer, s2)
-        SpriteRenderPass.updateSprite(Game.renderer, s2)
-    })
-
-    inst2.open()
-    
+    }    
 
     /*
     ECS.addSystem(world, function cameraLoopSystem(world) {
@@ -226,11 +238,9 @@ async function main () {
 
     // temporary test sprites
 
-    const s2 = spriteEntity(world, { name: 'health_empty-0.png', position: [ 50, 50 ], layer: 4, emissiveIntensity: 0.5 })
+    const s2 = spriteEntity(world, { name: 'health_empty-0.png', position: [ 50, 50 ], zIndex: 4, emissiveIntensity: 0.5, width: 14, height: 15 })
 
-    const s = spriteEntity(world, { name: 'health-0.png', position: [ 240, 135 ], layer: 4, emissiveIntensity: 0.5 })
-
-    
+    const s = spriteEntity(world, { name: 'health-0.png', position: [ 240, 135 ], zIndex: 4, emissiveIntensity: 0.5, width: 14, height: 15 })
 
     //s.sprite.scale[0] = 2
     //s.sprite.scale[1] = 2
@@ -271,8 +281,7 @@ function resizeViewport (renderer, width, height) {
     canvas.width = Math.ceil(constants.GAME_WIDTH)
     canvas.height = Math.ceil(constants.GAME_HEIGHT)
 
-    // TODO: call resize on the rendering framework
-    //picoApp.resize(canvas.width, canvas.height)
+    Cobalt.setViewportDimensions(renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
 
     // https://www.khronos.org/webgl/wiki/HandlingHighDPI
     // webgl display resolution size within canvas

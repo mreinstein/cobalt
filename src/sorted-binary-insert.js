@@ -1,31 +1,36 @@
-// return the index into the spriteEntities array where the new sprite should be inserted
-export default function sortedBinaryInsert (spriteEntity, sprites, spriteCount) {
+import { FLOAT32S_PER_SPRITE } from './constants.js'
 
-    if (spriteCount === 0)
+
+// return the index into the renderPass. array where the new sprite should be inserted
+export default function sortedBinaryInsert (spriteZIndex, spriteType, renderPass) {
+
+    if (renderPass.spriteCount === 0)
         return 0
 
     let low = 0
-    let high = spriteCount - 1
+    let high = renderPass.spriteCount - 1
 
     // order is used to sort the sprite by layer, then sprite type
-    //   layer       can be a value up to 255 (8 bits)
-    //   spriteType  can be a value up to 65,535 (16 bits)
-    const order = (spriteEntity.sprite.layer << 16 & 0xFF0000) | (spriteEntity.sprite.spriteType & 0xFFFF)
+    //   zIndex      0-255    (8 bits)
+    //   spriteType  0-65,535 (16 bits)
+    const order = (spriteZIndex << 16 & 0xFF0000) | (spriteType & 0xFFFF)
 
-    // binary search through sprites[] since it's already sorted low to high
+    // binary search through spriteData since it's already sorted low to high
     while (low <= high) {
         
-        const lowOrder = (sprites[low].sprite.layer << 16 & 0xFF0000) | (sprites[low].sprite.spriteType & 0xFFFF)
+        // the 12th float of each sprite stores the sortValue
+
+        const lowOrder = renderPass.spriteData[low * FLOAT32S_PER_SPRITE + 11]
         if (order <= lowOrder)
             return low
 
-        const highOrder = (sprites[high].sprite.layer << 16 & 0xFF0000) | (sprites[high].sprite.spriteType & 0xFFFF)
+        const highOrder = renderPass.spriteData[high * FLOAT32S_PER_SPRITE + 11]
         if (order >= highOrder)
             return high + 1
 
         const mid = Math.floor((low + high) / 2)
 
-        const midOrder = (sprites[mid].sprite.layer << 16 & 0xFF0000) | (sprites[mid].sprite.spriteType & 0xFFFF)
+        const midOrder = renderPass.spriteData[mid * FLOAT32S_PER_SPRITE + 11]
 
         if(order === midOrder)
             return mid + 1

@@ -1,5 +1,4 @@
-
-export async function createTexture (device, url, format='rgba8unorm') {
+export default async function createTexture (device, url, format='rgba8unorm') {
     
     const response = await fetch(url)
     const blob = await response.blob()

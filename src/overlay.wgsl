@@ -9,8 +9,8 @@ struct Sprite {
     tint: vec4<f32>,
     opacity: f32,
     rotation: f32,
-    emissiveIntensity: f32,
-    sortValue: f32,
+    //emissiveIntensity: f32,
+    //sortValue: f32,
 };
 
 struct SpritesBuffer {
@@ -21,7 +21,6 @@ struct SpritesBuffer {
 @binding(1) @group(0) var myTexture: texture_2d<f32>;
 @binding(2) @group(0) var mySampler: sampler;
 @binding(3) @group(0) var<storage, read> sprites : SpritesBuffer;
-@binding(4) @group(0) var emissiveTexture: texture_2d<f32>;
 
 
 struct Fragment {
@@ -31,17 +30,11 @@ struct Fragment {
     @location(2) Opacity: f32,
 };
 
-// multiple render targets
-struct GBufferOutput {
-  @location(0) color : vec4<f32>,
-  @location(1) emissive : vec4<f32>,
-}
-
 
 @vertex
 fn vs_main (@builtin(instance_index) i_id : u32, 
             @location(0) vertexPosition: vec3<f32>,
-                  @location(1) vertexTexCoord: vec2<f32>) -> Fragment  {
+            @location(1) vertexTexCoord: vec2<f32>) -> Fragment  {
 
     var output : Fragment;
 
@@ -58,11 +51,13 @@ fn vs_main (@builtin(instance_index) i_id : u32,
     var s = sin(rot);
     var c = cos(rot);
 
+    // TODO: can probably hardcode a view and projection matrix since this doesn't change
+
     // https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html
 
     var scaleM: mat4x4<f32> = mat4x4<f32>(sx, 0.0, 0.0, 0.0,
                                          0.0,  sy, 0.0, 0.0,
-                                         0.0, 0.0, sz, 0.0,
+                                         0.0, 0.0,  sz, 0.0,
                                            0,   0,   0, 1.0);
 
     // rotation and translation
@@ -71,9 +66,8 @@ fn vs_main (@builtin(instance_index) i_id : u32,
                                         0.0, 0.0, 1.0, 0.0,
                                          tx,  ty,  tz, 1.0) * scaleM;
 
-    //output.Position = transformUBO.projection * transformUBO.view * sprites.models[i_id].modelMatrix * vec4<f32>(vertexPosition, 1.0);
     output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 1.0);
-
+    
     output.TexCoord = vertexTexCoord;
     output.Tint = sprites.models[i_id].tint;
     output.Opacity = sprites.models[i_id].opacity;
@@ -84,20 +78,12 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 @fragment
 fn fs_main (@location(0) TexCoord: vec2<f32>,
             @location(1) Tint: vec4<f32>,
-            @location(2) Opacity: f32) -> GBufferOutput {
-    
-
-    var output : GBufferOutput;
+            @location(2) Opacity: f32) -> @location(0) vec4<f32> {
 
     var outColor: vec4<f32> = textureSample(myTexture, mySampler, TexCoord);
-    output.color = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
+    //var output = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
 
-    let emissive = textureSample(emissiveTexture, mySampler, TexCoord);
-
-    // the alpha channel in the emissive texture is used for emission strength
-    output.emissive = vec4(emissive.rgb, 1.0) * emissive.a;
-
-    //output.emissive = textureSample(emissiveTexture, mySampler, TexCoord) * EmissiveIntensity;
-
-    return output;
+    //return output;
+    return outColor;
+    //return vec4<f32>(1.0, 0.0, 0.0, 1.0);
 }

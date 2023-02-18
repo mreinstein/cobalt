@@ -1,9 +1,8 @@
-import sortedBinaryInsert from './sorted-binary-insert.js'
-import toWorld            from './transform-to-world.js'
-import { vec4 }           from './deps.js'
+import sortedBinaryInsert      from './sorted-binary-insert.js'
+import uuid                    from './uuid.js'
+import { vec4 }                from './deps.js'
+import { FLOAT32S_PER_SPRITE } from './constants.js'
 
-
-const FLOAT32S_PER_SPRITE = 12 // translate + scale + tint + opacity 
 
 const _tmpVec4 = vec4.create()
 
@@ -72,6 +71,8 @@ export function create (renderer, minLayer, maxLayer) {
         minLayer,
         maxLayer,
 
+        id: uuid(),
+
         // instancedDrawCalls is used to actually perform draw calls within the render pass
         // layout is interleaved with baseVtxIdx (the sprite type), and instanceCount (how many sprites)
         // [
@@ -82,10 +83,6 @@ export function create (renderer, minLayer, maxLayer) {
         instancedDrawCalls: new Uint32Array(MAX_SPRITE_COUNT * 2),
         instancedDrawCallCount: 0,
 
-        // stores a reference to a sprite component so it can be used to update the sprite as needed
-        // [ sprite0Component, sprite1Component, ... ]
-        spriteEntities: new Array(MAX_SPRITE_COUNT),
-
         bindGroup,
         spriteBuffer,
 
@@ -94,26 +91,42 @@ export function create (renderer, minLayer, maxLayer) {
         spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE), 
         spriteCount: 0,
 
-        // when a sprite is changed the renderpass is dirty, and should have it's instance data
-        // copied to the gpu
+        spriteIndices: new Map(), // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
+
+        // when a sprite is changed the renderpass is dirty, and should have it's instance data copied to the gpu
         dirty: false,
     }
 }
 
 
-export function addSprite (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
+export function destroy (c, rp) {
+    const device = c.device
+
+    rp.instancedDrawCalls = null
+    
+    rp.bindGroup = null
+
+    rp.spriteBuffer.destroy()
+    rp.spriteBuffer = null
+
+    rp.spriteData = null
+    rp.spriteIndices.clear()
+    rp.spriteIndices = null
+}
+
+
+// returns a unique identifier for the created sprite
+export function addSprite (c, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+
+    const renderPass = c.renderPasses.find((rp) => rp.type !== 'tile' && rp.minLayer <= zIndex && rp.maxLayer >= zIndex)
+
+    if (!renderPass)
+        throw new Error(`Unable to add sprite; zIndex ${zIndex} not declared in layers`)
+
+    const spriteType = c.sprite.spritesheet.locations.indexOf(name)
 
     // find the place in our spriteData where this sprite belongs.
-    const insertIdx = sortedBinaryInsert(spriteEntity, renderPass.spriteEntities, renderPass.spriteCount)
-
-    // shift down all of the sprites after the insert location by 1
-    for (let i=renderPass.spriteCount-1; i >= insertIdx; i--) {
-        renderPass.spriteEntities[i+1] = renderPass.spriteEntities[i]
-        renderPass.spriteEntities[i+1].sprite.dataIndex += 1
-    }
-
-    renderPass.spriteEntities[insertIdx] = spriteEntity
+    const insertIdx = sortedBinaryInsert(zIndex, spriteType, renderPass)
 
     // shift down all the data in spriteData from insertIdx to spriteCount-1
     // https://stackoverflow.com/questions/35563529/how-to-copy-typedarray-into-another-typedarray
@@ -123,28 +136,40 @@ export function addSprite (renderer, spriteEntity) {
         offset
     )
 
-    copySpriteDataToBuffer(renderer.sprite.spritesheet, spriteEntity, renderPass, insertIdx)
-    
-    // store the location of this sprite's data in the renderer's float32array so that we can 
+    copySpriteDataToBuffer(c.sprite.spritesheet, renderPass, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+
+    // shift down all of the sprite indices
+    for (const [ spriteId, idx] of renderPass.spriteIndices)
+        if (idx >= insertIdx)
+            renderPass.spriteIndices.set(spriteId, idx+1)
+
+    // store the location of this sprite's data in the renderPass's float32array so that we can 
     // reference it later, when we need to remove or update this sprite component
-    spriteEntity.sprite.dataIndex = insertIdx
+    const spriteId = uuid()
+
+    c.sprite.renderPassLookup.set(spriteId, renderPass)
+    renderPass.spriteIndices.set(spriteId, insertIdx)
 
     renderPass.spriteCount++
 
     renderPass.dirty = true
+    
+    return spriteId
 }
 
 
-export function removeSprite (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
+export function removeSprite (c, spriteId) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
 
-    const removeIdx = spriteEntity.sprite.dataIndex
+    if (!renderPass)
+        throw new Error(`Unable to remove sprite; spriteId ${spriteId} could not be found in any render passes`)
 
-    // shift up all of the sprites after the insert location by 1
-    for (let i=removeIdx; i < renderPass.spriteCount-1; i++) {
-        renderPass.spriteEntities[i] = renderPass.spriteEntities[i+1]
-        renderPass.spriteEntities[i].sprite.dataIndex -= 1
-    }
+    const removeIdx = renderPass.spriteIndices.get(spriteId)
+
+    // shift up all of the sprites after the remove location by 1
+    for (const [ spriteId, idx] of renderPass.spriteIndices)
+        if (idx > removeIdx)
+            renderPass.spriteIndices.set(spriteId, idx-1)
 
     // shift up all the data in spriteData from removeIdx to spriteCount-1
     // https://stackoverflow.com/questions/35563529/how-to-copy-typedarray-into-another-typedarray
@@ -154,72 +179,147 @@ export function removeSprite (renderer, spriteEntity) {
         offset
     )
 
+    renderPass.spriteIndices.delete(spriteId)
+
+    c.sprite.renderPassLookup.delete(spriteId)
+
     renderPass.spriteCount--
 
     renderPass.dirty = true
 }
 
 
-export function updateSprite (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    copySpriteDataToBuffer(renderer.sprite.spritesheet, spriteEntity, renderPass, spriteEntity.sprite.dataIndex)
+export function setSpriteName (c, spriteId, name, scale) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+
+    if (!renderPass)
+        throw new Error(`Unable to update sprite name; spriteId ${spriteId} could not be found in any render passes`)
+
+    const spriteType = c.sprite.spritesheet.locations.indexOf(name)
+
+    const SPRITE_WIDTH = c.sprite.spritesheet.spriteMeta[name].w
+    const SPRITE_HEIGHT = c.sprite.spritesheet.spriteMeta[name].h
+
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset+2] = SPRITE_WIDTH * scale[0]
+    renderPass.spriteData[offset+3] = SPRITE_HEIGHT * scale[1]
+
+    // 12th float is order. lower bits 0-15 are spriteType, bits 16-23 are sprite Z index
+    const zIndex = renderPass.spriteData[offset + 11] >> 16 & 0xFF
+
+    // sortValue is used to sort the sprite by layer, then sprite type
+    //   zIndex      0-255 (8 bits)
+    //   spriteType  0-65,535 (16 bits)
+    const sortValue = (zIndex << 16 & 0xFF0000) | (spriteType & 0xFFFF)
+    renderPass.spriteData[offset+11] = sortValue
+
     renderPass.dirty = true
 }
 
 
-export function updateSpriteAnimation (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    const SPRITE_WIDTH = renderer.sprite.spritesheet.spriteMeta[spriteEntity.sprite.name].w
-    const SPRITE_HEIGHT = renderer.sprite.spritesheet.spriteMeta[spriteEntity.sprite.name].h
+export function setSpritePosition (c, spriteId, position) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
 
-    const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
+    if (!renderPass)
+        throw new Error(`Unable to update sprite position; spriteId ${spriteId} could not be found in any render passes`)
 
-    renderPass.spriteData[offset]   = spriteEntity.transform.position[0]
-    renderPass.spriteData[offset+1] = spriteEntity.transform.position[1]
-    renderPass.spriteData[offset+2] = SPRITE_WIDTH * spriteEntity.sprite.scale[0]
-    renderPass.spriteData[offset+3] = SPRITE_HEIGHT * spriteEntity.sprite.scale[1]
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset]   = position[0]
+    renderPass.spriteData[offset+1] = position[1]
+
+    renderPass.dirty = true
+}
+
+
+export function setSpriteTint (c, spriteId, tint) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+
+    if (!renderPass)
+        throw new Error(`Unable to update sprite tint; spriteId ${spriteId} could not be found in any render passes`)
+    
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset+4] = tint[0]
+    renderPass.spriteData[offset+5] = tint[1]
+    renderPass.spriteData[offset+6] = tint[2]
+    renderPass.spriteData[offset+7] = tint[3]
     
     renderPass.dirty = true
 }
 
 
-export function updateSpriteRotation (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
+export function setSpriteOpacity (c, spriteId, opacity) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
 
-    renderPass.spriteData[offset+9] = spriteEntity.sprite.rotation
+    if (!renderPass)
+        throw new Error(`Unable to update sprite opacity; spriteId ${spriteId} could not be found in any render passes`)
+
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset+8] = opacity
+
+    renderPass.dirty = true
 }
 
-export function updateSpriteEmissiveIntensity (renderer, spriteEntity) {
-    const renderPass = renderer.renderPasses[renderer.renderPassLookup[spriteEntity.sprite.layer]]
-    const offset = spriteEntity.sprite.dataIndex * FLOAT32S_PER_SPRITE
 
-    renderPass.spriteData[offset+10] = spriteEntity.sprite.emissiveIntensity
+export function setSpriteRotation (c, spriteId, rotation) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+
+    if (!renderPass)
+        throw new Error(`Unable to update sprite rotation; spriteId ${spriteId} could not be found in any render passes`)
+    
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    renderPass.spriteData[offset+9] = rotation
+    renderPass.dirty = true
 }
 
 
-// copy data from the ECS based sprite entity into the webgpu renderpass
-function copySpriteDataToBuffer (spritesheet, spriteEntity, renderPass, insertIdx) {
+export function setSprite (c, spriteId, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+    const renderPass = c.sprite.renderPassLookup.get(spriteId)
 
+    if (!renderPass)
+        throw new Error(`Unable to update sprite rotation; spriteId ${spriteId} could not be found in any render passes`)
+
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    copySpriteDataToBuffer(c.sprite.spritesheet, renderPass, spriteIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+
+    renderPass.dirty = true
+}
+
+
+// copy sprite data into the webgpu renderpass
+function copySpriteDataToBuffer (spritesheet, renderPass, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
     const offset = insertIdx * FLOAT32S_PER_SPRITE
-    //  TODO: handle linked relativeTo fields in transform
 
-    const SPRITE_WIDTH = spritesheet.spriteMeta[spriteEntity.sprite.name].w
-    const SPRITE_HEIGHT = spritesheet.spriteMeta[spriteEntity.sprite.name].h
+    const SPRITE_WIDTH = spritesheet.spriteMeta[name].w
+    const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h
 
-    // recurse down through the data structure to follow relativeTo as far as it'll go
-    // e.g., text characters are relativeTo textEntity, textEntity is relativeTo npcEntity
-    toWorld(_tmpVec4, spriteEntity.transform)
+    // sortValue is used to sort the sprite by layer, then sprite type
+    //   layer       can be a value up to 255 (8 bits)
+    //   spriteType  can be a value up to 65,535 (16 bits)
+    const spriteType = spritesheet.locations.indexOf(name)
+    const sortValue = (zIndex << 16 & 0xFF0000) | (spriteType & 0xFFFF)
 
-    renderPass.spriteData[offset]   = _tmpVec4[0]
-    renderPass.spriteData[offset+1] = _tmpVec4[1]
-    renderPass.spriteData[offset+2] = SPRITE_WIDTH * spriteEntity.sprite.scale[0]
-    renderPass.spriteData[offset+3] = SPRITE_HEIGHT * spriteEntity.sprite.scale[1]
-    renderPass.spriteData[offset+4] = spriteEntity.sprite.tint[0]
-    renderPass.spriteData[offset+5] = spriteEntity.sprite.tint[1]
-    renderPass.spriteData[offset+6] = spriteEntity.sprite.tint[2]
-    renderPass.spriteData[offset+7] = spriteEntity.sprite.tint[3]
-    renderPass.spriteData[offset+8] = spriteEntity.sprite.opacity
-    renderPass.spriteData[offset+9] = spriteEntity.sprite.rotation
-    renderPass.spriteData[offset+10] = spriteEntity.sprite.emissiveIntensity
+    renderPass.spriteData[offset]   = position[0]
+    renderPass.spriteData[offset+1] = position[1]
+    renderPass.spriteData[offset+2] = SPRITE_WIDTH * scale[0]
+    renderPass.spriteData[offset+3] = SPRITE_HEIGHT * scale[1]
+    renderPass.spriteData[offset+4] = tint[0]
+    renderPass.spriteData[offset+5] = tint[1]
+    renderPass.spriteData[offset+6] = tint[2]
+    renderPass.spriteData[offset+7] = tint[3]
+    renderPass.spriteData[offset+8] = opacity
+    renderPass.spriteData[offset+9] = rotation
+    // we used to set emissive intensity per-sprite, but now we use the alpha channel in the emissions texure,
+    // which enables us to adjust emission strength on a per-pixel basis. Copying it into the sprite data is a leftover
+    //renderPass.spriteData[offset+10] = emissiveIntensity
+    renderPass.spriteData[offset+11] = sortValue
 }

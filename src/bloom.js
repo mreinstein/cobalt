@@ -23,7 +23,7 @@ const MODE_UPSAMPLE       = 3
 const ALIGNMENT = 256 // 256-byte alignment for Dynamic Uniform Buffers
 
 
-export async function initBloom (device, canvas, viewportWidth, viewportHeight) {
+export async function init (device, canvas, viewportWidth, viewportHeight) {
     
     const hdr_texture = newTexture(
         device,
@@ -46,14 +46,8 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
         magFilter: 'linear',
         minFilter: 'linear',
         mipmapFilter: 'linear',
-
-        // TODO: mod.rs sets this to -1000. Why??
-        //lodMinClamp: -10000.0, //lodMinClamp: -1000.0,
-
-        //lodMaxClamp: 1000.0,
     })
 
-    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
     const emissiveTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
         format: 'rgba16float',
@@ -85,6 +79,7 @@ export async function initBloom (device, canvas, viewportWidth, viewportHeight) 
         hdr_sampler,
 
         // where sprites draw their emission pixels to
+        emissiveTexture,
         emissiveTextureView,
     }
 
@@ -411,17 +406,13 @@ function create_bloom_bind_group (device, bloom_mat, output_image, input_image, 
 }
 
 
-export function render_bloom (renderer, commandEncoder) {
+export function draw (renderer, commandEncoder) {
 	const MODE_PREFILTER = 0
 	const MODE_DOWNSAMPLE = 1
 	const MODE_UPSAMPLE_FIRST = 2
 	const MODE_UPSAMPLE = 3
 
 	const bloom_mat = renderer.bloom
-
-	// TODO: re-enable
-	//if (renderer.resized)
-	//	set_all_bind_group(device, bloom_mat)
 	
 	let bind_group_index = 0
 
@@ -439,19 +430,6 @@ export function render_bloom (renderer, commandEncoder) {
 	let mip_size = get_mip_size(0, bloom_mat.bind_groups_textures[0])
 
 	compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
-
-    /*
-    // my experimental Downsample
-    for (let i=1; i < BLOOM_MIP_COUNT; i++) {
-        mip_size = get_mip_size(i, bloom_mat.bind_groups_textures[0])
-    
-        // * Ping
-        compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
-        bind_group_index += 1
-        compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
-    }
-    */
-
 
 	// * Downsample
 	for (let i=1; i < BLOOM_MIP_COUNT; i++) {
@@ -500,4 +478,94 @@ function get_mip_size (current_mip, texture) {
 	}
 
 	return { width, height, depthOrArrayLayers: 1 }
+}
+
+
+export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
+
+    bloom_mat.hdr_texture.texture.destroy()
+
+    bloom_mat.hdr_texture = newTexture(
+        device,
+        'hdr render texture',
+        viewportWidth,
+        viewportHeight,
+        1,
+        1,
+        '2d',
+        'rgba16float',
+        GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        'all',
+    )
+
+    bloom_mat.emissiveTexture.destroy()
+    bloom_mat.emissiveTexture = device.createTexture({
+        size: [ viewportWidth, viewportHeight, 1 ],
+        format: 'rgba16float',
+        usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    bloom_mat.emissiveTextureView = bloom_mat.emissiveTexture.createView({
+        format: 'rgba16float',
+        dimension: '2d',
+        aspect: 'all',
+        baseMipLevel: 0,
+        mipLevelCount: 1,
+        baseArrayLayer: 0,
+        arrayLayerCount: 1
+    })
+
+    for (const t of bloom_mat.bind_groups_textures)
+        t.texture.destroy()
+    
+    bloom_mat.bind_groups_textures.length = 0
+
+    bloom_mat.bind_groups_textures.push(newTexture(
+        device,
+        'bloom downsampler image 0',
+        viewportWidth / 2,
+        viewportHeight / 2,
+        BLOOM_MIP_COUNT,
+        1,
+        '2d',
+        'rgba16float',
+        GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        'all',
+    ))
+
+    bloom_mat.bind_groups_textures.push(newTexture(
+        device,
+        'bloom downsampler image 1',
+        viewportWidth / 2,
+        viewportHeight / 2,
+        BLOOM_MIP_COUNT,
+        1,
+        '2d',
+        'rgba16float',
+        GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        'all',
+    ))
+
+    bloom_mat.bind_groups_textures.push(newTexture(
+        device,
+        'bloom upsampler image',
+        viewportWidth / 2,
+        viewportHeight / 2,
+        BLOOM_MIP_COUNT,
+        1,
+        '2d',
+        'rgba16float',
+        GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        'all',
+    ))
+
+    set_all_bind_group(device, bloom_mat)
+}
+
+
+export function destroy (device, bloom) {
+    // TODO
 }
