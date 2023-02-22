@@ -40,6 +40,7 @@ const c = Cobalt.(canvas, viewportWidth, viewportHeight)
 Cobalt.configureLayers(c, layers)
 Cobalt.draw(c)
 Cobalt.reset(c)
+Cobalt.removeSprites(c)
 
 
 // camera/viewport related calls

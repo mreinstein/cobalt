@@ -70,7 +70,6 @@ export async function create (canvas, viewportWidth, viewportHeight) {
 }
 
 
-
 export function draw (c) {
 	const { device, context } = c
 
@@ -249,7 +248,6 @@ export function draw (c) {
 }
 
 
-
 // build instancedDrawCalls
 function _rebuildSpriteDrawCalls (renderPass) {
     let currentSpriteType = -1
@@ -279,6 +277,16 @@ function _rebuildSpriteDrawCalls (renderPass) {
         renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2]     = currentSpriteType
         renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount
         renderPass.instancedDrawCallCount++
+    }
+}
+
+
+export function removeSprites (c) {
+    for (const rp of c.renderPasses) {
+        if (rp.type === 'sprite')
+            rp.spriteCount = 0
+        else if (rp.type === 'overlay')
+            rp.spriteCount = 0
     }
 }
 
