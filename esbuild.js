@@ -2,8 +2,6 @@ import esbuild  from 'esbuild'
 import { glsl } from 'esbuild-plugin-glsl'
 
 
-const minify = false
-
 const cfg = {
 	entryPoints: [ 'src/cobalt.js' ],
 	allowOverwrite: true,
@@ -11,10 +9,10 @@ const cfg = {
     format: 'esm',
     target: 'es2022',
     plugins: [
-        glsl({ minify })
+        glsl({ minify: false })  // setting minify to true breaks the code
     ],
     outfile: 'bundle.js',
-    minify,
+    minify: true,
 }
 
 
