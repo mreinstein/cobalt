@@ -1,4 +1,4 @@
-import * as Cobalt    from '../src/cobalt.js'
+import * as Cobalt    from '../bundle.js'
 import Game           from './Game.js'
 import animationComponent  from './component-animation.js'
 import transformComponent  from './component-transform.js'

@@ -1,4 +1,4 @@
-import fetchShader from './fetch-shader.js'
+import bloomWGSL from './bloom.wgsl'
 
 
 // ported from https://github.com/rledrin/WebGPU-Bloom
@@ -176,8 +176,6 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
         'all',
     ))
-
-    const bloomWGSL = await fetchShader('/src/bloom.wgsl')
 
     const compute_pipeline_layout = device.createPipelineLayout({
         bindGroupLayouts: bloom_mat.bind_group_layout

@@ -1,8 +1,7 @@
-import fetchShader from './fetch-shader.js'
+import sceneCompositeWGSL from './scene-composite.wgsl'
 
 
 export async function init (device, bloom_mat) {
-    const shader = await fetchShader('/src/scene-composite.wgsl')
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
     const bloom_intensity = 40.0
@@ -23,13 +22,13 @@ export async function init (device, bloom_mat) {
         layout: 'auto',
         vertex: {
           module: device.createShaderModule({
-            code: shader,
+            code: sceneCompositeWGSL,
           }),
           entryPoint: 'vert_main',
         },
         fragment: {
           module: device.createShaderModule({
-            code: shader,
+            code: sceneCompositeWGSL,
           }),
           entryPoint: 'frag_main',
           targets: [

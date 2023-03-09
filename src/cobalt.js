@@ -3,8 +3,10 @@ import * as SpriteRenderPass                          from './SpriteRenderPass.j
 import createSpriteQuads                              from './create-sprite-quads.js'
 import createTileQuad                                 from './create-tile-quad.js'
 import createTexture                                  from './create-texture.js'
-import fetchShader                                    from './fetch-shader.js'
 import readSpriteSheet                                from './read-spritesheet.js'
+import overlayWGSL                                    from './overlay.wgsl'
+import spriteWGSL                                     from './sprite.wgsl'
+import tileWGSL                                       from './tile.wgsl'
 import uuid                                           from './uuid.js'
 import * as Bloom                                     from './bloom.js'
 import * as SceneComposite                            from './scene-composite.js'
@@ -451,8 +453,6 @@ export async function configureTileRenderer (c, atlasTextureUrl, tileSize=16, ti
 
     const atlasMaterial = await createTexture(device, atlasTextureUrl)
 
-    const shader = await fetchShader('/src/tile.wgsl')
-
     const uniformBuffer = device.createBuffer({
         size: 32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -521,7 +521,7 @@ export async function configureTileRenderer (c, atlasTextureUrl, tileSize=16, ti
         label: 'tile',
         vertex: {
             module: device.createShaderModule({
-                code: shader
+                code: tileWGSL
             }),
             entryPoint: 'vs_main',
             buffers: [ quad.bufferLayout ]
@@ -529,7 +529,7 @@ export async function configureTileRenderer (c, atlasTextureUrl, tileSize=16, ti
 
         fragment: {
             module: device.createShaderModule({
-                code: shader
+                code: tileWGSL
             }),
             entryPoint: 'fs_main',
             targets: [
@@ -665,8 +665,6 @@ export async function configureSpriteRenderer (c, spritesheetJson, spriteTexture
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'
 
-    const shader = await fetchShader('/src/sprite.wgsl')
-
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -712,7 +710,7 @@ export async function configureSpriteRenderer (c, spritesheetJson, spriteTexture
         label: 'sprite',
         vertex: {
             module: device.createShaderModule({
-                code: shader
+                code: spriteWGSL
             }),
             entryPoint: 'vs_main',
             buffers: [ quads.bufferLayout ]
@@ -720,7 +718,7 @@ export async function configureSpriteRenderer (c, spritesheetJson, spriteTexture
 
         fragment: {
             module: device.createShaderModule({
-                code: shader
+                code: spriteWGSL
             }),
             entryPoint: 'fs_main',
             targets: [
@@ -781,8 +779,6 @@ export async function configureOverlayRenderer (c, spritesheetJson, spriteTextur
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'
 
-    const shader = await fetchShader('/src/overlay.wgsl')
-
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -823,7 +819,7 @@ export async function configureOverlayRenderer (c, spritesheetJson, spriteTextur
         label: 'overlay',
         vertex: {
             module: device.createShaderModule({
-                code: shader
+                code: overlayWGSL
             }),
             entryPoint: 'vs_main',
             buffers: [ quads.bufferLayout ]
@@ -831,7 +827,7 @@ export async function configureOverlayRenderer (c, spritesheetJson, spriteTextur
 
         fragment: {
             module: device.createShaderModule({
-                code: shader
+                code: overlayWGSL
             }),
             entryPoint: 'fs_main',
             targets: [
@@ -972,6 +968,7 @@ export function setSpritePosition (c, spriteId, position) {
 export function setSpriteTint (c, spriteId, tint) {
     SpriteRenderPass.setSpriteTint(c, spriteId, tint)
 }
+
 
 export function setSpriteOpacity (c, spriteId, opacity) {
     SpriteRenderPass.setSpriteOpacity(c, spriteId, opacity)

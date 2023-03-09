@@ -1,0 +1,14 @@
+{
+  "name": "cobalt",
+  "private": true,
+  "type": "module",
+  "main": "bundle.js",
+  "scripts": {
+    "build": "node esbuild.js",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.17.11",
+    "esbuild-plugin-glsl": "^1.1.0"
+  }
+}
