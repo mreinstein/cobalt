@@ -41,7 +41,7 @@ struct GBufferOutput {
 @vertex
 fn vs_main (@builtin(instance_index) i_id : u32, 
             @location(0) vertexPosition: vec3<f32>,
-                  @location(1) vertexTexCoord: vec2<f32>) -> Fragment  {
+            @location(1) vertexTexCoord: vec2<f32>) -> Fragment  {
 
     var output : Fragment;
 

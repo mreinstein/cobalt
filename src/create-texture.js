@@ -1,4 +1,4 @@
-export default async function createTexture (device, url, format='rgba8unorm') {
+export default async function createTexture (device, label, url, format='rgba8unorm') {
     
     const response = await fetch(url)
     const blob = await response.blob()
@@ -6,6 +6,7 @@ export default async function createTexture (device, url, format='rgba8unorm') {
     const imageData = await createImageBitmap(blob/*, { premultiplyAlpha: 'none', resizeQuality: 'pixelated' }*/)
     
     const textureDescriptor = {
+        label,
         size: {
             width: imageData.width,
             height: imageData.height
@@ -23,6 +24,7 @@ export default async function createTexture (device, url, format='rgba8unorm') {
     )
 
     const viewDescriptor = {
+        label,
         format,
         dimension: '2d',
         aspect: 'all',
@@ -40,7 +42,7 @@ export default async function createTexture (device, url, format='rgba8unorm') {
         magFilter: 'nearest',
         minFilter: 'nearest',
         mipmapFilter: 'nearest',
-        maxAnisoptropy: 1
+        maxAnisotropy: 1
     }
 
     const sampler = device.createSampler(samplerDescriptor)

@@ -31,15 +31,12 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
         viewportWidth,
         viewportHeight,
         1,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     )
 
     const hdr_sampler = device.createSampler({
-    	label: 'hdr sampler render texture',
+    	label: 'hdr sampler',
         addressModeU: 'clamp-to-edge',
         addressModeV: 'clamp-to-edge',
         addressModeW: 'clamp-to-edge',
@@ -69,11 +66,9 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
 
 
     const bloom_mat = {
-        //render_pipeline: null,
         compute_pipeline: null,
         bind_group: [ ],
         bind_group_layout: [ ],
-        //bind_groups_buffers: [ ],
         bind_groups_textures: [ ],
         hdr_texture,
         hdr_sampler,
@@ -144,11 +139,8 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     bloom_mat.bind_groups_textures.push(newTexture(
@@ -157,11 +149,8 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     bloom_mat.bind_groups_textures.push(newTexture(
@@ -170,11 +159,8 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     const compute_pipeline_layout = device.createPipelineLayout({
@@ -199,15 +185,15 @@ export async function init (device, canvas, viewportWidth, viewportHeight) {
 }
 
 
-function newTexture (device, label, width, height, mip_count, sample_count, dimension, format, usage, aspect) {
+function newTexture (device, label, width, height, mip_count, format, usage) {
     const texture = device.createTexture({
     	label,
         size: { width, height },
         format,
         usage,
         mipLevelCount: mip_count,
-        sampleCount: sample_count,
-        dimension,
+        sampleCount: 1,
+        dimension: '2d',
     })
 
     const view = texture.createView()
@@ -218,8 +204,8 @@ function newTexture (device, label, width, height, mip_count, sample_count, dime
         mip_view.push(texture.createView({
         	label,
             format,
-            dimension,
-            aspect,
+            dimension: '2d',
+            aspect: 'all',
             baseMipLevel: i,
             mipLevelCount: 1,
             baseArrayLayer: 0,
@@ -247,10 +233,8 @@ function set_all_bind_group (device, bloom_mat) {
                                 bloom_knee * 2.0,
                                 0.25 / bloom_knee,
                                 combine_constant,
-                                // require byte alignment bs
-                                0,
-                                0,
-                                0,
+                                // required byte alignment bs
+                                0, 0, 0
                                 ])
 
     const params_buf = device.createBuffer({
@@ -421,7 +405,7 @@ export function draw (renderer, commandEncoder) {
 	compute_pass.setPipeline(bloom_mat.compute_pipeline)
 
 
-	// * PreFilter
+	// PreFilter
 	compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
 	bind_group_index += 1
 
@@ -429,30 +413,30 @@ export function draw (renderer, commandEncoder) {
 
 	compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
-	// * Downsample
+	// Downsample
 	for (let i=1; i < BLOOM_MIP_COUNT; i++) {
 		mip_size = get_mip_size(i, bloom_mat.bind_groups_textures[0])
 	
-		// * Ping
+		// Ping
 		compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
 		bind_group_index += 1
 		compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
-		// * Pong
+		// Pong
 		compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
 		bind_group_index += 1
 		compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 	}
 
 
-	// * First Upsample
+	// First Upsample
 	compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
 	bind_group_index += 1
 	mip_size = get_mip_size(BLOOM_MIP_COUNT - 1, bloom_mat.bind_groups_textures[2])
 	compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
 	
-	// * Upsample
+	// Upsample
 	for (let i=BLOOM_MIP_COUNT - 2; i >= 0; i--) {
 		mip_size = get_mip_size(i, bloom_mat.bind_groups_textures[2])
 	
@@ -481,7 +465,7 @@ function get_mip_size (current_mip, texture) {
 
 export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
 
-    bloom_mat.hdr_texture.texture.destroy()
+    destroy(device, bloom_mat)
 
     bloom_mat.hdr_texture = newTexture(
         device,
@@ -489,14 +473,10 @@ export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
         viewportWidth,
         viewportHeight,
         1,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     )
 
-    bloom_mat.emissiveTexture.destroy()
     bloom_mat.emissiveTexture = device.createTexture({
         size: [ viewportWidth, viewportHeight, 1 ],
         format: 'rgba16float',
@@ -516,22 +496,14 @@ export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
         arrayLayerCount: 1
     })
 
-    for (const t of bloom_mat.bind_groups_textures)
-        t.texture.destroy()
-    
-    bloom_mat.bind_groups_textures.length = 0
-
     bloom_mat.bind_groups_textures.push(newTexture(
         device,
         'bloom downsampler image 0',
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     bloom_mat.bind_groups_textures.push(newTexture(
@@ -540,11 +512,8 @@ export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     bloom_mat.bind_groups_textures.push(newTexture(
@@ -553,17 +522,20 @@ export function resize (device, bloom_mat, viewportWidth, viewportHeight) {
         viewportWidth / 2,
         viewportHeight / 2,
         BLOOM_MIP_COUNT,
-        1,
-        '2d',
         'rgba16float',
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        'all',
     ))
 
     set_all_bind_group(device, bloom_mat)
 }
 
 
-export function destroy (device, bloom) {
-    // TODO
+export function destroy (device, bloom_mat) {
+    bloom_mat.hdr_texture.texture.destroy()
+    bloom_mat.emissiveTexture.destroy()
+
+    for (const t of bloom_mat.bind_groups_textures)
+        t.texture.destroy()
+    
+    bloom_mat.bind_groups_textures.length = 0
 }

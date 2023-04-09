@@ -451,7 +451,7 @@ export async function configureTileRenderer (c, atlasTextureUrl, tileSize=16, ti
 
     const quad = createTileQuad(device)
 
-    const atlasMaterial = await createTexture(device, atlasTextureUrl)
+    const atlasMaterial = await createTexture(device, 'tile atlas', atlasTextureUrl)
 
     const uniformBuffer = device.createBuffer({
         size: 32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
@@ -584,7 +584,7 @@ export async function addTileLayer (c, scrollScale, tileMapTextureUrl, zIndex) {
 	const tileLayerId = uuid()
 
 	// build the tile layer and add it to the cobalt data structure
-	const tileLayerMaterial = await createTexture(device, tileMapTextureUrl)
+	const tileLayerMaterial = await createTexture(device, 'tile map', tileMapTextureUrl)
 
 	const tileBindGroup = device.createBindGroup({
         layout: c.tile.tileBindGroupLayout,
@@ -658,8 +658,8 @@ export async function configureSpriteRenderer (c, spritesheetJson, spriteTexture
     const quads = createSpriteQuads(device, spritesheet)
 
     const [ material, emissiveTexture ] = await Promise.all([
-        createTexture(device, spriteTextureUrl, 'rgba8unorm'),
-        createTexture(device, emissiveSpriteTextureUrl, 'rgba16float'),
+        createTexture(device, 'sprite', spriteTextureUrl, 'rgba8unorm'),
+        createTexture(device, 'emissive sprite', emissiveSpriteTextureUrl, 'rgba16float'),
     ])
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
@@ -774,7 +774,7 @@ export async function configureOverlayRenderer (c, spritesheetJson, spriteTextur
 
     const quads = createSpriteQuads(device, spritesheet)
 
-    const material = await createTexture(device, spriteTextureUrl, 'rgba8unorm')
+    const material = await createTexture(device, 'overlay', spriteTextureUrl, 'rgba8unorm')
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'
