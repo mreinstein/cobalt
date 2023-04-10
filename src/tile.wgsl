@@ -28,8 +28,7 @@ struct TileLayersBuffer {
 
 struct Fragment {
     @builtin(position) Position : vec4<f32>,
-    @location(0) TexCoord : vec2<f32>,
-    @location(1) PixelCoord : vec2<f32>
+    @location(0) TexCoord : vec2<f32>
 };
 
 
@@ -47,32 +46,37 @@ fn vs_main (@builtin(instance_index) i_id : u32,
     var viewOffset : vec2<f32> = transformUBO.viewOffset * scrollScale;
 
     // from Brandon's webgl-tile shader
-    output.PixelCoord = (vertexTexCoord * transformUBO.viewportSize) + viewOffset;
-    output.TexCoord = output.PixelCoord * inverseTileTextureSize * transformUBO.inverseTileSize;
-  output.Position = vec4<f32>(vertexPosition, 0.0, 1.0);
+    let PixelCoord = (vertexTexCoord * transformUBO.viewportSize) + viewOffset;
 
+    output.TexCoord = PixelCoord / transformUBO.tileSize;
+    output.Position = vec4<f32>(vertexPosition, 0.0, 1.0);
+    
     return output;
 }
 
 
+// based off of this fantastic implementation by Greg Mann https://stackoverflow.com/a/53465085/1927767
 @fragment
-fn fs_main (@location(0) TexCoord: vec2<f32>, @location(1) PixelCoord: vec2<f32>) -> @location(0) vec4<f32> {
-    // from Brandon's webgl-tile shader
-    var tile: vec4<f32> = textureSample(tileTexture, tileSampler, TexCoord);
+fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
 
-    if (tile.x == 1.0 && tile.y == 1.0) {
+    var tilemapCoord = floor(TexCoord);
+
+    var u_tilemapSize = vec2<f32>(textureDimensions(tileTexture, 0));
+    var tileFoo = fract((tilemapCoord + vec2<f32>(0.5, 0.5)) / u_tilemapSize);
+    var tile = floor(textureSample(tileTexture, tileSampler, tileFoo) * 255.0);
+
+    var u_tilesetSize = vec2<f32>(textureDimensions(atlasTexture, 0)) / transformUBO.tileSize;
+
+    let u_tileUVMinBounds = vec2<f32>(0.5/transformUBO.tileSize, 0.5/transformUBO.tileSize);
+    let u_tileUVMaxBounds = vec2<f32>((transformUBO.tileSize - 0.5) / transformUBO.tileSize, (transformUBO.tileSize - 0.5) / transformUBO.tileSize);
+    var texcoord = clamp(fract(TexCoord), u_tileUVMinBounds, u_tileUVMaxBounds);
+
+    var tileCoord = (tile.xy + texcoord) / u_tilesetSize;
+
+    var color = textureSample(atlasTexture, atlasSampler, tileCoord);
+
+    if (color.a <= 0.1) {
         discard;
     }
-
-    // add extruded tile space to the sprite offset. assumes 1 px extruded around each tile
-    var extrudeOffset : vec2<f32>;
-    extrudeOffset[0] = floor(tile.x * 256.0) * 2 + 1;
-    extrudeOffset[1] = floor(tile.y * 256.0) * 2 + 1;
-
-  var spriteOffset : vec2<f32> = floor(tile.xy * 256.0) * transformUBO.tileSize;
-    var spriteCoord : vec2<f32> = PixelCoord % transformUBO.tileSize;
-
-    let inverseAtlasTextureSize = 1 / vec2<f32>(textureDimensions(atlasTexture, 0));  //transformUBO.inverseAtlasTextureSize;
-    
-    return textureSample(atlasTexture, atlasSampler, (extrudeOffset + spriteOffset + spriteCoord) * inverseAtlasTextureSize);
+    return color;
 }

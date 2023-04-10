@@ -85,7 +85,6 @@ async function main () {
         Game.layers[layer.zIndex] = { name: layerName, type: layer.type}
     }
 
-    
     //Game.spritesheet = readSpriteSheet(spritesheetJson)
 
     const canvas = document.querySelector('canvas')
@@ -94,6 +93,7 @@ async function main () {
     const viewportHeight = constants.GAME_HEIGHT
     Game.renderer = await Cobalt.create(canvas, viewportWidth, viewportHeight)
 
+    
     //Cobalt.setViewportDimensions(Game.renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
 
     const spriteTextureUrl = 'assets/spritesheet.png'
@@ -132,8 +132,8 @@ async function main () {
     ])
     */
 
-    //                                                  atlasTextureUrl                         tileSize  tileScale
-    await Cobalt.configureTileRenderer(Game.renderer, `assets/spelunky-tiles-extruded.png`,   16,       1.0)
+    //                                                  atlasTextureUrl           tileSize  tileScale
+    await Cobalt.configureTileRenderer(Game.renderer, `assets/spelunky-tiles.png`,   16,       1.0)
 
     //                                       scrollScale  tileMapTextureUrl                       zIndex
     //await Cobalt.addTileLayer(Game.renderer, 1.0,         `data:image/png;base64,${b64Encoded}`,  zIndex)
@@ -190,6 +190,10 @@ async function main () {
 
     gui.add(config, 'bloom_threshold', 0.0, 1.0).onChange((v) => {
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
+    })
+
+    gui.add(Game.renderer.viewport, 'zoom', 0.001, 4).onChange((v) => {
+        Cobalt.setViewportPosition(Game.renderer, Game.renderer.viewport.position)
     })
 
     const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
