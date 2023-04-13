@@ -55,7 +55,7 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 }
 
 
-// based off of this fantastic implementation by Greg Mann https://stackoverflow.com/a/53465085/1927767
+// based off of a fantastic implementation by Greg Man https://stackoverflow.com/a/53465085/1927767
 @fragment
 fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
 

@@ -356,8 +356,8 @@ function _writeTileBuffer (c) {
     const tile = c.tile
     const { tileScale, tileSize } = tile
 
-    const GAME_WIDTH = c.viewport.width * c.viewport.zoom
-    const GAME_HEIGHT = c.viewport.height * c.viewport.zoom
+    const GAME_WIDTH = c.viewport.width / c.viewport.zoom
+    const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
 
     _buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
     _buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
@@ -393,8 +393,8 @@ function _writeSpriteBuffer (c) {
     //                out    left   right    bottom   top     near     far
     //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
 
-    const GAME_WIDTH = c.viewport.width * c.viewport.zoom
-    const GAME_HEIGHT = c.viewport.height * c.viewport.zoom
+    const GAME_WIDTH = c.viewport.width / c.viewport.zoom
+    const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
 
     mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
@@ -425,8 +425,8 @@ function _writeOverlayBuffer (c) {
     const projection = mat4.create()
 
     const zoom = 1.0 // c.viewport.zoom
-    const GAME_WIDTH = Math.round(c.viewport.width * zoom)
-    const GAME_HEIGHT = Math.round(c.viewport.height * zoom)
+    const GAME_WIDTH = Math.round(c.viewport.width / zoom)
+    const GAME_HEIGHT = Math.round(c.viewport.height / zoom)
 
     mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
