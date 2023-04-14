@@ -335,8 +335,9 @@ export function setViewportDimensions (c, width, height) {
 
 // @param Array pos top left corner of da viewport
 export function setViewportPosition (c, pos) {
-	c.viewport.position[0] = pos[0]
-	c.viewport.position[1] = pos[1]
+    c.viewport.position[0] = pos[0] - (c.viewport.width / 2 / c.viewport.zoom)
+    c.viewport.position[1] = pos[1] - (c.viewport.height / 2 / c.viewport.zoom)
+
 	if (c.sprite)
         _writeSpriteBuffer(c)
 
