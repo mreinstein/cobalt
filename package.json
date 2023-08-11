@@ -8,7 +8,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "esbuild": "^0.18.14",
+    "esbuild": "^0.19.1",
     "esbuild-plugin-glsl": "^1.1.0"
   }
 }
