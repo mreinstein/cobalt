@@ -50,8 +50,9 @@ Cobalt.setViewportPosition(c, pos)
 
 // sprite calls
 Cobalt.configureSpriteRenderer(c, spritesheetJson, spriteTextureUrl, emissiveSpriteTextureUrl)
-Cobalt.configureOverlayRenderer(c, spritesheetJson, spriteTextureUrl) 
-Cobalt.addSprite(c, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+Cobalt.configureOverlayRenderer(c, spritesheetJson, spriteTextureUrl)
+
+const spriteId = Cobalt.addSprite(c, name, position, width, height, scale, tint, opacity, rotation, zIndex)
 Cobalt.removeSprite(c, spriteId)
 Cobalt.setSpriteName(c, spriteId, name, scale)
 Cobalt.setSpritePosition(c, spriteId, position)

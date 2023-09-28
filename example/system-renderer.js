@@ -39,32 +39,3 @@ export default function createRendererSystem (renderer) {
         return { onUpdate }
     }
 }
-
-
-// build instancedDrawCalls
-function rebuildSpriteDrawCalls (renderPass) {
-    let currentSpriteType = -1
-    let instanceCount = 0
-    renderPass.instancedDrawCallCount = 0
-
-    for (let i=0; i < renderPass.spriteCount; i++) {
-        const s = renderPass.spriteEntities[i].sprite
-
-        if (s.spriteType !== currentSpriteType) {
-            currentSpriteType = s.spriteType
-            instanceCount = 0
-        }
-
-        instanceCount++
-
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2]     = s.spriteType
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount
-        renderPass.instancedDrawCallCount++
-    }
-
-    if (instanceCount > 0) {
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2]     = currentSpriteType
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount
-        renderPass.instancedDrawCallCount++
-    }
-}
