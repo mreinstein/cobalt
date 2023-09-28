@@ -17,18 +17,13 @@ An opinionated 2D renderer based on WebGpu, designed for sprite and tile games t
 
 ## Nice-to-have goals
 
-Dunno if these will make the cut but things to strongly consider
+things I'm considering:
 
 * primitive drawing (lines, rectangles, ellipses, paths, etc.)
 * intuitive render graph for highly configurable render pipelines
 
 
 ## API
-
-It's maybe worth stating that the design of this API doesn't look conventional for javascript libraries, but it was chosen purposefully to
-avoid creating a lot of extra objects.  Declaring arrays and other object types in high fps loops can cause lots more memory allocation
-
-and that invokes the wrath of the garbage collector.
 
 
 ```js
