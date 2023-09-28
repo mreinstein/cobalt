@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <title class="titleText">Web GPU prototyping</title>
-        <meta name="description" content="learning WebGPU" />
+        <meta name="description" content="Web GPU 2d cobalt" />
         <meta name="author" content="Mike Reinstein" />
         <meta name="viewport" content="width=device-width" />
         <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
@@ -103,31 +103,10 @@ async function main () {
     
     Cobalt.configureLayers(Game.renderer, Game.layers)
     /*
-    Cobalt.configureLayers(Renderer.cobalt, [
+    Cobalt.configureLayers(Game.renderer, [
         { name: 'background2', type: 'tile' },
         { name: 'background', type: 'tile' },
-        { name: 'details3', type: 'tile' },
-        { name: 'details2', type: 'tile' },
-        { name: 'movingplatformback', type: 'sprite' },
-        { name: 'details', type: 'tile' },
-        { name: 'chests', type: 'sprite' },
-        { name: 'breakables', type: 'tile' },
-        { name: 'particles', type: 'sprite' },
-        { name: 'projectiles', type: 'sprite' },
-        { name: 'enemies', type: 'sprite' },
-        { name: 'platforms2', type: 'tile' },
-        { name: 'platforms', type: 'tile' },
         { name: 'hero', type: 'sprite' },
-        { name: 'frontdetails', type: 'tile' },
-        { name: 'water', type: 'tile' },
-        { name: 'movingwater', type: 'sprite' },
-        { name: 'effects', type: 'sprite' },
-        { name: 'closingdoor', type: 'tile' },
-        { name: 'walls', type: 'tile' },
-        { name: 'uibackground', type: 'sprite' },
-        { name: 'ui', type: 'sprite' },
-        { name: 'hud', type: 'overlay' },
-        { name: 'overlay', type: 'overlay' },
     ])
     */
 
@@ -239,14 +218,26 @@ async function main () {
 
     Game.world = world
 
-    // temporary test sprites
+    // test sprites
 
-    const s2 = spriteEntity(world, { name: 'health_empty-0.png', position: [ 50, 50 ], zIndex: 4, emissiveIntensity: 0.5, width: 14, height: 15 })
+    const s2 = spriteEntity(world, {
+        name: 'health_empty-0.png',
+        position: [ 50, 50 ],
+        zIndex: 4,
+        emissiveIntensity: 0.5,
+        width: 14,
+        height: 15
+    })
 
-    const s = spriteEntity(world, { name: 'health-0.png', position: [ 240, 135 ], zIndex: 4, emissiveIntensity: 0.5, width: 14, height: 15 })
+    const s = spriteEntity(world, {
+        name: 'health-0.png',
+        position: [ 240, 135 ],
+        zIndex: 4,
+        emissiveIntensity: 0.5,
+        width: 14,
+        height: 15
+    })
 
-    //s.sprite.scale[0] = 2
-    //s.sprite.scale[1] = 2
 
     const gameLoop = function () {
         tick(Game)

@@ -3,7 +3,7 @@ import Game        from './Game.js'
 import { ECS }     from './deps.js'
 
 
-const SPRITE = [ 'sprite' ]
+const SPRITE_QUERY = [ 'sprite' ]
 
 
 export default function animationSystem (world) {
@@ -13,7 +13,7 @@ export default function animationSystem (world) {
         // temporarily shutting off animation because we're testing an emissive sprite which only has 1 frame
         return
 
-        for (const e of ECS.getEntities(world, SPRITE)) {
+        for (const e of ECS.getEntities(world, SPRITE_QUERY)) {
                
             e.animation.accumulator++
 
