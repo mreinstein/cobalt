@@ -15,7 +15,7 @@ import { FLOAT32S_PER_SPRITE }                        from './constants.js'
 
 
 // temporary variables, allocated once to avoid garbage collection
-const _tmpVec3 = vec3.create()
+const _tmpVec3 = vec3.create(0, 0, 0)
 const _buf = new Float32Array(136)  // tile instance data stored in a UBO
 
 
@@ -319,6 +319,7 @@ export function reset (c) {
 export function setViewportDimensions (c, width, height) {
 	c.viewport.width = width
 	c.viewport.height = height
+
     if (c.sprite)
 	   _writeSpriteBuffer(c)
 
@@ -388,23 +389,22 @@ function _writeTileBuffer (c) {
 
 
 function _writeSpriteBuffer (c) {
-    // TODO: I think zoom can be achieved by adjusting the left/right/bottom/top based on scale factor
-    const projection = mat4.create()
-
+    // TODO: achieve zoom instead by adjusting the left/right/bottom/top based on scale factor?
     //                out    left   right    bottom   top     near     far
     //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
 
     const GAME_WIDTH = c.viewport.width / c.viewport.zoom
     const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
 
-    mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+    //                         left          right    bottom        top     near     far
+    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+
 
     //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
 
-    const view = mat4.create()
     // set x,y,z camera position
-    vec3.set(_tmpVec3, -c.viewport.position[0], -c.viewport.position[1], 0)
-    mat4.fromTranslation(view, _tmpVec3)
+    vec3.set(-c.viewport.position[0], -c.viewport.position[1], 0, _tmpVec3)
+    const view = mat4.translation(_tmpVec3)
 
     // might be useful if we ever switch to a 3d perspective camera setup
     //mat4.lookAt(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
@@ -422,19 +422,18 @@ function _writeSpriteBuffer (c) {
 
 
 function _writeOverlayBuffer (c) {
-    // TODO: I think this buffer can be written just once since the overlays never change. (0,0 always top left corner)
-    const projection = mat4.create()
-
+    // TODO: I think this buffer only needs writing once since the overlays never change. (0,0 always top left corner)
+    
     const zoom = 1.0 // c.viewport.zoom
     const GAME_WIDTH = Math.round(c.viewport.width / zoom)
     const GAME_HEIGHT = Math.round(c.viewport.height / zoom)
 
-    mat4.ortho(projection,    0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+    //                         left          right    bottom        top     near     far
+    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
-    const view = mat4.create()
     // set x,y,z camera position
-    vec3.set(_tmpVec3, 0, 0, 0)
-    mat4.fromTranslation(view, _tmpVec3)
+    vec3.set(0, 0, 0, _tmpVec3)
+    const view = mat4.translation(_tmpVec3)
 
     c.device.queue.writeBuffer(c.overlay.uniformBuffer, 0, view.buffer)
     c.device.queue.writeBuffer(c.overlay.uniformBuffer, 64, projection.buffer)

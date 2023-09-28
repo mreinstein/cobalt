@@ -72,6 +72,7 @@ import { ECS, vec2 }    from './deps.js'
 
 async function main () {
 
+
     const [ spritesheetJson, layers ] = await Promise.all([
         fetchJson('./assets/spritesheet.json'),
         fetchJson('./assets/sprite-layers.json')
@@ -208,7 +209,7 @@ async function main () {
 
             const { tileScale } = Game.renderer.tile
 
-            vec2.set(Game.renderer.viewport.position, Math.floor(x * tileScale), Math.floor(y * tileScale))
+            vec2.set(Math.floor(x * tileScale), Math.floor(y * tileScale), Game.renderer.viewport.position)
         }
 
         return { onUpdate }

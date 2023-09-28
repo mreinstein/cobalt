@@ -1,9 +1,5 @@
 import uuid                    from './uuid.js'
-import { vec4 }                from './deps.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
-
-
-const _tmpVec4 = vec4.create()
 
 
 // this corresponds to a WebGPU render pass.  It may handle 1 or more sprite layers.

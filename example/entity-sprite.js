@@ -9,14 +9,14 @@ export default function spriteEntity (world, opts) {
     const ENTITY = ECS.createEntity(world)
 
     ECS.addComponentToEntity(world, ENTITY, 'transform', transformComponent({
-        position: vec3.fromValues(opts.position[0], opts.position[1], 0)
+        position: vec3.create(opts.position[0], opts.position[1], 0)
     }))
 
     ECS.addComponentToEntity(world, ENTITY, 'animation', animationComponent({
         name: opts.name
     }))
 
-    const tint = vec4.fromValues(0, 0, 0, 0)
+    const tint = vec4.create(0, 0, 0, 0)
 
     const opacity = opts.opacity ?? 255
 
@@ -25,7 +25,7 @@ export default function spriteEntity (world, opts) {
                                            opts.position,
                                            opts.width,
                                            opts.height,
-                                           vec3.fromValues(1, 1, 1),
+                                           vec3.create(1, 1, 1),
                                            tint,
                                            opacity / 255,
                                            opts.rotation || 0,
@@ -36,9 +36,9 @@ export default function spriteEntity (world, opts) {
 
         layer: opts.layer,
         rotation: 0, // radians
-        scale: vec3.fromValues(1, 1, 1),
+        scale: vec3.create(1, 1, 1),
         opacity: 1,  // 0 is transparent, 1 is opaque
-        tint: vec4.fromValues(0, 0, 0, 0),
+        tint: vec4.create(0, 0, 0, 0),
 
         cobaltSpriteId,
     })

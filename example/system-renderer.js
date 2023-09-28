@@ -1,6 +1,6 @@
-import * as Cobalt   from '../bundle.js'
-import Game          from './Game.js'
-import { ECS, vec3 } from './deps.js'
+import * as Cobalt from '../bundle.js'
+import Game        from './Game.js'
+import { ECS }     from './deps.js'
 
 
 const SPRITE_QUERY = [ 'sprite' ]
@@ -10,7 +10,6 @@ const SPRITE_QUERY = [ 'sprite' ]
 export default function createRendererSystem (renderer) {
 
     // temporary variables, allocated once to avoid garbage collection
-    const _tmpVec3 = vec3.create()
     const buf = new Float32Array(136)  // tile instance data stored in a UBO
     const removedEntities = {
         count: 0,
