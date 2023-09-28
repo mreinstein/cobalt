@@ -1,4 +1,3 @@
-import sortedBinaryInsert      from './sorted-binary-insert.js'
 import uuid                    from './uuid.js'
 import { vec4 }                from './deps.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
