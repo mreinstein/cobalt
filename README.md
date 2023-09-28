@@ -5,7 +5,7 @@
 An opinionated 2D renderer based on WebGpu, designed for sprite and tile games that minimizes CPU usage and maximizes frame rate.
 
 
-## Required Goals
+## Goals
 
 * pure WebGpu: no fallbacks to WebGl or canvas
 * minimal abstractions: provide very light abstractions over what webgpu provides
@@ -15,16 +15,7 @@ An opinionated 2D renderer based on WebGpu, designed for sprite and tile games t
 * back-to-front z-indexing
 
 
-## Nice-to-have goals
-
-things I'm considering:
-
-* primitive drawing (lines, rectangles, ellipses, paths, etc.)
-* intuitive render graph for highly configurable render pipelines
-
-
 ## API
-
 
 ```js
 import * as Cobalt from 'cobalt'
@@ -61,4 +52,3 @@ Cobalt.configureTileRenderer(c, atlasTextureUrl, tileSize=16, tileScale=1.0)
 Cobalt.addTileLayer(c, scrollScale, tileMapTextureUrl, zIndex)
 Cobalt.removeTileLayer(c, tileLayerId)
 ```
-
