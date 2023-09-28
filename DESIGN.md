@@ -58,4 +58,4 @@ These use a `TileRenderPass` data structure which provides 100% GPU hardware bas
 Internally, `TileRenderPass` objects store 1 or more layers, which hold a reference to a sprite texture, and a layer texture.
 When a tile layer is drawn, it loads the 2 textures into the gpu. One of these textures is a lookup table, where each pixel corresponds to a type of sprite. Because this processing can happen completely in the fragment shader, there's no need to do expensive loops over slow arrays in js land, which is the typical approach for current state-of-the-art web renderers.
 
-[https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html](This is inspirted by Brandon's fantastic webgl hardware tile shader blog post that he wrote over a decade ago now.)
+[This is inspired by Brandon's fantastic webgl hardware tile shader blog post.](https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html)
