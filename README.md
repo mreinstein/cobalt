@@ -31,7 +31,7 @@ Cobalt.removeSprites(c)
 
 // camera/viewport related calls
 Cobalt.setViewportDimensions(c, width, height)
-Cobalt.setViewportPosition(c, pos)
+Cobalt.setViewportPosition(c, pos) // pos is a 2d vector [ x, y ]
 
 
 // sprite calls
@@ -49,6 +49,6 @@ Cobalt.setSpriteRotation(c, spriteId, rotation)
 
 // tile calls
 Cobalt.configureTileRenderer(c, atlasTextureUrl, tileSize=16, tileScale=1.0)
-Cobalt.addTileLayer(c, scrollScale, tileMapTextureUrl, zIndex)
+const tileLayerId = Cobalt.addTileLayer(c, scrollScale, tileMapTextureUrl, zIndex)
 Cobalt.removeTileLayer(c, tileLayerId)
 ```
