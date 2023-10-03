@@ -60,13 +60,14 @@ async function init (cobalt, nodeData) {
 }
 
 
-function draw (cobalt, nodeData, commandEncoder) {
-    
-	// TODO: maybe store a state variable on the cobalt object that tracks how many render nodes have run so far
-	// would be reset each frame
-	//
-	//const loadOp = 'clear' //(actualRenderCount < 1) ? 'clear' : 'load'
-    const loadOp = (nodeData.options.textureUrl === 'assets/spelunky0.png') ? 'clear' : 'load'
+
+// @param Integer runCount  how many nodes in the graph have been run already
+function draw (cobalt, nodeData, commandEncoder, runCount) {
+    const { device } = cobalt
+
+    // on the first render, we should clear the color attachment.
+    // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
+    const loadOp = (runCount === 0) ? 'clear' : 'load'
 
 	const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [

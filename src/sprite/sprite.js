@@ -20,9 +20,9 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, nodeData, webGpuCommandEncoder) {
+    onRun: function (cobalt, nodeData, webGpuCommandEncoder, runCount) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, nodeData, webGpuCommandEncoder)
+        draw(cobalt, nodeData, webGpuCommandEncoder, runCount)
     },
 
     onDestroy: function (cobalt, data) {
@@ -128,17 +128,13 @@ async function init (cobalt, nodeData) {
 }
 
 
-function draw (cobalt, nodeData, commandEncoder) {
+// @param Integer runCount  how many nodes in the graph have been run already
+function draw (cobalt, nodeData, commandEncoder, runCount) {
     const { device } = cobalt
 
-	// TODO: maybe store a state variable on the cobalt object that tracks how many render nodes have run so far
-	// would be reset each frame.
-    //
-    // another option: pass loadOp as a parameter to draw()
-	//
-	const loadOp = 'load' //(actualRenderCount < 1) ? 'clear' : 'load'
-	//actualSpriteRenderCount++
-    let actualSpriteRenderCount = 3
+    // on the first render, we should clear the color attachment.
+    // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
+	const loadOp = (runCount === 0) ? 'clear' : 'load'
 
     if (nodeData.data.dirty) {
         _rebuildSpriteDrawCalls(nodeData.data)

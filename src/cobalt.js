@@ -119,6 +119,8 @@ export function draw (c) {
 
     const v = c.context.getCurrentTexture().createView()
 
+    let runCount = 0 // track how many nodes have run so far this frame
+
     // run all of the defined nodes
     for (const n of c.nodes) {
         const nodeDef = c.nodeDefs[n.type]
@@ -128,7 +130,8 @@ export function draw (c) {
             if (arg.type === 'webGpuTextureFrameView')
                 n.refs[arg.name] = v
 
-        nodeDef.onRun(c, n, commandEncoder)
+        nodeDef.onRun(c, n, commandEncoder, runCount)
+        runCount++
     }
 
     device.queue.submit([ commandEncoder.finish() ])
