@@ -18,7 +18,7 @@ export default {
         draw(cobalt, nodeData, webGpuCommandEncoder)
     },
 
-    onDestroy: function (data) {
+    onDestroy: function (cobalt, data) {
         // any cleanup for your node should go here (releasing textures, etc.)
         //destroy(data)
     },

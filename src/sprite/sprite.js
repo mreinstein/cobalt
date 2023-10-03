@@ -1,5 +1,4 @@
-import createSpriteQuads    from './create-sprite-quads.js'
-import createTextureFromUrl from '../create-texture-from-url.js'
+import { FLOAT32S_PER_SPRITE } from '../constants.js'
 
 
 // an emissive sprite renderer
@@ -7,8 +6,7 @@ import createTextureFromUrl from '../create-texture-from-url.js'
 export default {
     type: 'sprite',
     refs: [
-        { name: 'colorSpriteSheet', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'read' },
-        { name: 'emissiveSpriteSheet', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'read' },
+        { name: 'spritesheet', type: 'customResource', access: 'read' },
         { name: 'hdr', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
         { name: 'emissive', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
     ],
@@ -24,7 +22,7 @@ export default {
         draw(cobalt, nodeData, webGpuCommandEncoder)
     },
 
-    onDestroy: function (data) {
+    onDestroy: function (cobalt, data) {
         // any cleanup for your node should go here (releasing textures, etc.)
         destroy(data)
     },
@@ -34,172 +32,137 @@ export default {
     },
 
     onViewportPosition: function (cobalt, data) {
-
     },
 }
 
 
+// This corresponds to a WebGPU render pass.  It handles 1 sprite layer.
 async function init (cobalt, nodeData) {
-    const { device } = cobalt
+    const { canvas, device } = cobalt
+    
+    const MAX_SPRITE_COUNT = 16192  // max number of sprites in a single sprite render pass
 
-    // TODO
+    const numInstances = MAX_SPRITE_COUNT
 
-    /*
-    // configure the common settings for sprite rendering
-    const { canvas, device } = c
+    const translateFloatCount = 2 // vec2
+    const translateSize = Float32Array.BYTES_PER_ELEMENT * translateFloatCount  // in bytes
 
-    const spritesheet = readSpriteSheet(spritesheetJson)
+    const scaleFloatCount = 2 // vec2
+    const scaleSize = Float32Array.BYTES_PER_ELEMENT * scaleFloatCount  // in bytes
 
-    const quads = createSpriteQuads(device, spritesheet)
+    const tintFloatCount = 4 // vec4
+    const tintSize = Float32Array.BYTES_PER_ELEMENT * tintFloatCount // in bytes
 
-    const [ material, emissiveTexture ] = await Promise.all([
-        createTextureFromUrl(c, 'sprite', spriteTextureUrl, 'rgba8unorm'),
-        createTextureFromUrl(c, 'emissive sprite', emissiveSpriteTextureUrl, 'rgba16float'),
-    ])
+    const opacityFloatCount = 4 // vec4. technically we only need 3 floats (opacity, rotation, emissiveIntensity) but that screws up data alignment in the shader
+    const opacitySize = Float32Array.BYTES_PER_ELEMENT * opacityFloatCount  // in bytes
 
-    // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
-    canvas.style.imageRendering = 'pixelated'
-
-    const uniformBuffer = device.createBuffer({
-        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    // instanced sprite data (scale, translation, tint, opacity, rotation, emissiveIntensity)
+    const spriteBuffer = device.createBuffer({
+        size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances, // 4x4 matrix with 4 bytes per float32, per instance
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        //mappedAtCreation: true,
     })
 
-    const bindGroupLayout = device.createBindGroupLayout({
+    const bindGroup = device.createBindGroup({
+        layout: cobalt.resources.spritesheet.data.bindGroupLayout,
         entries: [
             {
                 binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { }
+                resource: {
+                    buffer: cobalt.resources.spritesheet.data.uniformBuffer
+                }
             },
             {
                 binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
+                resource: cobalt.resources.spritesheet.data.colorTexture.view
             },
             {
                 binding: 2,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
+                resource: cobalt.resources.spritesheet.data.colorTexture.sampler
             },
             {
                 binding: 3,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'read-only-storage'
+                resource: {
+                    buffer: spriteBuffer
                 }
             },
             {
                 binding: 4,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
+                resource: cobalt.resources.spritesheet.data.emissiveTexture.view
             },
-        ],
+        ]
     })
 
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
-    })
+    return {
+        // instancedDrawCalls is used to actually perform draw calls within the render pass
+        // layout is interleaved with baseVtxIdx (the sprite type), and instanceCount (how many sprites)
+        // [
+        //    baseVtxIdx0, instanceCount0,
+        //    baseVtxIdx1, instanceCount1,
+        //    ...
+        // ]
+        instancedDrawCalls: new Uint32Array(MAX_SPRITE_COUNT * 2),
+        instancedDrawCallCount: 0,
 
-    const pipeline = device.createRenderPipeline({
-        label: 'sprite',
-        vertex: {
-            module: device.createShaderModule({
-                code: spriteWGSL
-            }),
-            entryPoint: 'vs_main',
-            buffers: [ quads.bufferLayout ]
-        },
+        bindGroup,
+        spriteBuffer,
 
-        fragment: {
-            module: device.createShaderModule({
-                code: spriteWGSL
-            }),
-            entryPoint: 'fs_main',
-            targets: [
-                // color
-                {
-                    format: 'rgba16float',
-                    blend: {
-                        color: {
-                            srcFactor: 'src-alpha',
-                            dstFactor: 'one-minus-src-alpha',
-                        },
-                        alpha: {
-                            srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                },
+        // actual sprite instance data. ordered by layer, then sprite type
+        // this is used to update the spriteBuffer.
+        spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE), 
+        spriteCount: 0,
 
-                // emissive
-                {
-                    format: 'rgba16float',
-                }
-            ]
-        },
+        spriteIndices: new Map(), // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
 
-        primitive: {
-            topology: 'triangle-list'
-        },
-
-        layout: pipelineLayout
-    })
-    
-    c.sprite = {
-        renderPassLookup: new Map(), // key is spriteId, value is the cobalt.renderPasses[] entry containing this sprite
-        pipeline,
-        uniformBuffer, // perspective and view matrices for the camera
-        quads,
-        material,
-        emissiveTexture,
-        bindGroupLayout,
-        spritesheet,
+        // when a sprite is changed the renderpass is dirty, and should have it's instance data copied to the gpu
+        dirty: false,
     }
-    */
 }
 
 
 function draw (cobalt, nodeData, commandEncoder) {
-    /*
+    const { device } = cobalt
+
 	// TODO: maybe store a state variable on the cobalt object that tracks how many render nodes have run so far
-	// would be reset each frame
+	// would be reset each frame.
+    //
+    // another option: pass loadOp as a parameter to draw()
 	//
-	//const loadOp = 'clear' //(actualRenderCount < 1) ? 'clear' : 'load'
-    const loadOp = (nodeData.options.textureUrl === 'assets/spelunky0.png') ? 'clear' : 'load'
+	const loadOp = 'load' //(actualRenderCount < 1) ? 'clear' : 'load'
+	//actualSpriteRenderCount++
+    let actualSpriteRenderCount = 3
 
-	actualSpriteRenderCount++
-
-    if (renderPass.dirty) {
-        _rebuildSpriteDrawCalls(renderPass)
-        renderPass.dirty = false
+    if (nodeData.data.dirty) {
+        _rebuildSpriteDrawCalls(nodeData.data)
+        nodeData.data.dirty = false
     }
 
-    device.queue.writeBuffer(renderPass.spriteBuffer, 0, renderPass.spriteData.buffer)
+    device.queue.writeBuffer(nodeData.data.spriteBuffer, 0, nodeData.data.spriteData.buffer)
 
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             // color
             {
-                view: c.resources.hdr.data.value.view, //c.tmp_hdr_texture.view, // OLD c.bloom.hdr_texture.view,
-                clearValue: c.clearValue,
+                view: cobalt.resources.hdr.data.value.view,
+                clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'
             },
 
             // emissive
             {
-                view:  c.resources.emissive.data.value.view, //c.tmp_emissive_texture.view, // OLD c.bloom.emissiveTextureView,
-                clearValue: c.clearValue,
+                view: cobalt.resources.emissive.data.value.view,
+                clearValue: cobalt.clearValue,
+                // TODO: why less than 2?? what crazy ass magic number is this??
                 loadOp: (actualSpriteRenderCount < 2) ? 'clear' : 'load',
                 storeOp: 'store'
             }
         ]
     })
 
-    renderpass.setPipeline(c.sprite.pipeline)
-    renderpass.setBindGroup(0, renderPass.bindGroup)
-    renderpass.setVertexBuffer(0, c.sprite.quads.buffer)
+    renderpass.setPipeline(cobalt.resources.spritesheet.data.pipeline)
+    renderpass.setBindGroup(0, cobalt.resources.spritesheet.data.bindGroup)
+    renderpass.setVertexBuffer(0, cobalt.resources.spritesheet.data.quads.buffer)
 
     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
     //      renderpass.draw(6,  1,  0, 0)  //  1 hero instance
@@ -210,23 +173,22 @@ function draw (cobalt, nodeData, commandEncoder) {
     const vertexCount = 6
     let baseInstanceIdx = 0
 
-    for (let i=0; i < renderPass.instancedDrawCallCount; i++) {
+    for (let i=0; i < cobalt.resources.spritesheet.data.instancedDrawCallCount; i++) {
         // [
         //    baseVtxIdx0, instanceCount0,
         //    baseVtxIdx1, instanceCount1,
         //    ...
         // ]
-        const baseVertexIdx = renderPass.instancedDrawCalls[i*2  ] * vertexCount
-        const instanceCount = renderPass.instancedDrawCalls[i*2+1]
+        const baseVertexIdx = cobalt.resources.spritesheet.data.instancedDrawCalls[i*2  ] * vertexCount
+        const instanceCount = cobalt.resources.spritesheet.data.instancedDrawCalls[i*2+1]
         renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx)
         baseInstanceIdx += instanceCount
     }
 
     renderpass.end()
-    */
 }
 
-/*
+
 // build instancedDrawCalls
 function _rebuildSpriteDrawCalls (renderPass) {
     let currentSpriteType = -1
@@ -260,49 +222,22 @@ function _rebuildSpriteDrawCalls (renderPass) {
 }
 
 
-function _writeSpriteBuffer (c) {
-    // TODO: achieve zoom instead by adjusting the left/right/bottom/top based on scale factor?
-    //                out    left   right    bottom   top     near     far
-    //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
-
-    const GAME_WIDTH = c.viewport.width / c.viewport.zoom
-    const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
-
-    //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
-
-
-    //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
-
-    // set x,y,z camera position
-    vec3.set(-c.viewport.position[0], -c.viewport.position[1], 0, _tmpVec3)
-    const view = mat4.translation(_tmpVec3)
-
-    // might be useful if we ever switch to a 3d perspective camera setup
-    //mat4.lookAt(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
-    //mat4.targetTo(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
-
-    // camera zoom
-    //mat4.scale(view, view, [ 0.9, 0.9, 1 ])
-
-    //mat4.fromScaling(view, [ 1.5, 1.5, 1 ])
-    //mat4.translate(view, view, [ 0, 0, 0 ])
-
-    c.device.queue.writeBuffer(c.sprite.uniformBuffer, 0, view.buffer)
-    c.device.queue.writeBuffer(c.sprite.uniformBuffer, 64, projection.buffer)
-}
-*/
-
-
 function destroy (nodeData) {
-    /*
-    if (c.sprite) {
-        c.sprite.renderPassLookup.clear()
-        c.sprite.quads.buffer.destroy()
-        c.sprite.material.buffer.destroy()
-        c.sprite.uniformBuffer.destroy()
-        c.sprite.emissiveTexture.texture.destroy()
-        c.sprite = null
-    }
-    */
+    nodeData.data.instancedDrawCalls = null
+    
+    nodeData.data.bindGroup = null
+
+    nodeData.data.spriteBuffer.destroy()
+    nodeData.data.spriteBuffer = null
+
+    nodeData.data.spriteData = null
+    nodeData.data.spriteIndices.clear()
+    nodeData.data.spriteIndices = null
 }
+
+
+async function fetchJson (url) {
+    const raw = await fetch(url)
+    return raw.json()
+}
+

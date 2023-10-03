@@ -6,7 +6,7 @@ import tileWGSL             from './tile.wgsl'
 const _buf = new Float32Array(136)  // tile instance data stored in a UBO
 
 
-// shared tile atlas resource, used by each tile render pass
+// shared tile atlas resource, used by each tile render node
 export default {
     type: 'tileAtlas',
     refs: [ ],
@@ -21,7 +21,7 @@ export default {
         // do whatever you need for this node. webgpu renderpasses, etc.
     },
 
-    onDestroy: function (data) {
+    onDestroy: function (cobalt, data) {
         // any cleanup for your node should go here (releasing textures, etc.)
         destroy(data)
     },

@@ -30,7 +30,7 @@ struct mode_lod_param {
 
 
 // PushConstants don't work in webgpu in chrome because they've been removed from the spec for v1 :(
-// might be added after v1 though https://github.com/gpuweb/gpuweb/issues/612#issuecomment-599063640
+// might be added after v1 though https://github.com/gpuweb/gpuweb/issues/75
 //var<push_constant> pc: PushConstants;
 
 

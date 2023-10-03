@@ -17,7 +17,7 @@ export default {
         // do whatever you need for this node. webgpu renderpasses, etc.
     },
 
-    onDestroy: function (data) {
+    onDestroy: function (cobalt, data) {
         // any cleanup for your node should go here (releasing textures, etc.)
         destroy(data)
     },

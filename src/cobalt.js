@@ -19,6 +19,7 @@ import spriteNode                                     from './sprite/sprite.js'
 import tileNode                                       from './tile/tile.js'
 // built-in resource nodes
 import tileAtlasNode                                  from './tile/atlas.js'
+import spritesheetNode                                from './sprite/spritesheet.js'
 import fbTextureNode                                  from './fb-texture/fb-texture.js'
 
 
@@ -47,7 +48,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
     })
 
     const nodeDefs = {
-        // TODO: consider namespacing the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
+        // TODO: namespace the builtins  e.g., builtin_bloom or cobalt_bloom, etc.
         //
         // builtin node types
         bloom: bloomNode,
@@ -55,6 +56,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         sprite: spriteNode,
         tile: tileNode,
         tileAtlas: tileAtlasNode,
+        spritesheet: spritesheetNode,
         fbTexture: fbTextureNode,
     }
 
@@ -64,13 +66,6 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         nodes: [ ],
 
         // named resources shard/referenced across run nodes
-        /*
-        resources: {
-            tileAtlas: {
-                value: { texture, view },
-            },
-        }
-        */
         resources: { },
 
 		canvas,
@@ -116,7 +111,7 @@ export function defineNode (c, nodeDefinition) {
         onRun: function (cobalt, data, webGpuCommandEncoder) {
             // do whatever you need for this node. webgpu renderpasses, etc.
         },
-        onDestroy: function (data) {
+        onDestroy: function (cobalt, data) {
             // any cleanup for your node should go here (releasing textures, etc.)
         },
         onResize: function (cobalt, data) {
@@ -147,22 +142,6 @@ export async function addResourceNode (c, nodeData) {
 
 
 export async function initNode (c, nodeData) {
-    /*
-    sample nodeData
-    {
-        type: 'bloom',
-        // refs are named links to other nodes
-        refs: {
-            emissive: texView1,
-            hdr: texView2,
-            bloom: texView3
-        },
-        options: {
-            // any extra options you want to pass to this node
-        }
-    }
-    */
-
     const nodeDef = c.nodeDefs[nodeData?.type]
 
     if (!nodeDef)
@@ -406,6 +385,12 @@ export function reset (c) {
     }
 
     c.resources = { }
+
+    for (const n of c.nodes) {
+        const nodeDef = c.nodeDefs[n.type]
+        nodeDef.onDestroy(c, n)
+    }
+    c.nodes.length = 0
 }
 
 

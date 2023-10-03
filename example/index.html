@@ -72,7 +72,15 @@ import { ECS, vec2 }    from './deps.js'
 
 async function main () {
 
+    const canvas = document.querySelector('canvas')
 
+    const viewportWidth = constants.GAME_WIDTH
+    const viewportHeight = constants.GAME_HEIGHT
+    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+
+
+     ///////////////////
+    //  TODO: remove this sprite stuff
     const [ spritesheetJson, layers ] = await Promise.all([
         fetchJson('./assets/spritesheet.json'),
         fetchJson('./assets/sprite-layers.json')
@@ -85,20 +93,15 @@ async function main () {
         Game.layers[layer.zIndex] = { name: layerName, type: layer.type}
     }
 
-    const canvas = document.querySelector('canvas')
-
-    const viewportWidth = constants.GAME_WIDTH
-    const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
-
-
     const spriteTextureUrl = 'assets/spritesheet.png'
     const emissiveSpriteTextureUrl = 'assets/spritesheet_emissive.png'
     //const spritesheetJson = await fetchJson('/assets/spritesheet.json')
     await Cobalt.configureSpriteRenderer(Game.renderer, spritesheetJson, spriteTextureUrl, emissiveSpriteTextureUrl)
-
     
     Cobalt.configureLayers(Game.renderer, Game.layers)
+    ////////////////////////////
+
+
 
     const tileAtlasNode = await Cobalt.addResourceNode(Game.renderer, {
         name: 'tileAtlas',
@@ -141,6 +144,32 @@ async function main () {
             //zIndex: 5,
         }
     })
+
+    const spritesheet = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'spritesheet',
+        type: 'spritesheet',
+        refs: { },
+        options: {
+            spriteSheetJsonUrl: './assets/spritesheet.json',
+            colorTextureUrl: 'assets/spritesheet.png',
+            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
+        }
+    })
+
+    const spriteNode = await Cobalt.initNode(Game.renderer, {
+        type: 'sprite',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            spritesheet: 'spritesheet',
+            emissive: 'emissive',
+            hdr: 'hdr',
+        },
+        options: {
+            //zIndex: 5,
+        }
+    })
+
 
     // create the shared textures
     const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
@@ -191,12 +220,6 @@ async function main () {
     }, 50)
 
     window.addEventListener('resize', debouncedResize, { passive: true })
-
-
-    const world = ECS.createWorld()
-    ECS.addSystem(world, rendererSystem(Game.renderer))
-    ECS.addSystem(world, animationSystem)
-
 
 
     // link the shared textures to nodes
@@ -288,6 +311,10 @@ async function main () {
     }
 
     
+    const world = ECS.createWorld()
+    ECS.addSystem(world, rendererSystem(Game.renderer))
+    ECS.addSystem(world, animationSystem)
+
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
             const elapsed = performance.now()
@@ -301,8 +328,6 @@ async function main () {
 
         return { onUpdate }
     })
-    
-    
     
 
     Game.world = world
