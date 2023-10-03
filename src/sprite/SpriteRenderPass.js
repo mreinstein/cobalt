@@ -1,123 +1,15 @@
 import sortedBinaryInsert      from './sorted-binary-insert.js'
 import uuid                    from '../uuid.js'
-import { FLOAT32S_PER_SPRITE } from '../constants.js'
-
-
-// this corresponds to a WebGPU render pass.  It may handle 1 or more sprite layers.
-export function create (renderer, minLayer, maxLayer) {
-    const device = renderer.device
-
-    const MAX_SPRITE_COUNT = 16192  // max number of sprites in a single sprite render pass
-
-    const numInstances = MAX_SPRITE_COUNT
-
-    const translateFloatCount = 2 // vec2
-    const translateSize = Float32Array.BYTES_PER_ELEMENT * translateFloatCount  // in bytes
-
-    const scaleFloatCount = 2 // vec2
-    const scaleSize = Float32Array.BYTES_PER_ELEMENT * scaleFloatCount  // in bytes
-
-    const tintFloatCount = 4 // vec4
-    const tintSize = Float32Array.BYTES_PER_ELEMENT * tintFloatCount // in bytes
-
-    const opacityFloatCount = 4 // vec4. technically we only need 3 floats (opacity, rotation, emissiveIntensity) but that screws up data alignment in the shader
-    const opacitySize = Float32Array.BYTES_PER_ELEMENT * opacityFloatCount  // in bytes
-
-    // instanced sprite data (scale, translation, tint, opacity, rotation, emissiveIntensity)
-    const spriteBuffer = device.createBuffer({
-        size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances, // 4x4 matrix with 4 bytes per float32, per instance
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        //mappedAtCreation: true,
-    })
-
-    const bindGroup = device.createBindGroup({
-        layout: renderer.sprite.bindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: renderer.sprite.uniformBuffer
-                }
-            },
-            {
-                binding: 1,
-                resource: renderer.sprite.material.view
-            },
-            {
-                binding: 2,
-                resource: renderer.sprite.material.sampler
-            },
-            {
-                binding: 3,
-                resource: {
-                    buffer: spriteBuffer
-                }
-            },
-            {
-                binding: 4,
-                resource: renderer.sprite.emissiveTexture.view
-            },
-        ]
-    })
-
-    return {
-        type: 'sprite',
-
-        // layer range this render pass is responsible for drawing.
-        minLayer,
-        maxLayer,
-
-        id: uuid(),
-
-        // instancedDrawCalls is used to actually perform draw calls within the render pass
-        // layout is interleaved with baseVtxIdx (the sprite type), and instanceCount (how many sprites)
-        // [
-        //    baseVtxIdx0, instanceCount0,
-        //    baseVtxIdx1, instanceCount1,
-        //    ...
-        // ]
-        instancedDrawCalls: new Uint32Array(MAX_SPRITE_COUNT * 2),
-        instancedDrawCallCount: 0,
-
-        bindGroup,
-        spriteBuffer,
-
-        // actual sprite instance data. ordered by layer, then sprite type
-        // this is used to update the spriteBuffer.
-        spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE), 
-        spriteCount: 0,
-
-        spriteIndices: new Map(), // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
-
-        // when a sprite is changed the renderpass is dirty, and should have it's instance data copied to the gpu
-        dirty: false,
-    }
-}
-
-
-export function destroy (c, rp) {
-    rp.instancedDrawCalls = null
-    
-    rp.bindGroup = null
-
-    rp.spriteBuffer.destroy()
-    rp.spriteBuffer = null
-
-    rp.spriteData = null
-    rp.spriteIndices.clear()
-    rp.spriteIndices = null
-}
+import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 
 // returns a unique identifier for the created sprite
-export function addSprite (c, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+export function addSprite (cobalt, renderPass, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
 
-    const renderPass = c.renderPasses.find((rp) => rp.type !== 'tile' && rp.minLayer <= zIndex && rp.maxLayer >= zIndex)
+    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    renderPass = renderPass.data
 
-    if (!renderPass)
-        throw new Error(`Unable to add sprite; zIndex ${zIndex} not declared in layers`)
-
-    const spriteType = c.sprite.spritesheet.locations.indexOf(name)
+    const spriteType = spritesheet.locations.indexOf(name)
 
     // find the place in our spriteData where this sprite belongs.
     const insertIdx = sortedBinaryInsert(zIndex, spriteType, renderPass)
@@ -130,10 +22,10 @@ export function addSprite (c, name, position, width, height, scale, tint, opacit
         offset
     )
 
-    copySpriteDataToBuffer(c.sprite.spritesheet, renderPass, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+    copySpriteDataToBuffer(renderPass, spritesheet, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
 
     // shift down all of the sprite indices
-    for (const [ spriteId, idx] of renderPass.spriteIndices)
+    for (const [ spriteId, idx ] of renderPass.spriteIndices)
         if (idx >= insertIdx)
             renderPass.spriteIndices.set(spriteId, idx+1)
 
@@ -141,27 +33,21 @@ export function addSprite (c, name, position, width, height, scale, tint, opacit
     // reference it later, when we need to remove or update this sprite component
     const spriteId = uuid()
 
-    c.sprite.renderPassLookup.set(spriteId, renderPass)
+    //c.sprite.renderPassLookup.set(spriteId, renderPass)
     renderPass.spriteIndices.set(spriteId, insertIdx)
-
     renderPass.spriteCount++
-
     renderPass.dirty = true
-    
+
     return spriteId
 }
 
 
-export function removeSprite (c, spriteId) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
-
-    if (!renderPass)
-        throw new Error(`Unable to remove sprite; spriteId ${spriteId} could not be found in any render passes`)
-
+export function removeSprite (cobalt, renderPass, spriteId) {
+    renderPass = renderPass.data
     const removeIdx = renderPass.spriteIndices.get(spriteId)
 
     // shift up all of the sprites after the remove location by 1
-    for (const [ spriteId, idx] of renderPass.spriteIndices)
+    for (const [ spriteId, idx ] of renderPass.spriteIndices)
         if (idx > removeIdx)
             renderPass.spriteIndices.set(spriteId, idx-1)
 
@@ -174,25 +60,20 @@ export function removeSprite (c, spriteId) {
     )
 
     renderPass.spriteIndices.delete(spriteId)
-
-    c.sprite.renderPassLookup.delete(spriteId)
-
+    //c.sprite.renderPassLookup.delete(spriteId)
     renderPass.spriteCount--
-
     renderPass.dirty = true
 }
 
 
-export function setSpriteName (c, spriteId, name, scale) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+export function setSpriteName (cobalt, renderPass, spriteId, name, scale) {
+    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    renderPass = renderPass.data
 
-    if (!renderPass)
-        throw new Error(`Unable to update sprite name; spriteId ${spriteId} could not be found in any render passes`)
+    const spriteType = spritesheet.locations.indexOf(name)
 
-    const spriteType = c.sprite.spritesheet.locations.indexOf(name)
-
-    const SPRITE_WIDTH = c.sprite.spritesheet.spriteMeta[name].w
-    const SPRITE_HEIGHT = c.sprite.spritesheet.spriteMeta[name].h
+    const SPRITE_WIDTH = spritesheet.spriteMeta[name].w
+    const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
     const offset = spriteIdx * FLOAT32S_PER_SPRITE
@@ -213,11 +94,8 @@ export function setSpriteName (c, spriteId, name, scale) {
 }
 
 
-export function setSpritePosition (c, spriteId, position) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
-
-    if (!renderPass)
-        throw new Error(`Unable to update sprite position; spriteId ${spriteId} could not be found in any render passes`)
+export function setSpritePosition (cobalt, renderPass, spriteId, position) {
+    renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
     const offset = spriteIdx * FLOAT32S_PER_SPRITE
@@ -229,12 +107,9 @@ export function setSpritePosition (c, spriteId, position) {
 }
 
 
-export function setSpriteTint (c, spriteId, tint) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+export function setSpriteTint (cobalt, renderPass, spriteId, tint) {
+    renderPass = renderPass.data
 
-    if (!renderPass)
-        throw new Error(`Unable to update sprite tint; spriteId ${spriteId} could not be found in any render passes`)
-    
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
     const offset = spriteIdx * FLOAT32S_PER_SPRITE
 
@@ -247,11 +122,8 @@ export function setSpriteTint (c, spriteId, tint) {
 }
 
 
-export function setSpriteOpacity (c, spriteId, opacity) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
-
-    if (!renderPass)
-        throw new Error(`Unable to update sprite opacity; spriteId ${spriteId} could not be found in any render passes`)
+export function setSpriteOpacity (cobalt, renderPass, spriteId, opacity) {
+    renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
     const offset = spriteIdx * FLOAT32S_PER_SPRITE
@@ -262,12 +134,9 @@ export function setSpriteOpacity (c, spriteId, opacity) {
 }
 
 
-export function setSpriteRotation (c, spriteId, rotation) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
+export function setSpriteRotation (cobalt, renderPass, spriteId, rotation) {
+    renderPass = renderPass.data
 
-    if (!renderPass)
-        throw new Error(`Unable to update sprite rotation; spriteId ${spriteId} could not be found in any render passes`)
-    
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
     const offset = spriteIdx * FLOAT32S_PER_SPRITE
 
@@ -276,21 +145,19 @@ export function setSpriteRotation (c, spriteId, rotation) {
 }
 
 
-export function setSprite (c, spriteId, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
-    const renderPass = c.sprite.renderPassLookup.get(spriteId)
-
-    if (!renderPass)
-        throw new Error(`Unable to update sprite rotation; spriteId ${spriteId} could not be found in any render passes`)
+export function setSprite (cobalt, renderPass, spriteId, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
-    copySpriteDataToBuffer(c.sprite.spritesheet, renderPass, spriteIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+    copySpriteDataToBuffer(renderPass, spritesheet, spriteIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
 
     renderPass.dirty = true
 }
 
 
 // copy sprite data into the webgpu renderpass
-function copySpriteDataToBuffer (spritesheet, renderPass, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+function copySpriteDataToBuffer (renderPass, spritesheet, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
     const offset = insertIdx * FLOAT32S_PER_SPRITE
 
     const SPRITE_WIDTH = spritesheet.spriteMeta[name].w

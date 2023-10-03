@@ -1,4 +1,5 @@
-import { FLOAT32S_PER_SPRITE } from '../constants.js'
+import * as SpriteRenderPass   from './SpriteRenderPass.js'
+import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 
 // an emissive sprite renderer
@@ -10,6 +11,8 @@ export default {
         { name: 'hdr', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
         { name: 'emissive', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
     ],
+
+    // cobalt event handling functions
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
@@ -32,6 +35,11 @@ export default {
     },
 
     onViewportPosition: function (cobalt, data) {
+    },
+
+    // optional
+    customFunctions: {
+        ...SpriteRenderPass,
     },
 }
 
@@ -154,14 +162,14 @@ function draw (cobalt, nodeData, commandEncoder) {
                 view: cobalt.resources.emissive.data.value.view,
                 clearValue: cobalt.clearValue,
                 // TODO: why less than 2?? what crazy ass magic number is this??
-                loadOp: (actualSpriteRenderCount < 2) ? 'clear' : 'load',
+                loadOp: 'clear', //(actualSpriteRenderCount < 2) ? 'clear' : 'load',
                 storeOp: 'store'
             }
         ]
     })
 
     renderpass.setPipeline(cobalt.resources.spritesheet.data.pipeline)
-    renderpass.setBindGroup(0, cobalt.resources.spritesheet.data.bindGroup)
+    renderpass.setBindGroup(0, nodeData.data.bindGroup)
     renderpass.setVertexBuffer(0, cobalt.resources.spritesheet.data.quads.buffer)
 
     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
@@ -173,14 +181,14 @@ function draw (cobalt, nodeData, commandEncoder) {
     const vertexCount = 6
     let baseInstanceIdx = 0
 
-    for (let i=0; i < cobalt.resources.spritesheet.data.instancedDrawCallCount; i++) {
+    for (let i=0; i < nodeData.data.instancedDrawCallCount; i++) {
         // [
         //    baseVtxIdx0, instanceCount0,
         //    baseVtxIdx1, instanceCount1,
         //    ...
         // ]
-        const baseVertexIdx = cobalt.resources.spritesheet.data.instancedDrawCalls[i*2  ] * vertexCount
-        const instanceCount = cobalt.resources.spritesheet.data.instancedDrawCalls[i*2+1]
+        const baseVertexIdx = nodeData.data.instancedDrawCalls[i*2  ] * vertexCount
+        const instanceCount = nodeData.data.instancedDrawCalls[i*2+1]
         renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx)
         baseInstanceIdx += instanceCount
     }

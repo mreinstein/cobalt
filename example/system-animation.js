@@ -20,9 +20,9 @@ export default function animationSystem (world) {
             if (e.animation.accumulator % 7 === 0) {
                 //                                            frame count 
                 e.animation.frame = (e.animation.frame + 1) % 6
-                Cobalt.setSpriteName(Game.renderer, e.sprite.cobaltSpriteId, `bucky_repeater_shoot_forward-${e.animation.frame}.png`, e.sprite.scale)
+                e.sprite.spriteNode.setSpriteName(e.sprite.cobaltSpriteId, `bucky_repeater_shoot_forward-${e.animation.frame}.png`, e.sprite.scale)
             } else {
-                Cobalt.setSpriteRotation(Game.renderer, e.sprite.cobaltSpriteId, e.sprite.rotation + 0.01)
+                 e.sprite.spriteNode.setSpriteRotation(e.sprite.cobaltSpriteId, e.sprite.rotation + 0.01)
             }
 
             // copying the entire sprite is quite a bit slower when dealing with high sprite counts

@@ -20,8 +20,9 @@ export default function spriteEntity (world, opts) {
 
     const opacity = opts.opacity ?? 255
 
-    const cobaltSpriteId = Cobalt.addSprite(Game.renderer,
-                                           opts.name, 
+    const spriteNode = opts.spriteNode
+
+    const cobaltSpriteId = spriteNode.addSprite(opts.name, 
                                            opts.position,
                                            opts.width,
                                            opts.height,
@@ -40,7 +41,9 @@ export default function spriteEntity (world, opts) {
         opacity: 1,  // 0 is transparent, 1 is opaque
         tint: vec4.create(0, 0, 0, 0),
 
+        // cobalt references
         cobaltSpriteId,
+        spriteNode,
     })
 
     return ENTITY

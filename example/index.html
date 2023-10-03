@@ -78,31 +78,6 @@ async function main () {
     const viewportHeight = constants.GAME_HEIGHT
     Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
-
-     ///////////////////
-    //  TODO: remove this sprite stuff
-    const [ spritesheetJson, layers ] = await Promise.all([
-        fetchJson('./assets/spritesheet.json'),
-        fetchJson('./assets/sprite-layers.json')
-    ])
-
-    Game.layers = new Array(Object.keys(layers).length)
-
-    for (const layerName in layers) {
-        const layer = layers[layerName]
-        Game.layers[layer.zIndex] = { name: layerName, type: layer.type}
-    }
-
-    const spriteTextureUrl = 'assets/spritesheet.png'
-    const emissiveSpriteTextureUrl = 'assets/spritesheet_emissive.png'
-    //const spritesheetJson = await fetchJson('/assets/spritesheet.json')
-    await Cobalt.configureSpriteRenderer(Game.renderer, spritesheetJson, spriteTextureUrl, emissiveSpriteTextureUrl)
-    
-    Cobalt.configureLayers(Game.renderer, Game.layers)
-    ////////////////////////////
-
-
-
     const tileAtlasNode = await Cobalt.addResourceNode(Game.renderer, {
         name: 'tileAtlas',
         type: 'tileAtlas',
@@ -340,7 +315,8 @@ async function main () {
         zIndex: 4,
         emissiveIntensity: 0.5,
         width: 14,
-        height: 15
+        height: 15,
+        spriteNode,
     })
 
     const s = spriteEntity(world, {
@@ -349,7 +325,8 @@ async function main () {
         zIndex: 4,
         emissiveIntensity: 0.5,
         width: 14,
-        height: 15
+        height: 15,
+        spriteNode,
     })
 
 
@@ -368,12 +345,6 @@ function tick (context) {
     context.lastFrameTime = newTime
     ECS.update(context.world, frameTime)
     ECS.cleanup(context.world)
-}
-
-
-async function fetchJson (url) {
-    const raw = await fetch(url)
-    return raw.json()
 }
 
 

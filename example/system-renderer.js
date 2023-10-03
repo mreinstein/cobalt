@@ -27,7 +27,7 @@ export default function createRendererSystem (renderer) {
 
             for (let i=0; i < removedEntities.count; i++) {
                 const oldSprite = removedEntities.entries[i]
-                Cobalt.removeSprite(Game.renderer, oldSprite.sprite.cobaltSpriteId)
+                oldSprite.spriteNode.removeSprite(oldSprite.sprite.cobaltSpriteId)
             }
 
             Cobalt.draw(Game.renderer)
