@@ -90,7 +90,7 @@ async function main () {
         }
     })
 
-    const tileNode2 = await Cobalt.initNode(Game.renderer, {
+    const tileNode = await Cobalt.initNode(Game.renderer, {
         type: 'tile',
         refs: {
             // key is the var name defined in this node
@@ -105,7 +105,7 @@ async function main () {
         }
     })
 
-    const tileNode = await Cobalt.initNode(Game.renderer, {
+    const tileNode2 = await Cobalt.initNode(Game.renderer, {
         type: 'tile',
         refs: {
             // key is the var name defined in this node
@@ -144,6 +144,7 @@ async function main () {
             //zIndex: 5,
         }
     })
+    
 
 
     // create the shared textures
@@ -308,7 +309,6 @@ async function main () {
     Game.world = world
 
     // test sprites
-
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
         position: [ 50, 50 ],
@@ -328,7 +328,6 @@ async function main () {
         height: 15,
         spriteNode,
     })
-
 
     const gameLoop = function () {
         tick(Game)

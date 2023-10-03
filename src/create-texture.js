@@ -27,7 +27,7 @@ export default function createTexture (device, label, width, height, mip_count, 
         }))
 
     const sampler = device.createSampler({
-        label: 'hdr sampler',
+        label: `${label} sampler`,
         addressModeU: 'clamp-to-edge',
         addressModeV: 'clamp-to-edge',
         addressModeW: 'clamp-to-edge',

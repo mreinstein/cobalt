@@ -4,21 +4,24 @@ struct TransformData {
     inverseAtlasTextureSize: vec2<f32>,
     tileSize: f32,
     inverseTileSize: f32,
-    tileLayers: array<TileLayer, 32>,
+    //tileLayers: array<TileLayer, 32>,
 };
 
-struct TileLayer {
-    scrollScale: vec2<f32>,
-    inverseTileTextureSize: vec2<f32>
-};
 
-struct TileLayersBuffer {
-  models: array<TileLayer>,
+//struct TileLayer {
+//    scrollScale: vec2<f32>,
+//    inverseTileTextureSize: vec2<f32>
+//};
+
+
+struct TileScroll {
+    scrollScale: vec2<f32>
 };
 
 // individual tile texture
-@binding(0) @group(0) var tileTexture: texture_2d<f32>;
-@binding(1) @group(0) var tileSampler: sampler;
+@binding(0) @group(0) var<uniform> myScroll: TileScroll;
+@binding(1) @group(0) var tileTexture: texture_2d<f32>;
+@binding(2) @group(0) var tileSampler: sampler;
 
 // common to all tile layers
 @binding(0) @group(1) var<uniform> transformUBO: TransformData;
@@ -41,7 +44,7 @@ fn vs_main (@builtin(instance_index) i_id : u32,
 
     let inverseTileTextureSize = 1 / vec2<f32>(textureDimensions(tileTexture, 0));  // transformUBO.tileLayers[i_id].inverseTileTextureSize;
 
-    var scrollScale = transformUBO.tileLayers[i_id].scrollScale;
+    var scrollScale = myScroll.scrollScale; //transformUBO.tileLayers[i_id].scrollScale;
 
     var viewOffset : vec2<f32> = transformUBO.viewOffset * scrollScale;
 
@@ -64,6 +67,10 @@ fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
     var u_tilemapSize = vec2<f32>(textureDimensions(tileTexture, 0));
     var tileFoo = fract((tilemapCoord + vec2<f32>(0.5, 0.5)) / u_tilemapSize);
     var tile = floor(textureSample(tileTexture, tileSampler, tileFoo) * 255.0);
+
+    if (tile.x == 255 && tile.y == 255) {
+        discard;
+    }
 
     var u_tilesetSize = vec2<f32>(textureDimensions(atlasTexture, 0)) / transformUBO.tileSize;
 

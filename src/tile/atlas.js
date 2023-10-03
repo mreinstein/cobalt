@@ -3,7 +3,7 @@ import createTileQuad       from './create-tile-quad.js'
 import tileWGSL             from './tile.wgsl'
 
 
-const _buf = new Float32Array(136)  // tile instance data stored in a UBO
+const _buf = new Float32Array(8) //(136)  // tile instance data stored in a UBO
 
 
 // shared tile atlas resource, used by each tile render node
@@ -45,7 +45,7 @@ async function init (cobalt, nodeData) {
     const atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl)
 
     const uniformBuffer = device.createBuffer({
-        size: 32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
+        size: 32, //32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
@@ -94,13 +94,18 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                texture:  { }
+                buffer: { }
             },
             {
                 binding: 1,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                texture:  { }
+            },
+            {
+                binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: { }
-            }
+            },
         ],
     })
 
@@ -192,6 +197,7 @@ function _writeTileBuffer (c) {
     _buf[6] = tileSize
     _buf[7] = 1.0 / tileSize                            // inverseTileSize
 
+    /*
     // copy each tile layer's instance data into the UBO
     let i = 8
     for (const node of c.nodes) {
@@ -205,6 +211,9 @@ function _writeTileBuffer (c) {
             i += 4
         }
     }
-    
+
     c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, i)
+    */
+    
+    c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, 8)
 }

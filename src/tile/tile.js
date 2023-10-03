@@ -38,23 +38,46 @@ async function init (cobalt, nodeData) {
     // build the tile layer and add it to the cobalt data structure
     const material = await createTextureFromUrl(cobalt, 'tile map', nodeData.options.textureUrl)
 
+    const dat = new Float32Array([ nodeData.options.scrollScale, nodeData.options.scrollScale ])
+
+    const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+
+    const descriptor = {
+        size: dat.byteLength,
+        usage,
+        // make this memory space accessible from the CPU (host visible)
+        mappedAtCreation: true
+    }
+
+    const uniformBuffer = device.createBuffer(descriptor)
+    new Float32Array(uniformBuffer.getMappedRange()).set(dat)
+    uniformBuffer.unmap()
+
+
     const bindGroup = device.createBindGroup({
         layout: cobalt.resources.tileAtlas.data.tileBindGroupLayout,
         entries: [
             {
                 binding: 0,
-                resource: material.view
+                resource: {
+                    buffer: uniformBuffer
+                }
             },
             {
                 binding: 1,
+                resource: material.view
+            },
+            {
+                binding: 2,
                 resource: material.sampler
-            }
+            },
         ]
     })
 
     return {
         bindGroup,
         material,
+        uniformBuffer,
         scrollScale: nodeData.options.scrollScale,
     }
 }
@@ -85,15 +108,13 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     renderpass.setPipeline(tileAtlas.pipeline)
     renderpass.setVertexBuffer(0, tileAtlas.quad.buffer)
 
+    renderpass.setBindGroup(0, nodeData.data.bindGroup)
+
     // common stuff; the transform data and the tile atlas texture
     renderpass.setBindGroup(1, tileAtlas.atlasBindGroup)
 
-    // render each of the tile layers
-    //for (let j=0; j < renderPass.layers.length; j++) {
-        renderpass.setBindGroup(0, nodeData.data.bindGroup) //renderpass.setBindGroup(0, renderPass.layers[j].bindGroup)
-        // vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx
-        renderpass.draw(6, 1, 0, 0)
-    //}
+    // vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx
+    renderpass.draw(6, 1, 0, 0)
 
     renderpass.end()
 }
