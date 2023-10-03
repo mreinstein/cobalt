@@ -2,18 +2,17 @@ import esbuild  from 'esbuild'
 import { glsl } from 'esbuild-plugin-glsl'
 
 
-const cfg = {
-	entryPoints: [ 'src/cobalt.js' ],
-	allowOverwrite: true,
+esbuild.build({
+    entryPoints: [ 'src/cobalt.js' ],
+    allowOverwrite: true,
     bundle: true,
     format: 'esm',
     target: 'es2022',
     plugins: [
-        glsl({ minify: false })  // setting minify to true breaks the code
+        // minifying used to break the code for some reason, but I think it's fixed
+        // so I'll re-enable this and see how it goes!
+        glsl({ minify: true })
     ],
     outfile: 'bundle.js',
-    minify: true,
-}
-
-
-esbuild.build(cfg)
+    minify: false /*true*/, // TODO: re-enable
+})

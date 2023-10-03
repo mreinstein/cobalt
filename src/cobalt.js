@@ -1,22 +1,29 @@
 import * as OverlayRenderPass                         from './OverlayRenderPass.js'
 import * as SpriteRenderPass                          from './SpriteRenderPass.js'
-import createSpriteQuads                              from './create-sprite-quads.js'
-import createTileQuad                                 from './create-tile-quad.js'
 import createTexture                                  from './create-texture.js'
+import createTextureFromUrl                           from './create-texture-from-url.js'
+export { default as createTexture }                   from './create-texture.js'
+import createSpriteQuads                              from './create-sprite-quads.js'
 import readSpriteSheet                                from './read-spritesheet.js'
 import overlayWGSL                                    from './overlay.wgsl'
 import spriteWGSL                                     from './sprite.wgsl'
-import tileWGSL                                       from './tile.wgsl'
 import uuid                                           from './uuid.js'
-import * as Bloom                                     from './bloom.js'
-import * as SceneComposite                            from './scene-composite.js'
 import { removeArrayItems, mat4, vec3 }               from './deps.js'
 import { FLOAT32S_PER_SPRITE }                        from './constants.js'
 
 
+// built-in run nodes
+import bloomNode                                      from './bloom/bloom.js'
+import compositeNode                                  from './scene-composite/scene-composite.js'
+import spriteNode                                     from './sprite/sprite.js'
+import tileNode                                       from './tile/tile.js'
+// built-in resource nodes
+import tileAtlasNode                                  from './tile/atlas.js'
+import fbTextureNode                                  from './fb-texture/fb-texture.js'
+
+
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
-const _buf = new Float32Array(136)  // tile instance data stored in a UBO
 
 
 /////////////////////////////////
@@ -24,7 +31,7 @@ const _buf = new Float32Array(136)  // tile instance data stored in a UBO
 
 // create and initialize a WebGPU renderer for a given canvas
 // returns the data structure containing all WebGPU related stuff
-export async function create (canvas, viewportWidth, viewportHeight) {
+export async function init (canvas, viewportWidth, viewportHeight) {
 
 	const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
 
@@ -39,25 +46,36 @@ export async function create (canvas, viewportWidth, viewportHeight) {
         alphaMode: 'opaque'
     })
 
-    const bloom = await Bloom.init(device, canvas, viewportWidth, viewportHeight)
-    const postProcessing = await SceneComposite.init(device, bloom)
+    const nodeDefs = {
+        // TODO: consider namespacing the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
+        //
+        // builtin node types
+        bloom: bloomNode,
+        composite: compositeNode,
+        sprite: spriteNode,
+        tile: tileNode,
+        tileAtlas: tileAtlasNode,
+        fbTexture: fbTextureNode,
+    }
 
 	return {
+        nodeDefs,
+        // runnable nodes. ordering dictates render order (first to last)
+        nodes: [ ],
+
+        // named resources shard/referenced across run nodes
+        /*
+        resources: {
+            tileAtlas: {
+                value: { texture, view },
+            },
+        }
+        */
+        resources: { },
+
 		canvas,
 		device,
 		context,
-
-		sprite: undefined,  // common data related to all sprite render passes
-        tile: undefined,    // common data related to all tile render passes
-
-        renderPasses: [ ],       // ordered list of WebGPU render passes.  available types:  TILE | SPRITE | OVERLAY
-        //activeRenderPasses: [ ], // ordered list of active entries from renderPasses
-        //activeRenderPassesLength: 0,
-
-        // all the sprite/tile renderpasses draw to this texture except the overlay layers
-        postProcessing,
-
-        bloom,
 
         // used in the color attachments of renderpass
         clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
@@ -68,7 +86,101 @@ export async function create (canvas, viewportWidth, viewportHeight) {
             zoom: 1.0,
             position: [ 0, 0 ]  // top left point of the viewport
         },
+
+
+
+        // TODO: this stuff is all processing node specific; move to those modules
+
+		sprite: undefined,  // common data related to all sprite render passes
+        
+        renderPasses: [ ],       // ordered list of WebGPU render passes.  available types:  TILE | SPRITE | OVERLAY
 	}
+}
+
+
+export function defineNode (c, nodeDefinition) {
+    /*
+    sample nodeDefinition structure
+    {
+        type: 'bloom',
+        // refs are named links to other nodes
+        refs: [
+            { name: 'emissive', type: 'webGpuTextureView', format: 'rgba16', access: 'read' },
+            { name: 'hdr',      type: 'webGpuTextureView', format: 'rgba16', access: 'read' },
+            { name: 'bloom',    type: 'webGpuTextureView', format: 'rgba16', access: 'readwrite' },
+        ],
+        onInit: function (cobalt, options={}) {
+            // return whatever data you want to store for this node
+            return { }
+        },
+        onRun: function (cobalt, data, webGpuCommandEncoder) {
+            // do whatever you need for this node. webgpu renderpasses, etc.
+        },
+        onDestroy: function (data) {
+            // any cleanup for your node should go here (releasing textures, etc.)
+        },
+        onResize: function (cobalt, data) {
+            // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
+        },
+        onViewportPosition: function (cobalt, data) {
+            // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
+        },
+    }
+    */
+
+    if (!c.nodeDefs[nodeData?.type])
+        throw new Error(`Can't initialize a new node missing a type.`)
+
+    c.nodeDefs[nodeDefinition.type] = nodeDefinition
+}
+
+
+
+export async function addResourceNode (c, nodeData) {
+    if (!nodeData.name)
+        throw new Error(`Can't create a resource node without a name property.`)
+
+    c.resources[nodeData.name] = await initNode(c, nodeData)
+
+    return c.resources[nodeData.name]
+}
+
+
+export async function initNode (c, nodeData) {
+    /*
+    sample nodeData
+    {
+        type: 'bloom',
+        // refs are named links to other nodes
+        refs: {
+            emissive: texView1,
+            hdr: texView2,
+            bloom: texView3
+        },
+        options: {
+            // any extra options you want to pass to this node
+        }
+    }
+    */
+
+    const nodeDef = c.nodeDefs[nodeData?.type]
+
+    if (!nodeDef)
+        throw new Error(`Can't initialize a new node missing a type.`)
+    
+    const data = await nodeDef.onInit(c, nodeData)
+
+    const node = {
+        type: nodeData.type,
+        refs: nodeData.refs || { },
+        options: nodeData.options || { },
+        data: data || { }
+    }
+
+    console.log('added node:', node)
+
+    c.nodes.push(node)
+    return node
 }
 
 
@@ -80,40 +192,12 @@ export function draw (c) {
     let actualRenderCount = 0 // number of renderpasses that actually activated so far
     let actualSpriteRenderCount = 0 // number of sprite renderpasses that actually activated so far
 
-    const tile = c.tile
-
     for (const renderPass of c.renderPasses) {
 
         const loadOp = (actualRenderCount < 1) ? 'clear' : 'load'
 
-        if (renderPass.type === 'tile') { 
+        if (renderPass.type === 'tile') {
             actualRenderCount++
-            
-            const renderpass = commandEncoder.beginRenderPass({
-                colorAttachments: [
-                    {
-                        view: c.bloom.hdr_texture.view,
-                        clearValue: c.clearValue,
-                        loadOp,
-                        storeOp: 'store'
-                    }
-                ]
-            })
-
-            renderpass.setPipeline(tile.pipeline)
-            renderpass.setVertexBuffer(0, tile.quad.buffer)
-
-            // common stuff; the transform data and the tile atlas texture
-            renderpass.setBindGroup(1, tile.atlasBindGroup)
-
-            // render each of the tile layers
-            for (let j=0; j < renderPass.layers.length; j++) {
-                renderpass.setBindGroup(0, renderPass.layers[j].bindGroup)
-                // vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx
-                renderpass.draw(6, 1, 0, 0)
-            }
-
-            renderpass.end()
 
         } else if (renderPass.type === 'sprite') {
             actualRenderCount++
@@ -130,7 +214,7 @@ export function draw (c) {
                 colorAttachments: [
                     // color
                     {
-                        view: c.bloom.hdr_texture.view,
+                        view: c.resources.hdr.data.value.view, //c.tmp_hdr_texture.view, // OLD c.bloom.hdr_texture.view,
                         clearValue: c.clearValue,
                         loadOp,
                         storeOp: 'store'
@@ -138,7 +222,7 @@ export function draw (c) {
 
                     // emissive
                     {
-                        view: c.bloom.emissiveTextureView,
+                        view:  c.resources.emissive.data.value.view, //c.tmp_emissive_texture.view, // OLD c.bloom.emissiveTextureView,
                         clearValue: c.clearValue,
                         loadOp: (actualSpriteRenderCount < 2) ? 'clear' : 'load',
                         storeOp: 'store'
@@ -175,19 +259,22 @@ export function draw (c) {
         }
     }
 
-    Bloom.draw(c, commandEncoder)
 
     const v = c.context.getCurrentTexture().createView()
 
-    // combine bloom and color textures and draw to a fullscreen quad
-    SceneComposite.draw(c, commandEncoder, v)
+    // run all of the defined nodes
+    for (const n of c.nodes) {
+        const nodeDef = c.nodeDefs[n.type]
 
-    // TODO: render other post processing effects
-    //renderPixelationFilter(c, commandEncoder)
-    //renderVignetteFilter(c, commandEncoder)
-    //renderFilmGrainFilter(c, commandEncoder)
+        // some nodes may need a reference to the default texture view (the frame backing)
+        for (const arg of nodeDef.refs)
+            if (arg.type === 'webGpuTextureFrameView')
+                n.refs[arg.name] = v
 
-    
+        nodeDef.onRun(c, n, commandEncoder)
+    }
+
+    /*
     // render all GUI/overlay layers on top of the postProcessing
     for (const renderPass of c.renderPasses) {
         if (renderPass.type === 'overlay') {
@@ -244,7 +331,7 @@ export function draw (c) {
             renderpass.end()
         }
     }
-    
+    */
 
     device.queue.submit([ commandEncoder.finish() ])
 }
@@ -311,6 +398,14 @@ export function reset (c) {
 
     c.sprite.renderPassLookup.clear()
     c.renderPasses.length = 0
+
+    for (const name in c.resources) {
+        const res = c.resources[name]
+        const nodeDef = c.nodeDefs[res.type]
+        nodeDef.onDestroy(c, res)
+    }
+
+    c.resources = { }
 }
 
 
@@ -320,17 +415,24 @@ export function setViewportDimensions (c, width, height) {
 	c.viewport.width = width
 	c.viewport.height = height
 
+    for (const resName in c.resources) {
+        const res = c.resources[resName]
+        const nodeDef = c.nodeDefs[res.type]
+        nodeDef.onResize(c, res)
+    }
+
+    for (const n of c.nodes) {
+        const nodeDef = c.nodeDefs[n.type]
+        nodeDef.onResize(c, n)
+    }
+
+
+    // TODO: these dont belong here, move them to the individual onResize calls
     if (c.sprite)
-	   _writeSpriteBuffer(c)
+       _writeSpriteBuffer(c)
 
     if (c.overlay)
         _writeOverlayBuffer(c)
-
-	if (c.tile)
-		_writeTileBuffer(c)
-
-    Bloom.resize(c.device, c.bloom, c.viewport.width, c.viewport.height)
-    SceneComposite.resize(c, c.viewport.width, c.viewport.height)
 }
 
 
@@ -339,52 +441,23 @@ export function setViewportPosition (c, pos) {
     c.viewport.position[0] = pos[0] - (c.viewport.width / 2 / c.viewport.zoom)
     c.viewport.position[1] = pos[1] - (c.viewport.height / 2 / c.viewport.zoom)
 
+    for (const resName in c.resources) {
+        const res = c.resources[resName]
+        const nodeDef = c.nodeDefs[res.type]
+        nodeDef.onViewportPosition(c, res)
+    }
+
+    for (const n of c.nodes) {
+        const nodeDef = c.nodeDefs[n.type]
+        nodeDef.onViewportPosition(c, n)
+    }
+
+    // TODO: these dont belong here, move them to the individual onViewportPosition calls
 	if (c.sprite)
         _writeSpriteBuffer(c)
 
     if (c.overlay)
         _writeOverlayBuffer(c)
-
-	if (c.tile)
-		_writeTileBuffer(c)
-}
-
-
-function _writeTileBuffer (c) {
-	// viewOffset.  [ 0, 0 ] is the top left corner of the level
-    _buf[0] = c.viewport.position[0] // viewoffset[0] 
-    _buf[1] = c.viewport.position[1] // viewOffset[1]
-
-    const tile = c.tile
-    const { tileScale, tileSize } = tile
-
-    const GAME_WIDTH = c.viewport.width / c.viewport.zoom
-    const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
-
-    _buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
-    _buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
-
-    _buf[4] = 1 / tile.atlasMaterial.imageData.width  // inverseAtlasTextureSize[0]
-    _buf[5] = 1 / tile.atlasMaterial.imageData.height // inverseAtlasTextureSize[1]
-
-    _buf[6] = tileSize
-    _buf[7] = 1.0 / tileSize                            // inverseTileSize
-
-    // copy each tile layer's instance data into the UBO
-    let i = 8
-    for (const rp of c.renderPasses) {
-        if (rp.type === 'tile' && rp.layers.length) {
-            for (const l of rp.layers) {
-                _buf[i]   = l.scrollScale        // scrollScale[0]
-                _buf[i+1] = l.scrollScale        // scrollScale[1]
-                _buf[i+2] = 1/l.imageData.width  // inverseTileTextureSize[0]
-                _buf[i+3] = 1/l.imageData.height // inverseTileTextureSize[1]
-                i += 4
-            }
-        }
-    }
-    
-    c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, i)
 }
 
 
@@ -441,182 +514,6 @@ function _writeOverlayBuffer (c) {
 
 
 
-////////////////////////////////
-// tile calls
-
-// configure the common settings for tile map rendering
-export async function configureTileRenderer (c, atlasTextureUrl, tileSize=16, tileScale=1.0) {
-
-	const device = c.device
-
-    const quad = createTileQuad(device)
-
-    const atlasMaterial = await createTexture(device, 'tile atlas', atlasTextureUrl)
-
-    const uniformBuffer = device.createBuffer({
-        size: 32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-
-    const atlasBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            }
-        ],
-    })
-
-    const atlasBindGroup = device.createBindGroup({
-        layout: atlasBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: uniformBuffer
-                }
-            },
-            {
-                binding: 1,
-                resource: atlasMaterial.view
-            },
-            {
-                binding: 2,
-                resource: atlasMaterial.sampler
-            }
-        ]
-    })
-
-    const tileBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            }
-        ],
-    })
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ tileBindGroupLayout, atlasBindGroupLayout ]
-    })
-
-    const pipeline = device.createRenderPipeline({
-        label: 'tile',
-        vertex: {
-            module: device.createShaderModule({
-                code: tileWGSL
-            }),
-            entryPoint: 'vs_main',
-            buffers: [ quad.bufferLayout ]
-        },
-
-        fragment: {
-            module: device.createShaderModule({
-                code: tileWGSL
-            }),
-            entryPoint: 'fs_main',
-            targets: [
-                {
-                    format: 'rgba16float',
-                    blend: {
-                        color: {
-                            srcFactor: 'src-alpha',
-                            dstFactor: 'one-minus-src-alpha',
-                        },
-                        alpha: {
-                            srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                }
-            ]
-        },
-
-        primitive: {
-            topology: 'triangle-list'
-        },
-
-        layout: pipelineLayout
-    })
-
-	c.tile = {
-		pipeline,
-        uniformBuffer,
-        atlasBindGroup,   // tile atlas texture, transform UBO
-        atlasMaterial,
-
-        tileBindGroupLayout,
-
-        tileMaterials: { },  // key is layer id, value is the material
-        tileBindGroups: { }, // key is layer id, value is the bind group
-
-        quad,
-
-        tileSize,
-        tileScale,
-	}
-}
-
-
-export async function addTileLayer (c, scrollScale, tileMapTextureUrl, zIndex) {
-	if (!c.tile)
-		throw new Error(`Cobalt's tile renderer is not configured.  Please call configureTileRenderer(...) before adding any tile layers.`)
-
-	const device = c.device
-
-	const tileLayerId = uuid()
-
-	// build the tile layer and add it to the cobalt data structure
-	const tileLayerMaterial = await createTexture(device, 'tile map', tileMapTextureUrl)
-
-	const tileBindGroup = device.createBindGroup({
-        layout: c.tile.tileBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: tileLayerMaterial.view
-            },
-            {
-                binding: 1,
-                resource: tileLayerMaterial.sampler
-            }
-        ]
-    })
-
-    c.tile.tileBindGroups[tileLayerId] = tileBindGroup
-    c.tile.tileMaterials[tileLayerId] = tileLayerMaterial
-
-    const rp = c.renderPasses.find((rp) => rp.type === 'tile' && rp.minLayer <= zIndex && rp.maxLayer >= zIndex)
-
-    if (!rp)
-        throw new Error(`Unable to add tile layer; zIndex ${zIndex} not declared in layers`)
-
-    rp.layers.push({
-        tileLayerId,
-        imageData: tileLayerMaterial.imageData,
-        bindGroup: tileBindGroup,
-        scrollScale: scrollScale,
-    })
-
-	return tileLayerId
-}
 
 
 export function removeTileLayer (c, tileLayerId) {
@@ -658,8 +555,8 @@ export async function configureSpriteRenderer (c, spritesheetJson, spriteTexture
     const quads = createSpriteQuads(device, spritesheet)
 
     const [ material, emissiveTexture ] = await Promise.all([
-        createTexture(device, 'sprite', spriteTextureUrl, 'rgba8unorm'),
-        createTexture(device, 'emissive sprite', emissiveSpriteTextureUrl, 'rgba16float'),
+        createTextureFromUrl(c, 'sprite', spriteTextureUrl, 'rgba8unorm'),
+        createTextureFromUrl(c, 'emissive sprite', emissiveSpriteTextureUrl, 'rgba16float'),
     ])
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
@@ -774,7 +671,7 @@ export async function configureOverlayRenderer (c, spritesheetJson, spriteTextur
 
     const quads = createSpriteQuads(device, spritesheet)
 
-    const material = await createTexture(device, 'overlay', spriteTextureUrl, 'rgba8unorm')
+    const material = await createTextureFromUrl(c, 'overlay', spriteTextureUrl, 'rgba8unorm')
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
     canvas.style.imageRendering = 'pixelated'

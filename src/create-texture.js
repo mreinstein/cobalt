@@ -1,56 +1,46 @@
-export default async function createTexture (device, label, url, format='rgba8unorm') {
+export default function createTexture (device, label, width, height, mip_count, format, usage) {
     
-    const response = await fetch(url)
-    const blob = await response.blob()
-
-    const imageData = await createImageBitmap(blob/*, { premultiplyAlpha: 'none', resizeQuality: 'pixelated' }*/)
-    
-    const textureDescriptor = {
+    const texture = device.createTexture({
         label,
-        size: {
-            width: imageData.width,
-            height: imageData.height
-        },
+        size: { width, height },
         format,
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
-    }
-    
-    const texture = device.createTexture(textureDescriptor)
-
-    device.queue.copyExternalImageToTexture(
-         { source: imageData },
-         { texture },
-         textureDescriptor.size
-    )
-
-    const viewDescriptor = {
-        label,
-        format,
+        usage,
+        mipLevelCount: mip_count,
+        sampleCount: 1,
         dimension: '2d',
-        aspect: 'all',
-        baseMipLevel: 0,
-        mipLevelCount: 1,
-        baseArrayLayer: 0,
-        arrayLayerCount: 1
-    }
+    })
 
-    const view = texture.createView(viewDescriptor)
+    const view = texture.createView()
 
-    const samplerDescriptor = {
-        addressModeU: 'repeat', // repeat | clamp-to-edge
-        addressModeV: 'repeat', // repeat | clamp-to-edge
-        magFilter: 'nearest',
-        minFilter: 'nearest',
-        mipmapFilter: 'nearest',
-        maxAnisotropy: 1
-    }
+    const mip_view = [ ]
 
-    const sampler = device.createSampler(samplerDescriptor)
+    for (let i=0; i < mip_count; i++)
+        mip_view.push(texture.createView({
+            label,
+            format,
+            dimension: '2d',
+            aspect: 'all',
+            baseMipLevel: i,
+            mipLevelCount: 1,
+            baseArrayLayer: 0,
+            arrayLayerCount: 1,
+        }))
+
+    const sampler = device.createSampler({
+        label: 'hdr sampler',
+        addressModeU: 'clamp-to-edge',
+        addressModeV: 'clamp-to-edge',
+        addressModeW: 'clamp-to-edge',
+        magFilter: 'linear',
+        minFilter: 'linear',
+        mipmapFilter: 'linear',
+    })
 
     return {
+        size: { width, height },
         texture,
         view,
+        mip_view,
         sampler,
-        imageData
     }
 }

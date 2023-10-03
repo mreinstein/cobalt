@@ -85,16 +85,12 @@ async function main () {
         Game.layers[layer.zIndex] = { name: layerName, type: layer.type}
     }
 
-    //Game.spritesheet = readSpriteSheet(spritesheetJson)
-
     const canvas = document.querySelector('canvas')
 
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await Cobalt.create(canvas, viewportWidth, viewportHeight)
+    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
-    
-    //Cobalt.setViewportDimensions(Game.renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
 
     const spriteTextureUrl = 'assets/spritesheet.png'
     const emissiveSpriteTextureUrl = 'assets/spritesheet_emissive.png'
@@ -103,23 +99,88 @@ async function main () {
 
     
     Cobalt.configureLayers(Game.renderer, Game.layers)
-    /*
-    Cobalt.configureLayers(Game.renderer, [
-        { name: 'background2', type: 'tile' },
-        { name: 'background', type: 'tile' },
-        { name: 'hero', type: 'sprite' },
-    ])
-    */
 
-    //                                                  atlasTextureUrl           tileSize  tileScale
-    await Cobalt.configureTileRenderer(Game.renderer, `assets/spelunky-tiles.png`,   16,       1.0)
+    const tileAtlasNode = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'tileAtlas',
+        type: 'tileAtlas',
+        refs: { },
+        options: {
+            label: 'tile atlas',
+            tileSize: 16,
+            tileScale: 1.0,
+            textureUrl: 'assets/spelunky-tiles.png'
+        }
+    })
 
-    //                                       scrollScale  tileMapTextureUrl                       zIndex
-    //await Cobalt.addTileLayer(Game.renderer, 1.0,         `data:image/png;base64,${b64Encoded}`,  zIndex)
-    await Cobalt.addTileLayer(Game.renderer, 1.0,         `assets/spelunky0.png`,  5)
-    await Cobalt.addTileLayer(Game.renderer, 0.6,         `assets/spelunky1.png`,  0)
+    const tileNode2 = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: 'tileAtlas',
+            hdr: 'hdr',
+        },
+        options: {
+            textureUrl: 'assets/spelunky1.png',
+            scrollScale: 0.6,
+            //zIndex: 0,
+        }
+    })
 
+    const tileNode = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: 'tileAtlas',
+            hdr: 'hdr',
+        },
+        options: {
+            textureUrl: 'assets/spelunky0.png',
+            scrollScale: 1.0,
+            //zIndex: 5,
+        }
+    })
 
+    // create the shared textures
+    const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'hdr',
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr color texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const emissiveTex = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'emissive',
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr emissive texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        }
+    })
+
+    const bloomTex = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'bloom',
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr bloom texture',
+            format: 'rgba16float',
+            mip_count: 7,
+            viewportScale: 0.5,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
 
     // use resizeViewport to init values on load:
     resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
@@ -137,23 +198,50 @@ async function main () {
     ECS.addSystem(world, animationSystem)
 
 
-    const gui = new dat.GUI()
-    const config = {
-        bloom_intensity: 40.0,
-        bloom_combine_constant: 0.68,
-        bloom_knee: 0.2,
-        bloom_threshold: 0.1, // 1.0
 
-        // sprite instance 1
-        sprite_instances: [
-            {
-                emissive_intensity: 1.0,
-            },
-            {
-                emissive_intensity: 0.5,
-            },
-        ],
-    }
+    // link the shared textures to nodes
+
+    const bloomNode = await Cobalt.initNode(Game.renderer, {
+        type: 'bloom',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            emissive: 'emissive',
+            hdr: 'hdr',
+            bloom: 'bloom'
+        },
+        options: {
+            // any extra options you want to pass to this node
+            bloom_intensity: 40.0,
+            bloom_combine_constant: 0.68,
+            bloom_knee: 0.2,
+            bloom_threshold: 0.1, // 1.0
+
+            // sprite instance 1
+            sprite_instances: [
+                {
+                    emissive_intensity: 1.0,
+                },
+                {
+                    emissive_intensity: 0.5,
+                },
+            ],
+        }
+    })
+
+    const compositeNode = await Cobalt.initNode(Game.renderer, {
+        type: 'composite',
+        refs: {
+            hdr: 'hdr',
+            bloom: 'bloom',
+        },
+        options: { }
+    })
+
+
+    const gui = new dat.GUI()
+
+    const config = bloomNode.options
 
     gui.add(config, 'bloom_intensity', 0, 200).onChange((v) => {
         updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
@@ -176,17 +264,16 @@ async function main () {
     })
 
     const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
-        const device = Game.renderer.device
-        const params_buf = Game.renderer.postProcessing.params_buf
-
+        const { device } = Game.renderer
+        
         device.queue.writeBuffer(
-            params_buf,
+            compositeNode.data.params_buf,
             0,
             new Float32Array([ bloom_intensity, bloom_combine_constant ])
         )
 
         device.queue.writeBuffer(
-            Game.renderer.bloom.params_buf,
+            bloomNode.data.params_buf,
             0,
             new Float32Array([ bloom_threshold,
                                 bloom_threshold - bloom_knee,
@@ -198,23 +285,24 @@ async function main () {
                                 0,
                                 0, ])
         )
-    }    
+    }
 
-    /*
+    
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
             const elapsed = performance.now()
             const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
             const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
 
-            const { tileScale } = Game.renderer.tile
+            //const { tileScale } = Game.renderer.tile
 
-            vec2.set(Math.floor(x * tileScale), Math.floor(y * tileScale), Game.renderer.viewport.position)
+            Cobalt.setViewportPosition(Game.renderer, [ x, y ])
         }
 
         return { onUpdate }
     })
-    */
+    
+    
     
 
     Game.world = world
@@ -266,7 +354,7 @@ async function fetchJson (url) {
 
 function resizeViewport (renderer, width, height) {
 
-    const { canvas } = renderer
+    const { canvas, device } = renderer
 
     // determine which screen dimension is most constrained
     // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
