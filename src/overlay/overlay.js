@@ -5,7 +5,7 @@ import sortedBinaryInsert      from '../sprite/sorted-binary-insert.js'
 import uuid                    from '../uuid.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
 import { mat4, vec3, vec4 }    from '../deps.js'
-import { mat4 as mat4b }       from 'https://cdn.skypack.dev/gl-matrix'
+
 
 // a sprite renderer with coordinates in screen space. useful for HUD/ui stuff
 
@@ -75,7 +75,12 @@ async function init (cobalt, nodeData) {
     const spriteBuffer = device.createBuffer({
         size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances, // 4x4 matrix with 4 bytes per float32, per instance
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        //mappedAtCreation: true,
+    })
+
+    // the view and project matrices
+    const uniformBuffer = device.createBuffer({
+        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
     const bindGroupLayout = device.createBindGroupLayout({
@@ -111,7 +116,7 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 resource: {
-                    buffer: cobalt.resources.spritesheet.data.uniformBuffer
+                    buffer: uniformBuffer, //cobalt.resources.spritesheet.data.uniformBuffer
                 }
             },
             {
@@ -188,6 +193,7 @@ async function init (cobalt, nodeData) {
         instancedDrawCallCount: 0,
 
         spriteBuffer,
+        uniformBuffer,
         pipeline,
         bindGroupLayout,
         bindGroup,
@@ -294,28 +300,20 @@ function _rebuildSpriteDrawCalls (renderPass) {
 }
 
 
-function _writeOverlayBuffer (c, nodeData) {
+function _writeOverlayBuffer (cobalt, nodeData) {
     // TODO: I think this buffer can be written just once since the overlays never change. (0,0 always top left corner)
-    //const projection = mat4.create()
+    const zoom = 1.0 // cobalt.viewport.zoom
+    const GAME_WIDTH = Math.round(cobalt.viewport.width / zoom)
+    const GAME_HEIGHT = Math.round(cobalt.viewport.height / zoom)
 
-    const zoom = 1.0 // c.viewport.zoom
-    const GAME_WIDTH = Math.round(c.viewport.width / zoom)
-    const GAME_HEIGHT = Math.round(c.viewport.height / zoom)
-
-    //const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
-
-    const projection = mat4b.create()
-    mat4b.ortho(projection, 0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
     // set x,y,z camera position
     vec3.set(0, 0, 0, _tmpVec3)
-    //const view = mat4.translation(_tmpVec3)
+    const view = mat4.translation(_tmpVec3)
 
-    const view = mat4b.create()
-    mat4b.fromTranslation(view, _tmpVec3)
-
-    c.device.queue.writeBuffer(nodeData.data.spriteBuffer, 0, view.buffer)
-    c.device.queue.writeBuffer(nodeData.data.spriteBuffer, 64, projection.buffer)
+    cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 0, view.buffer)
+    cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 64, projection.buffer)
 }
 
 
@@ -326,6 +324,9 @@ function destroy (nodeData) {
 
     nodeData.data.spriteBuffer.destroy()
     nodeData.data.spriteBuffer = null
+
+    nodeData.data.uniformBuffer.destroy()
+    nodeData.data.uniformBuffer = null
 
     nodeData.data.spriteData = null
     nodeData.data.spriteIndices.clear()
