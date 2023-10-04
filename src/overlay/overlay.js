@@ -1,15 +1,20 @@
-import * as SpriteRenderPass   from './SpriteRenderPass.js'
+import createSpriteQuads       from '../sprite/create-sprite-quads.js'
+import overlayWGSL             from './overlay.wgsl'
+import sortedBinaryInsert      from '../sprite/sorted-binary-insert.js'
+import uuid                    from '../uuid.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
+import { vec4 }                from '../deps.js'
 
+// a sprite renderer with coordinates in screen space. useful for HUD/ui stuff
 
-// an emissive sprite renderer
+const _tmpVec4 = vec4.create()
+
 
 export default {
-    type: 'sprite',
+    type: 'overlay',
     refs: [
         { name: 'spritesheet', type: 'customResource', access: 'read' },
-        { name: 'hdr', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
-        { name: 'emissive', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
+        { name: 'color', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
     ],
 
     // cobalt event handling functions
@@ -30,24 +35,19 @@ export default {
         destroy(data)
     },
 
-    onResize: function (cobalt, data) {
-        // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-    },
+    onResize: function (cobalt, data) { },
 
-    onViewportPosition: function (cobalt, data) {
-    },
+    onViewportPosition: function (cobalt, data) { },
 
     // optional
-    customFunctions: {
-        ...SpriteRenderPass,
-    },
+    customFunctions: { },
 }
 
 
 // This corresponds to a WebGPU render pass.  It handles 1 sprite layer.
 async function init (cobalt, nodeData) {
     const { device } = cobalt
-    
+
     const MAX_SPRITE_COUNT = 16192  // max number of sprites in a single sprite render pass
 
     const numInstances = MAX_SPRITE_COUNT
@@ -71,13 +71,94 @@ async function init (cobalt, nodeData) {
         //mappedAtCreation: true,
     })
 
+
+
+    const quads = createSpriteQuads(device, spritesheet)
+
+    const uniformBuffer = device.createBuffer({
+        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+
+    const bindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { }
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.FRAGMENT,
+                texture:  { }
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.FRAGMENT,
+                sampler: { }
+            },
+            {
+                binding: 3,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'read-only-storage'
+                }
+            },
+        ],
+    })
+
+    const pipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [ bindGroupLayout ]
+    })
+
+    const pipeline = device.createRenderPipeline({
+        label: 'overlay',
+        vertex: {
+            module: device.createShaderModule({
+                code: overlayWGSL
+            }),
+            entryPoint: 'vs_main',
+            buffers: [ quads.bufferLayout ]
+        },
+
+        fragment: {
+            module: device.createShaderModule({
+                code: overlayWGSL
+            }),
+            entryPoint: 'fs_main',
+            targets: [
+                // color
+                {
+                    format: 'bgra8unorm',
+                    blend: {
+                        color: {
+                            srcFactor: 'src-alpha',
+                            dstFactor: 'one-minus-src-alpha',
+                        },
+                        alpha: {
+                            srcFactor: 'zero',
+                            dstFactor: 'one'
+                        }
+                    }
+                }
+            ]
+        },
+
+        primitive: {
+            topology: 'triangle-list'
+        },
+
+        layout: pipelineLayout
+    })
+    
+
     const bindGroup = device.createBindGroup({
-        layout: cobalt.resources.spritesheet.data.bindGroupLayout,
+        layout: renderer.overlay.bindGroupLayout,
         entries: [
             {
                 binding: 0,
                 resource: {
-                    buffer: cobalt.resources.spritesheet.data.uniformBuffer
+                    buffer: uniformBuffer
                 }
             },
             {
@@ -94,12 +175,9 @@ async function init (cobalt, nodeData) {
                     buffer: spriteBuffer
                 }
             },
-            {
-                binding: 4,
-                resource: cobalt.resources.spritesheet.data.emissiveTexture.view
-            },
         ]
     })
+
 
     return {
         // instancedDrawCalls is used to actually perform draw calls within the render pass
@@ -136,6 +214,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
 	const loadOp = (runCount === 0) ? 'clear' : 'load'
 
+    /*
     if (nodeData.data.dirty) {
         _rebuildSpriteDrawCalls(nodeData.data)
         nodeData.data.dirty = false
@@ -190,9 +269,11 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     }
 
     renderpass.end()
+    */
 }
 
 
+/*
 // build instancedDrawCalls
 function _rebuildSpriteDrawCalls (renderPass) {
     let currentSpriteType = -1
@@ -224,7 +305,7 @@ function _rebuildSpriteDrawCalls (renderPass) {
         renderPass.instancedDrawCallCount++
     }
 }
-
+*/
 
 function destroy (nodeData) {
     nodeData.data.instancedDrawCalls = null

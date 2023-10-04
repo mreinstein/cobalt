@@ -1,14 +1,15 @@
-export { default as createTexture }                   from './create-texture.js'
+export { default as createTexture } from './create-texture.js'
 
 // built-in run nodes
-import bloomNode                                      from './bloom/bloom.js'
-import compositeNode                                  from './scene-composite/scene-composite.js'
-import spriteNode                                     from './sprite/sprite.js'
-import tileNode                                       from './tile/tile.js'
+import bloomNode                    from './bloom/bloom.js'
+import compositeNode                from './scene-composite/scene-composite.js'
+import spriteNode                   from './sprite/sprite.js'
+import tileNode                     from './tile/tile.js'
 // built-in resource nodes
-import tileAtlasNode                                  from './tile/atlas.js'
-import spritesheetNode                                from './sprite/spritesheet.js'
-import fbTextureNode                                  from './fb-texture/fb-texture.js'
+import tileAtlasNode                from './tile/atlas.js'
+import spritesheetNode              from './sprite/spritesheet.js'
+import fbTextureNode                from './fb-texture/fb-texture.js'
+import overlayNode                  from './overlay/overlay.js'      
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -39,6 +40,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         tileAtlas: tileAtlasNode,
         spritesheet: spritesheetNode,
         fbTexture: fbTextureNode,
+        overlay: overlayNode,
     }
 
 	return {
@@ -126,6 +128,7 @@ export function draw (c) {
         const nodeDef = c.nodeDefs[n.type]
 
         // some nodes may need a reference to the default texture view (the frame backing)
+        // this is generated each draw frame so we need to update the references
         for (const arg of nodeDef.refs)
             if (arg.type === 'webGpuTextureFrameView')
                 n.refs[arg.name] = v
