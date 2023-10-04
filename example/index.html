@@ -59,6 +59,8 @@
         </div>
 
 <script type="module">
+//import './dist/webgpu-debugger.js';
+
 import Game             from './Game.js'
 import * as Cobalt      from '../bundle.js'
 import constants        from './constants.js'
@@ -237,6 +239,16 @@ async function main () {
         options: { }
     })
 
+    const overlayNode = await Cobalt.initNode(Game.renderer, {
+        type: 'overlay',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            spritesheet: 'spritesheet',
+        },
+        options: { }
+    })
+
 
     const gui = new dat.GUI()
 
@@ -327,6 +339,16 @@ async function main () {
         width: 14,
         height: 15,
         spriteNode,
+    })
+
+    const s3 = spriteEntity(world, {
+        name: 'health-0.png',
+        position: [ 100, 100 ],
+        zIndex: 5,
+        //emissiveIntensity: 0.5,
+        width: 14,
+        height: 15,
+        spriteNode: overlayNode,
     })
 
     const gameLoop = function () {
