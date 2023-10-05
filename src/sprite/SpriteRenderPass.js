@@ -4,7 +4,7 @@ import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 
 // returns a unique identifier for the created sprite
-export function addSprite (cobalt, renderPass, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+export function addSprite (cobalt, renderPass, name, position, scale, tint, opacity, rotation, zIndex) {
 
     const spritesheet = cobalt.resources.spritesheet.data.spritesheet
     renderPass = renderPass.data
@@ -22,7 +22,7 @@ export function addSprite (cobalt, renderPass, name, position, width, height, sc
         offset
     )
 
-    copySpriteDataToBuffer(renderPass, spritesheet, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+    copySpriteDataToBuffer(renderPass, spritesheet, insertIdx, name, position, scale, tint, opacity, rotation, zIndex)
 
     // shift down all of the sprite indices
     for (const [ spriteId, idx ] of renderPass.spriteIndices)
@@ -145,19 +145,23 @@ export function setSpriteRotation (cobalt, renderPass, spriteId, rotation) {
 }
 
 
-export function setSprite (cobalt, renderPass, spriteId, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+export function setSprite (cobalt, renderPass, spriteId, name, position, scale, tint, opacity, rotation, zIndex) {
     const spritesheet = cobalt.resources.spritesheet.data.spritesheet
     renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
-    copySpriteDataToBuffer(renderPass, spritesheet, spriteIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex)
+    copySpriteDataToBuffer(renderPass, spritesheet, spriteIdx, name, position, scale, tint, opacity, rotation, zIndex)
 
     renderPass.dirty = true
 }
 
 
 // copy sprite data into the webgpu renderpass
-function copySpriteDataToBuffer (renderPass, spritesheet, insertIdx, name, position, width, height, scale, tint, opacity, rotation, zIndex) {
+function copySpriteDataToBuffer (renderPass, spritesheet, insertIdx, name, position, scale, tint, opacity, rotation, zIndex) {
+    
+    if (!spritesheet.spriteMeta[name])
+        throw new Error(`Sprite name ${name} could not be found in the spritesheet metaData`)
+
     const offset = insertIdx * FLOAT32S_PER_SPRITE
 
     const SPRITE_WIDTH = spritesheet.spriteMeta[name].w

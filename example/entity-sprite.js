@@ -24,8 +24,6 @@ export default function spriteEntity (world, opts) {
 
     const cobaltSpriteId = spriteNode.addSprite(opts.name, 
                                            opts.position,
-                                           opts.width,
-                                           opts.height,
                                            vec3.create(1, 1, 1),
                                            tint,
                                            opacity / 255,
