@@ -1,4 +1,6 @@
 .DS_Store
 node_modules
 package-lock.json
-bundle.js
+
+# temporarily include the bundle in the output because we're not exposing this as an npm module yet
+#bundle.js
