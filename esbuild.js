@@ -14,5 +14,5 @@ esbuild.build({
         glsl({ minify: true })
     ],
     outfile: 'bundle.js',
-    minify: false,
+    minify: true,
 })
