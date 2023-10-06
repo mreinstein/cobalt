@@ -139,7 +139,7 @@ function init (cobalt, options) {
 
     // link bloom_mat.bind_groups_textures[2]) to bloom_mat.bloomTexture
     //bloom_mat.bind_groups_textures.push(bloom_mat.bloomTexture)
-    bloom_mat.bind_groups_textures.push(cobalt.resources.bloom.data.value)
+    bloom_mat.bind_groups_textures.push(cobalt.resources.bloom.data)
     /*
     bloom_mat.bind_groups_textures.push(createTexture(
         device,
@@ -212,9 +212,9 @@ function set_all_bind_group (cobalt, bloom_mat) {
         device,
         bloom_mat,
         bloom_mat.bind_groups_textures[0].mip_view[0],
-        cobalt.resources.emissive.data.value.view, //bloom_mat.emissiveTexture.view, //bloom_mat.hdr_texture.view,
-        cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view, // unused here, only for upsample passes
-        cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+        cobalt.resources.emissive.data.view,
+        cobalt.resources.hdr.data.view, // unused here, only for upsample passes
+        cobalt.resources.hdr.data.sampler,
         params_buf,
         MODE_PREFILTER << 16 | 0, // mode_lod value
     ));
@@ -227,8 +227,8 @@ function set_all_bind_group (cobalt, bloom_mat) {
             bloom_mat,
             bloom_mat.bind_groups_textures[1].mip_view[i],
             bloom_mat.bind_groups_textures[0].view,
-            cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view, // unused here, only for upsample passes
-            cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+            cobalt.resources.hdr.data.view, // unused here, only for upsample passes
+            cobalt.resources.hdr.data.sampler,
             params_buf,
             MODE_DOWNSAMPLE << 16 | (i - 1), // mode_lod value
         ))
@@ -239,8 +239,8 @@ function set_all_bind_group (cobalt, bloom_mat) {
             bloom_mat,
             bloom_mat.bind_groups_textures[0].mip_view[i],
             bloom_mat.bind_groups_textures[1].view,
-            cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view, // unused here, only for upsample passes
-            cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+            cobalt.resources.hdr.data.view, // unused here, only for upsample passes
+            cobalt.resources.hdr.data.sampler,
             params_buf,
             MODE_DOWNSAMPLE << 16 | i, // mode_lod value
         ))
@@ -252,8 +252,8 @@ function set_all_bind_group (cobalt, bloom_mat) {
         bloom_mat,
         bloom_mat.bind_groups_textures[2].mip_view[BLOOM_MIP_COUNT - 1],
         bloom_mat.bind_groups_textures[0].view,
-        cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view,  // unused here, only for upsample passes
-        cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+        cobalt.resources.hdr.data.view, // unused here, only for upsample passes
+        cobalt.resources.hdr.data.sampler,
         params_buf,
         MODE_UPSAMPLE_FIRST << 16 | (BLOOM_MIP_COUNT - 2), // mode_lod value
     ))
@@ -269,7 +269,7 @@ function set_all_bind_group (cobalt, bloom_mat) {
                 bloom_mat.bind_groups_textures[1].mip_view[i],
                 bloom_mat.bind_groups_textures[0].view,
                 bloom_mat.bind_groups_textures[2].view,
-                cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+                cobalt.resources.hdr.data.sampler,
                 params_buf,
                 MODE_UPSAMPLE << 16 | i, // mode_lod value
             ))
@@ -281,7 +281,7 @@ function set_all_bind_group (cobalt, bloom_mat) {
                 bloom_mat.bind_groups_textures[2].mip_view[i],
                 bloom_mat.bind_groups_textures[0].view,
                 bloom_mat.bind_groups_textures[1].view,
-                cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_texture.sampler,
+                cobalt.resources.hdr.data.sampler,
                 params_buf,
                 MODE_UPSAMPLE << 16 | i, // mode_lod value
             ))
@@ -442,8 +442,7 @@ function resize (cobalt, nodeData) {
     ))
 
     // link bloom_mat.bind_groups_textures[2]) to bloom_mat.bloomTexture
-    //bloom_mat.bind_groups_textures.push(bloom_mat.bloomTexture)
-    bloom_mat.bind_groups_textures.push(cobalt.resources.bloom.data.value)
+    bloom_mat.bind_groups_textures.push(cobalt.resources.bloom.data)
     /*
     bloom_mat.bind_groups_textures.push(createTexture(
         device,

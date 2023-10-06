@@ -38,16 +38,13 @@ async function init (cobalt, nodeData) {
 
     const { label, mip_count, format, usage, viewportScale } = nodeData.options
 
-    return {
-        value: createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage),
-        config: { label, mip_count, format, usage, viewportScale },  // used to re-create framebuffer textures upon resize
-    }
+    return createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage)
 }
 
 
 function destroy (cobalt, nodeData) {
     // destroy the existing texture before we re-create it to avoid leaking memory
-    nodeData.data.value.texture.destroy()
+    nodeData.data.texture.destroy()
 }
 
 
@@ -57,5 +54,5 @@ function resize (cobalt, nodeData) {
     const { width, height } = cobalt.viewport
     const { options } = nodeData
     const scale = nodeData.options.viewportScale
-    nodeData.data.value = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage)
+    nodeData.data = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage)
 }

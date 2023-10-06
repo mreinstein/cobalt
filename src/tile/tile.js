@@ -95,7 +95,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 	const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             {
-                view: cobalt.resources.hdr.data.value.view,
+                view: cobalt.resources.hdr.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'

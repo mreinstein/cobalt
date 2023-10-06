@@ -147,7 +147,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
         colorAttachments: [
             // color
             {
-                view: cobalt.resources.hdr.data.value.view,
+                view: cobalt.resources.hdr.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'
@@ -155,7 +155,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 
             // emissive
             {
-                view: cobalt.resources.emissive.data.value.view,
+                view: cobalt.resources.emissive.data.view,
                 clearValue: cobalt.clearValue,
                 // TODO: why less than 2?? what crazy ass magic number is this??
                 loadOp: 'clear', //(actualSpriteRenderCount < 2) ? 'clear' : 'load',

@@ -82,17 +82,17 @@ function init (cobalt, options) {
         entries: [
           {
             binding: 0,
-            resource: cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_sampler,
+            resource: cobalt.resources.hdr.data.sampler,
           },
           // color
           {
             binding: 1,
-            resource: cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view,
+            resource: cobalt.resources.hdr.data.view,
           },
           // emissive
           {
             binding: 2,
-            resource: cobalt.resources.bloom.data.value.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
+            resource: cobalt.resources.bloom.data.mip_view[0],
           },
           {
             binding: 3,
@@ -143,17 +143,17 @@ function resize (cobalt, nodeData) {
         entries: [
           {
             binding: 0,
-            resource: cobalt.resources.hdr.data.value.sampler, //bloom_mat.hdr_sampler,
+            resource: cobalt.resources.hdr.data.sampler,
           },
           // color
           {
             binding: 1,
-            resource: cobalt.resources.hdr.data.value.view, //bloom_mat.hdr_texture.view,
+            resource: cobalt.resources.hdr.data.view,
           },
           // emissive
           {
             binding: 2,
-            resource: cobalt.resources.bloom.data.value.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
+            resource: cobalt.resources.bloom.data.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
           },
           {
             binding: 3,
