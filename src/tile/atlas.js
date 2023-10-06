@@ -160,9 +160,6 @@ async function init (cobalt, nodeData) {
 
         tileBindGroupLayout,
 
-        tileMaterials: { },  // key is layer id, value is the material
-        tileBindGroups: { }, // key is layer id, value is the bind group
-
         quad,
 
         tileSize: nodeData.options.tileSize,
