@@ -18,9 +18,9 @@ export default {
         draw(cobalt, nodeData, webGpuCommandEncoder)
     },
 
-    onDestroy: function (cobalt, data) {
+    onDestroy: function (cobalt, nodeData) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        //destroy(data)
+        destroy(nodeData)
     },
 
     onResize: function (cobalt, data) {
@@ -28,6 +28,40 @@ export default {
     },
 
     onViewportPosition: function (cobalt, data) {
+    },
+
+    // optional
+    customFunctions: {
+        setTexture: async function (cobalt, nodeData, textureUrl) {
+            const { device } = cobalt
+
+            destroy(nodeData)
+            nodeData.options.textureUrl = textureUrl
+            const material = await createTextureFromUrl(cobalt, 'tile map', nodeData.options.textureUrl)
+
+            const bindGroup = device.createBindGroup({
+                layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
+                entries: [
+                    {
+                        binding: 0,
+                        resource: {
+                            buffer: nodeData.data.uniformBuffer
+                        }
+                    },
+                    {
+                        binding: 1,
+                        resource: material.view
+                    },
+                    {
+                        binding: 2,
+                        resource: material.sampler
+                    },
+                ]
+            })
+
+            nodeData.data.bindGroup = bindGroup
+            nodeData.data.material = material
+        },
     },
 }
 
@@ -118,9 +152,9 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     renderpass.end()
 }
 
-/*
+
 function destroy (nodeData) {
-    nodeData.material.texture.destroy()
-    nodeData.material.texture = undefined
+    nodeData.data.material.texture.destroy()
+    nodeData.data.material.texture = undefined
 }
-*/
+
