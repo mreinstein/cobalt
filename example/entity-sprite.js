@@ -1,5 +1,4 @@
 import * as Cobalt         from '../bundle.js'
-import Game                from './Game.js'
 import animationComponent  from './component-animation.js'
 import transformComponent  from './component-transform.js'
 import { ECS, vec3, vec4 } from './deps.js'

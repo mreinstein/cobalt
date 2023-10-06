@@ -1,5 +1,4 @@
 import * as Cobalt from '../bundle.js'
-import Game        from './Game.js'
 import { ECS }     from './deps.js'
 
 
@@ -24,9 +23,6 @@ export default function animationSystem (world) {
             } else {
                  e.sprite.spriteNode.setSpriteRotation(e.sprite.cobaltSpriteId, e.sprite.rotation + 0.01)
             }
-
-            // copying the entire sprite is quite a bit slower when dealing with high sprite counts
-            //SpriteRenderPass.updateSprite(Game.renderer, e)
         }
     }
 
