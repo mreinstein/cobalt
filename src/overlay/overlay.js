@@ -116,16 +116,16 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 resource: {
-                    buffer: uniformBuffer, //cobalt.resources.spritesheet.data.uniformBuffer
+                    buffer: uniformBuffer,
                 }
             },
             {
                 binding: 1,
-                resource: cobalt.resources.spritesheet.data.colorTexture.view
+                resource: nodeData.refs.spritesheet.data.colorTexture.view
             },
             {
                 binding: 2,
-                resource: cobalt.resources.spritesheet.data.colorTexture.sampler
+                resource: nodeData.refs.spritesheet.data.colorTexture.sampler
             },
             {
                 binding: 3,
@@ -148,7 +148,7 @@ async function init (cobalt, nodeData) {
                 code: overlayWGSL
             }),
             entryPoint: 'vs_main',
-            buffers: [ cobalt.resources.spritesheet.data.quads.bufferLayout ]
+            buffers: [ nodeData.refs.spritesheet.data.quads.bufferLayout ]
         },
 
         fragment: {
@@ -240,7 +240,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 
     renderpass.setPipeline(nodeData.data.pipeline)
     renderpass.setBindGroup(0, nodeData.data.bindGroup)
-    renderpass.setVertexBuffer(0, cobalt.resources.spritesheet.data.quads.buffer)
+    renderpass.setVertexBuffer(0, nodeData.refs.spritesheet.data.quads.buffer)
 
     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
     //      renderpass.draw(6,  1,  0, 0)  //  1 hero instance

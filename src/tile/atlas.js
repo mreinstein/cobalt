@@ -26,13 +26,13 @@ export default {
         destroy(data)
     },
 
-    onResize: function (cobalt, data) {
+    onResize: function (cobalt, nodeData) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        _writeTileBuffer(cobalt)
+        _writeTileBuffer(cobalt, nodeData)
     },
 
-    onViewportPosition: function (cobalt, data) {
-        _writeTileBuffer(cobalt)
+    onViewportPosition: function (cobalt, nodeData) {
+        _writeTileBuffer(cobalt, nodeData)
     },
 }
 
@@ -174,12 +174,12 @@ function destroy (data) {
 }
 
 
-function _writeTileBuffer (c) {
+function _writeTileBuffer (c, nodeData) {
     // viewOffset.  [ 0, 0 ] is the top left corner of the level
     _buf[0] = c.viewport.position[0] // viewoffset[0] 
     _buf[1] = c.viewport.position[1] // viewOffset[1]
 
-    const tile = c.resources.tileAtlas.data
+    const tile = nodeData.data
     const { tileScale, tileSize } = tile
 
     const GAME_WIDTH = c.viewport.width / c.viewport.zoom

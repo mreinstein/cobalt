@@ -4,7 +4,7 @@ import createTextureFromUrl from '../create-texture-from-url.js'
 export default {
     type: 'tile',
     refs: [
-        { name: 'tileAtlas', type: 'webGpuTextureFrameView', format: 'rgba8unorm', access: 'write' },
+        { name: 'tileAtlas', type: 'webGpuTextureView', format: 'rgba8unorm', access: 'write' },
     ],
 
     // @params Object cobalt renderer world object
@@ -53,9 +53,8 @@ async function init (cobalt, nodeData) {
     new Float32Array(uniformBuffer.getMappedRange()).set(dat)
     uniformBuffer.unmap()
 
-
     const bindGroup = device.createBindGroup({
-        layout: cobalt.resources.tileAtlas.data.tileBindGroupLayout,
+        layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
         entries: [
             {
                 binding: 0,
@@ -95,7 +94,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 	const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             {
-                view: cobalt.resources.hdr.data.view,
+                view: nodeData.refs.hdr.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'
@@ -103,7 +102,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
         ]
     })
 
-    const tileAtlas = cobalt.resources.tileAtlas.data
+    const tileAtlas = nodeData.refs.tileAtlas.data
 
     renderpass.setPipeline(tileAtlas.pipeline)
     renderpass.setVertexBuffer(0, tileAtlas.quad.buffer)
@@ -119,8 +118,9 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     renderpass.end()
 }
 
-
+/*
 function destroy (nodeData) {
-    nodeData.matarial.texture.destroy()
-    nodeData.matarial.texture = undefined
+    nodeData.material.texture.destroy()
+    nodeData.material.texture = undefined
 }
+*/

@@ -92,33 +92,16 @@ async function main () {
         }
     })
 
-    const tileNode = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            tileAtlas: 'tileAtlas',
-            hdr: 'hdr',
-        },
+    const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
+        name: 'hdr',
+        type: 'fbTexture',
+        refs: { },
         options: {
-            textureUrl: 'assets/spelunky1.png',
-            scrollScale: 0.6,
-            //zIndex: 0,
-        }
-    })
-
-    const tileNode2 = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            tileAtlas: 'tileAtlas',
-            hdr: 'hdr',
-        },
-        options: {
-            textureUrl: 'assets/spelunky0.png',
-            scrollScale: 1.0,
-            //zIndex: 5,
+            label: 'hdr color texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
         }
     })
 
@@ -130,36 +113,6 @@ async function main () {
             spriteSheetJsonUrl: './assets/spritesheet.json',
             colorTextureUrl: 'assets/spritesheet.png',
             emissiveTextureUrl: 'assets/spritesheet_emissive.png'
-        }
-    })
-
-    const spriteNode = await Cobalt.initNode(Game.renderer, {
-        type: 'sprite',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            spritesheet: 'spritesheet',
-            emissive: 'emissive',
-            hdr: 'hdr',
-        },
-        options: {
-            //zIndex: 5,
-        }
-    })
-    
-
-
-    // create the shared textures
-    const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'hdr',
-        type: 'fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr color texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
         }
     })
 
@@ -189,27 +142,58 @@ async function main () {
         }
     })
 
-    // use resizeViewport to init values on load:
-    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+    const tileNode = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: tileAtlasNode,
+            hdr: hdrTex,
+        },
+        options: {
+            textureUrl: 'assets/spelunky1.png',
+            scrollScale: 0.6,
+            //zIndex: 0,
+        }
+    })
 
-    // window resize is *expensive* - best to debounce:
-    const debouncedResize = debounce(function () {
-       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
-    }, 50)
+    const tileNode2 = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: tileAtlasNode,
+            hdr: hdrTex,
+        },
+        options: {
+            textureUrl: 'assets/spelunky0.png',
+            scrollScale: 1.0,
+            //zIndex: 5,
+        }
+    })
 
-    window.addEventListener('resize', debouncedResize, { passive: true })
-
-
-    // link the shared textures to nodes
+    const spriteNode = await Cobalt.initNode(Game.renderer, {
+        type: 'sprite',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            spritesheet: spritesheet,
+            emissive: emissiveTex,
+            hdr: hdrTex,
+        },
+        options: {
+            //zIndex: 5,
+        }
+    })
 
     const bloomNode = await Cobalt.initNode(Game.renderer, {
         type: 'bloom',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
-            emissive: 'emissive',
-            hdr: 'hdr',
-            bloom: 'bloom'
+            emissive: emissiveTex,
+            hdr: hdrTex,
+            bloom: bloomTex
         },
         options: {
             // any extra options you want to pass to this node
@@ -233,8 +217,8 @@ async function main () {
     const compositeNode = await Cobalt.initNode(Game.renderer, {
         type: 'composite',
         refs: {
-            hdr: 'hdr',
-            bloom: 'bloom',
+            hdr: hdrTex,
+            bloom: bloomTex,
         },
         options: { }
     })
@@ -244,10 +228,21 @@ async function main () {
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
-            spritesheet: 'spritesheet',
+            spritesheet: spritesheet,
         },
         options: { }
     })
+
+
+    // use resizeViewport to init values on load:
+    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+
+    // window resize is *expensive* - best to debounce:
+    const debouncedResize = debounce(function () {
+       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+    }, 50)
+
+    window.addEventListener('resize', debouncedResize, { passive: true })
 
 
     const gui = new dat.GUI()

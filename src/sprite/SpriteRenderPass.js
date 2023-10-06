@@ -6,7 +6,7 @@ import { FLOAT32S_PER_SPRITE } from './constants.js'
 // returns a unique identifier for the created sprite
 export function addSprite (cobalt, renderPass, name, position, scale, tint, opacity, rotation, zIndex) {
 
-    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
 
     const spriteType = spritesheet.locations.indexOf(name)
@@ -67,7 +67,7 @@ export function removeSprite (cobalt, renderPass, spriteId) {
 
 
 export function setSpriteName (cobalt, renderPass, spriteId, name, scale) {
-    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
 
     const spriteType = spritesheet.locations.indexOf(name)
@@ -146,7 +146,7 @@ export function setSpriteRotation (cobalt, renderPass, spriteId, rotation) {
 
 
 export function setSprite (cobalt, renderPass, spriteId, name, position, scale, tint, opacity, rotation, zIndex) {
-    const spritesheet = cobalt.resources.spritesheet.data.spritesheet
+    const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)

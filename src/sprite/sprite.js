@@ -8,8 +8,8 @@ export default {
     type: 'sprite',
     refs: [
         { name: 'spritesheet', type: 'customResource', access: 'read' },
-        { name: 'hdr', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
-        { name: 'emissive', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
+        { name: 'hdr', type: 'webGpuTextureView', format: 'rgba16float', access: 'write' },
+        { name: 'emissive', type: 'webGpuTextureView', format: 'rgba16float', access: 'write' },
     ],
 
     // cobalt event handling functions
@@ -71,22 +71,24 @@ async function init (cobalt, nodeData) {
         //mappedAtCreation: true,
     })
 
+    const spritesheet = nodeData.refs.spritesheet.data
+
     const bindGroup = device.createBindGroup({
-        layout: cobalt.resources.spritesheet.data.bindGroupLayout,
+        layout: nodeData.refs.spritesheet.data.bindGroupLayout,
         entries: [
             {
                 binding: 0,
                 resource: {
-                    buffer: cobalt.resources.spritesheet.data.uniformBuffer
+                    buffer: spritesheet.uniformBuffer
                 }
             },
             {
                 binding: 1,
-                resource: cobalt.resources.spritesheet.data.colorTexture.view
+                resource: spritesheet.colorTexture.view
             },
             {
                 binding: 2,
-                resource: cobalt.resources.spritesheet.data.colorTexture.sampler
+                resource: spritesheet.colorTexture.sampler
             },
             {
                 binding: 3,
@@ -96,7 +98,7 @@ async function init (cobalt, nodeData) {
             },
             {
                 binding: 4,
-                resource: cobalt.resources.spritesheet.data.emissiveTexture.view
+                resource: spritesheet.emissiveTexture.view
             },
         ]
     })
@@ -147,7 +149,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
         colorAttachments: [
             // color
             {
-                view: cobalt.resources.hdr.data.view,
+                view: nodeData.refs.hdr.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'
@@ -155,7 +157,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 
             // emissive
             {
-                view: cobalt.resources.emissive.data.view,
+                view: nodeData.refs.emissive.data.view,
                 clearValue: cobalt.clearValue,
                 // TODO: why less than 2?? what crazy ass magic number is this??
                 loadOp: 'clear', //(actualSpriteRenderCount < 2) ? 'clear' : 'load',
@@ -164,9 +166,9 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
         ]
     })
 
-    renderpass.setPipeline(cobalt.resources.spritesheet.data.pipeline)
+    renderpass.setPipeline(nodeData.refs.spritesheet.data.pipeline)
     renderpass.setBindGroup(0, nodeData.data.bindGroup)
-    renderpass.setVertexBuffer(0, cobalt.resources.spritesheet.data.quads.buffer)
+    renderpass.setVertexBuffer(0, nodeData.refs.spritesheet.data.quads.buffer)
 
     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
     //      renderpass.draw(6,  1,  0, 0)  //  1 hero instance
