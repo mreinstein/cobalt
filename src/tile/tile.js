@@ -111,6 +111,7 @@ async function init (cobalt, nodeData) {
         bindGroup,
         material,
         uniformBuffer,
+        enabled: true, // a quick way to shut off rendering
         scrollScale: nodeData.options.scrollScale,
     }
 }
@@ -119,6 +120,9 @@ async function init (cobalt, nodeData) {
 
 // @param Integer runCount  how many nodes in the graph have been run already
 function draw (cobalt, nodeData, commandEncoder, runCount) {
+    if (!nodeData.data.enabled)
+        return
+    
     const { device } = cobalt
 
     // on the first render, we should clear the color attachment.
