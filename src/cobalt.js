@@ -98,7 +98,8 @@ export async function initNode (c, nodeData) {
         type: nodeData.type,
         refs: nodeData.refs || { },
         options: nodeData.options || { },
-        data: data || { }
+        data: data || { },
+        enabled: true, // when disabled, the node won't be run
     }
 
     // copy in all custom functions, and ensure the first parameter is the node itself 
@@ -133,8 +134,10 @@ export function draw (c) {
             if (arg.type === 'webGpuTextureFrameView')
                 n.refs[arg.name] = v
 
-        nodeDef.onRun(c, n, commandEncoder, runCount)
-        runCount++
+        if (n.enabled) {
+            nodeDef.onRun(c, n, commandEncoder, runCount)
+            runCount++
+        }
     }
 
     device.queue.submit([ commandEncoder.finish() ])
