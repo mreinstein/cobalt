@@ -8,10 +8,6 @@ const SPRITE_QUERY = [ 'sprite' ]
 export default function animationSystem (world) {
 
     const onUpdate = function (dt) {
-        // TODO: remove this short-circuit after bloom is finished
-        // temporarily shutting off animation because we're testing an emissive sprite which only has 1 frame
-        return
-
         for (const e of ECS.getEntities(world, SPRITE_QUERY)) {
                
             e.animation.accumulator++
