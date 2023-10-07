@@ -93,6 +93,5 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   //let mapped_color = aces(combined_color.rgb);
   let gamma_corrected_color = pow(mapped_color, vec3<f32>(1.0 / 2.2));
 
-  return vec4<f32>(gamma_corrected_color + hdr_color.rgb, 1.0);
-  
+  return vec4<f32>(gamma_corrected_color + hdr_color.rgb, 1.0);  
 }

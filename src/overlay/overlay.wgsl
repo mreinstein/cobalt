@@ -81,9 +81,7 @@ fn fs_main (@location(0) TexCoord: vec2<f32>,
             @location(2) Opacity: f32) -> @location(0) vec4<f32> {
 
     var outColor: vec4<f32> = textureSample(myTexture, mySampler, TexCoord);
-    //var output = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
+    var output = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
 
-    //return output;
-    return outColor;
-    //return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    return output;
 }

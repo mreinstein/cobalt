@@ -22,7 +22,7 @@ import * as Cobalt from 'cobalt'
 
 
 // general calls
-const c = Cobalt.create(canvas, viewportWidth, viewportHeight)
+const c = Cobalt.init(canvas, viewportWidth, viewportHeight)
 Cobalt.configureLayers(c, layers)
 Cobalt.draw(c)
 Cobalt.reset(c)

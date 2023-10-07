@@ -1,9 +1,7 @@
-// all of the game's globals are consolidated here
+// all of the example's globals are consolidated here
 export default {
-    renderer: undefined,     // webgpu globals
-    spritesheet: undefined,  // texture/animation
-    
-    layers: undefined,       // tile/sprite/overlay layer definitions
+    renderer: undefined,     // cobalt instance
+    world: undefined,        // ECS instance
 
     // timekeeping (in milliseconds)
     lastFrameTime: 0,        // local time the last frame ran
