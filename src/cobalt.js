@@ -69,7 +69,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
 
 
 export function defineNode (c, nodeDefinition) {
-    if (!c.nodeDefs[nodeDefinition?.type])
+    if (!nodeDefinition?.type)
         throw new Error(`Can't define a new node missing a type.`)
 
     c.nodeDefs[nodeDefinition.type] = nodeDefinition
