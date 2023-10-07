@@ -4,9 +4,9 @@ import sceneCompositeWGSL from './scene-composite.wgsl'
 export default {
     type: 'bloom',
     refs: [
-        { name: 'hdr',      type: 'webGpuTextureView', format: 'rgba16', access: 'read' },
-        { name: 'bloom',    type: 'webGpuTextureView', format: 'rgba16', access: 'read' },
-        { name: 'combined', type: 'webGpuTextureFrameView', format: 'rgba8unorm', access: 'write' },
+        { name: 'hdr',      type: 'textureView', format: 'rgba16', access: 'read' },
+        { name: 'bloom',    type: 'textureView', format: 'rgba16', access: 'read' },
+        { name: 'combined', type: 'textureView', format: 'rgba8unorm', access: 'write' },
     ],
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
@@ -14,24 +14,22 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, nodeData, webGpuCommandEncoder) {
+    onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, nodeData, webGpuCommandEncoder)
+        draw(cobalt, node, webGpuCommandEncoder)
     },
 
-    onDestroy: function (cobalt, data) {
+    onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        //destroy(data)
+        //destroy(node)
     },
 
-    onResize: function (cobalt, data) {
+    onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        resize(cobalt, data)
+        resize(cobalt, node)
     },
 
-    onViewportPosition: function (cobalt, data) {
-
-    },
+    onViewportPosition: function (cobalt, node) { },
 }
 
 

@@ -219,6 +219,7 @@ async function main () {
         refs: {
             hdr: hdrTex,
             bloom: bloomTex,
+            combined: 'FRAME_TEXTURE_VIEW',
         },
         options: { }
     })
@@ -229,6 +230,7 @@ async function main () {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
             spritesheet: spritesheet,
+            color: 'FRAME_TEXTURE_VIEW',
         },
         options: { }
     })

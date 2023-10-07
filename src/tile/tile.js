@@ -4,7 +4,7 @@ import createTextureFromUrl from '../create-texture-from-url.js'
 export default {
     type: 'tile',
     refs: [
-        { name: 'tileAtlas', type: 'webGpuTextureView', format: 'rgba8unorm', access: 'write' },
+        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'write' },
     ],
 
     // @params Object cobalt renderer world object
@@ -13,39 +13,39 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, nodeData, webGpuCommandEncoder) {
+    onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, nodeData, webGpuCommandEncoder)
+        draw(cobalt, node, webGpuCommandEncoder)
     },
 
-    onDestroy: function (cobalt, nodeData) {
+    onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        destroy(nodeData)
+        destroy(node)
     },
 
-    onResize: function (cobalt, data) {
+    onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
     },
 
-    onViewportPosition: function (cobalt, data) {
+    onViewportPosition: function (cobalt, node) {
     },
 
     // optional
     customFunctions: {
-        setTexture: async function (cobalt, nodeData, textureUrl) {
+        setTexture: async function (cobalt, node, textureUrl) {
             const { device } = cobalt
 
-            destroy(nodeData)
-            nodeData.options.textureUrl = textureUrl
-            const material = await createTextureFromUrl(cobalt, 'tile map', nodeData.options.textureUrl)
+            destroy(node)
+            node.options.textureUrl = textureUrl
+            const material = await createTextureFromUrl(cobalt, 'tile map', node.options.textureUrl)
 
             const bindGroup = device.createBindGroup({
-                layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
+                layout: node.refs.tileAtlas.data.tileBindGroupLayout,
                 entries: [
                     {
                         binding: 0,
                         resource: {
-                            buffer: nodeData.data.uniformBuffer
+                            buffer: node.data.uniformBuffer
                         }
                     },
                     {
@@ -59,8 +59,8 @@ export default {
                 ]
             })
 
-            nodeData.data.bindGroup = bindGroup
-            nodeData.data.material = material
+            node.data.bindGroup = bindGroup
+            node.data.material = material
         },
     },
 }

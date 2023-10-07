@@ -17,7 +17,7 @@ export default {
     type: 'overlay',
     refs: [
         { name: 'spritesheet', type: 'customResource', access: 'read' },
-        { name: 'color', type: 'webGpuTextureFrameView', format: 'rgba16float', access: 'write' },
+        { name: 'color', type: 'textView', format: 'rgba8unorm', access: 'write' },
     ],
 
     // cobalt event handling functions
@@ -28,22 +28,22 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, nodeData, webGpuCommandEncoder, runCount) {
+    onRun: function (cobalt, node, webGpuCommandEncoder, runCount) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, nodeData, webGpuCommandEncoder, runCount)
+        draw(cobalt, node, webGpuCommandEncoder, runCount)
     },
 
-    onDestroy: function (cobalt, data) {
+    onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        destroy(data)
+        destroy(node)
     },
 
-    onResize: function (cobalt, data) {
-        _writeOverlayBuffer(cobalt, data)
+    onResize: function (cobalt, node) {
+        _writeOverlayBuffer(cobalt, node)
     },
 
-    onViewportPosition: function (cobalt, data) {
-        _writeOverlayBuffer(cobalt, data)
+    onViewportPosition: function (cobalt, node) {
+        _writeOverlayBuffer(cobalt, node)
     },
 
     // optional

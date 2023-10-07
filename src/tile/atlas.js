@@ -17,22 +17,22 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, nodeData, webGpuCommandEncoder) {
+    onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
     },
 
-    onDestroy: function (cobalt, data) {
+    onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
         destroy(data)
     },
 
-    onResize: function (cobalt, nodeData) {
+    onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        _writeTileBuffer(cobalt, nodeData)
+        _writeTileBuffer(cobalt, node)
     },
 
-    onViewportPosition: function (cobalt, nodeData) {
-        _writeTileBuffer(cobalt, nodeData)
+    onViewportPosition: function (cobalt, node) {
+        _writeTileBuffer(cobalt, node)
     },
 }
 

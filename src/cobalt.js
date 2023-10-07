@@ -30,7 +30,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
     })
 
     const nodeDefs = {
-        // TODO: namespace the builtins  e.g., builtin_bloom or cobalt_bloom, etc.
+        // TODO: namespace the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
         //
         // builtin node types
         bloom: bloomNode,
@@ -50,6 +50,10 @@ export async function init (canvas, viewportWidth, viewportHeight) {
 
         // named resources shard/referenced across run nodes
         resources: { },
+
+        // keeps references to all node refs that need to access the per-frame default texture view
+        // these refs are updated on each invocation of Cobalt.draw(...)
+        defaultTextureViewRefs: [ ],
 
 		canvas,
 		device,
@@ -102,6 +106,13 @@ export async function initNode (c, nodeData) {
         enabled: true, // when disabled, the node won't be run
     }
 
+    for (const refName in node.refs)
+        if (node.refs[refName] === 'FRAME_TEXTURE_VIEW')
+            c.defaultTextureViewRefs.push({ node, refName })
+
+    // TODO: should we validate that all of the refs from the node definition are included?
+    //       if so, we might want a notion of required vs optional refs
+
     // copy in all custom functions, and ensure the first parameter is the node itself 
     const customFunctions = nodeDef.customFunctions || { }
     for (const fnName in customFunctions) {
@@ -124,20 +135,20 @@ export function draw (c) {
 
     let runCount = 0 // track how many nodes have run so far this frame
 
-    // run all of the defined nodes
-    for (const n of c.nodes) {
-        const nodeDef = c.nodeDefs[n.type]
 
-        // some nodes may need a reference to the default texture view (the frame backing)
-        // this is generated each draw frame so we need to update the references
-        for (const arg of nodeDef.refs)
-            if (arg.type === 'webGpuTextureFrameView')
-                n.refs[arg.name] = v
+    // some nodes may need a reference to the default texture view (the frame backing)
+    // this is generated each draw frame so we need to update the references
+    for (const r of c.defaultTextureViewRefs)
+        r.node.refs[r.refName] = v
 
-        if (n.enabled) {
-            nodeDef.onRun(c, n, commandEncoder, runCount)
-            runCount++
-        }
+    // run all of the enabled nodes
+    for (const node of c.nodes) {
+        if (!node.enabled)
+            continue
+
+        const nodeDef = c.nodeDefs[node.type]
+        nodeDef.onRun(c, node, commandEncoder, runCount)
+        runCount++
     }
 
     device.queue.submit([ commandEncoder.finish() ])
@@ -160,6 +171,7 @@ export function reset (c) {
         nodeDef.onDestroy(c, n)
     }
     c.nodes.length = 0
+    c.defaultTextureViewRefs.length = 0
 }
 
 
