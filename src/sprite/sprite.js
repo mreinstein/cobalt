@@ -4,6 +4,23 @@ import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 // an emissive sprite renderer
 
+
+/*
+Sprites are typically dynamic; they can move, they are animated, they can be colored, rotated etc.
+
+These use a `SpriteRenderPass` data structure which allows for dynamically adding/removing/updating sprites at run time.
+
+Internally, `SpriteRenderPass` objects are rendered as instanced triangles.
+Adding and removing sprites pre-sorts all triangles based on they layer they're on + the type of sprite they are.
+This lines up the data nicely for WebGpu such that they don't require any work in the render loop.
+
+Each type of sprite is rendered as 2 triangles, with a number instances for each sprite.
+This instance data is transfered to the GPU, which is then calculated in the shaders (position, rotation, scale, tinting, opacity, etc.)
+
+All of the matrix math for these sprites is done in a vertex shader, so they are fairly efficient to move, color and rotate, but it's not free.
+There is still some CPU required as the number of sprites increases.
+*/
+
 export default {
     type: 'sprite',
     refs: [

@@ -1,6 +1,20 @@
 import createTextureFromUrl from '../create-texture-from-url.js'
 
 
+/*
+Tile layers are totally static, and there are usually many of them in a grid, in several layers.
+
+These use a `TileRenderPass` data structure which provides 100% GPU hardware based tile rendering, making them _almost_ free CPU-wise.
+
+Internally, `TileRenderPass` objects store 1 or more layers, which hold a reference to a sprite texture, and a layer texture.
+When a tile layer is drawn, it loads the 2 textures into the gpu.
+One of these textures is a lookup table, where each pixel corresponds to a type of sprite.
+Because this processing can happen completely in the fragment shader, there's no need to do expensive loops over slow arrays in js land, which is the typical approach for current state-of-the-art web renderers.
+
+Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html
+*/
+
+
 export default {
     type: 'tile',
     refs: [
