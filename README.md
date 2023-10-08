@@ -22,10 +22,13 @@ This library is geared torwards people building their own renderers that want to
 node graph implementation that simplifies the linking of textures and other assets between render passes.
 
 
-## Example Usage
+## Partial Example
 
 This isn't a complete example by any stretch but shows how to initialize cobalt, 
 define the skeleton of a sprite node renderer, and instantiate nodes, linking them together by `refs`, and then a draw loop.
+
+There is a more complete example in `example/index.html` which you can actually run.
+
 
 ```js
 import * as Cobalt from 'cobalt'
