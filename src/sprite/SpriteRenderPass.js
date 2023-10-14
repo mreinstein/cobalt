@@ -33,7 +33,6 @@ export function addSprite (cobalt, renderPass, name, position, scale, tint, opac
     // reference it later, when we need to remove or update this sprite component
     const spriteId = uuid()
 
-    //c.sprite.renderPassLookup.set(spriteId, renderPass)
     renderPass.spriteIndices.set(spriteId, insertIdx)
     renderPass.spriteCount++
     renderPass.dirty = true
@@ -60,7 +59,6 @@ export function removeSprite (cobalt, renderPass, spriteId) {
     )
 
     renderPass.spriteIndices.delete(spriteId)
-    //c.sprite.renderPassLookup.delete(spriteId)
     renderPass.spriteCount--
     renderPass.dirty = true
 }
