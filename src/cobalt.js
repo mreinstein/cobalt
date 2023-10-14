@@ -1,15 +1,17 @@
 export { default as createTexture } from './create-texture.js'
 
 // built-in run nodes
-import bloomNode                    from './bloom/bloom.js'
-import compositeNode                from './scene-composite/scene-composite.js'
-import spriteNode                   from './sprite/sprite.js'
-import tileNode                     from './tile/tile.js'
+import bloomNode           from './bloom/bloom.js'
+import compositeNode       from './scene-composite/scene-composite.js'
+import spriteNode          from './sprite/sprite.js'
+import tileNode            from './tile/tile.js'
+import displacementNode    from './displacement/displacement.js'
+import overlayNode         from './overlay/overlay.js'      
+
 // built-in resource nodes
-import tileAtlasNode                from './tile/atlas.js'
-import spritesheetNode              from './sprite/spritesheet.js'
-import fbTextureNode                from './fb-texture/fb-texture.js'
-import overlayNode                  from './overlay/overlay.js'      
+import tileAtlasNode       from './tile/atlas.js'
+import spritesheetNode     from './sprite/spritesheet.js'
+import fbTextureNode       from './fb-texture/fb-texture.js'
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -32,14 +34,17 @@ export async function init (canvas, viewportWidth, viewportHeight) {
     const nodeDefs = {
         // TODO: namespace the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
         //
-        // builtin node types
+        // built in resource node types
+        tileAtlas: tileAtlasNode,
+        spritesheet: spritesheetNode,
+        fbTexture: fbTextureNode,
+
+        // builtin run node types
         bloom: bloomNode,
         composite: compositeNode,
         sprite: spriteNode,
         tile: tileNode,
-        tileAtlas: tileAtlasNode,
-        spritesheet: spritesheetNode,
-        fbTexture: fbTextureNode,
+        displacement: displacementNode,
         overlay: overlayNode,
     }
 
@@ -47,9 +52,6 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         nodeDefs,
         // runnable nodes. ordering dictates render order (first to last)
         nodes: [ ],
-
-        // named resources shard/referenced across run nodes
-        resources: { },
 
         // keeps references to all node refs that need to access the per-frame default texture view
         // these refs are updated on each invocation of Cobalt.draw(...)
@@ -77,16 +79,6 @@ export function defineNode (c, nodeDefinition) {
         throw new Error(`Can't define a new node missing a type.`)
 
     c.nodeDefs[nodeDefinition.type] = nodeDefinition
-}
-
-
-export async function addResourceNode (c, nodeData) {
-    if (!nodeData.name)
-        throw new Error(`Can't create a resource node without a name property.`)
-
-    c.resources[nodeData.name] = await initNode(c, nodeData)
-
-    return c.resources[nodeData.name]
 }
 
 
@@ -157,15 +149,6 @@ export function draw (c) {
 
 // clean up all the loaded data so we could re-load a level, etc.
 export function reset (c) {
-
-    for (const name in c.resources) {
-        const res = c.resources[name]
-        const nodeDef = c.nodeDefs[res.type]
-        nodeDef.onDestroy(c, res)
-    }
-
-    c.resources = { }
-
     for (const n of c.nodes) {
         const nodeDef = c.nodeDefs[n.type]
         nodeDef.onDestroy(c, n)
@@ -179,12 +162,6 @@ export function setViewportDimensions (c, width, height) {
 	c.viewport.width = width
 	c.viewport.height = height
 
-    for (const resName in c.resources) {
-        const res = c.resources[resName]
-        const nodeDef = c.nodeDefs[res.type]
-        nodeDef.onResize(c, res)
-    }
-
     for (const n of c.nodes) {
         const nodeDef = c.nodeDefs[n.type]
         nodeDef.onResize(c, n)
@@ -196,12 +173,6 @@ export function setViewportDimensions (c, width, height) {
 export function setViewportPosition (c, pos) {
     c.viewport.position[0] = pos[0] - (c.viewport.width / 2 / c.viewport.zoom)
     c.viewport.position[1] = pos[1] - (c.viewport.height / 2 / c.viewport.zoom)
-
-    for (const resName in c.resources) {
-        const res = c.resources[resName]
-        const nodeDef = c.nodeDefs[res.type]
-        nodeDef.onViewportPosition(c, res)
-    }
 
     for (const n of c.nodes) {
         const nodeDef = c.nodeDefs[n.type]

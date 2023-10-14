@@ -95,8 +95,7 @@ function init (viewportWidth, viewportHeight) {
 	// wire up the render graph:
 
 	// spritesheet is a built-in cobalt node
-	const spritesheet = await Cobalt.addResourceNode(Game.renderer, {
-	    name: 'spritesheet',
+	const spritesheet = await Cobalt.initNode(Game.renderer, {
 	    type: 'spritesheet',
 	    refs: { },
 	    options: {
@@ -109,8 +108,7 @@ function init (viewportWidth, viewportHeight) {
 	// fbTexture is also a built-in cobalt node type. It's size will match
 	// cobalt's viewport size. cobalt will hande resizing this automatically.
 	// frame buffer textures are essential for post processing effects.
-	const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
-	    name: 'hdr',
+	const hdrTex = await Cobalt.initNode(Game.renderer, {
 	    type: 'fbTexture',
 	    refs: { },
 	    options: {
