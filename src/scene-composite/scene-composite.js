@@ -136,7 +136,7 @@ function resize (cobalt, node) {
     const { pipeline, params_buf } = node.data
     const { device } = cobalt
 
-    nodeData.data.bindGroup = device.createBindGroup({
+    node.data.bindGroup = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [
           {
