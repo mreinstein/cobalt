@@ -1,5 +1,5 @@
 import createTextureFromUrl from '../create-texture-from-url.js'
-import createTileQuad       from './create-tile-quad.js'
+import createFullscreenQuad from '../create-fullscreen-quad.js'
 import tileWGSL             from './tile.wgsl'
 
 
@@ -40,7 +40,7 @@ export default {
 async function init (cobalt, nodeData) {
     const { device } = cobalt
 
-    const quad = createTileQuad(device)
+    const quad = createFullscreenQuad(device)
 
     const atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl)
 

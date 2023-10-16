@@ -1,3 +1,4 @@
+import createTextureFromUrl from '../create-texture-from-url.js'
 import displacementWGSL from './displacement.wgsl'
 import uuid             from '../uuid.js'
 import { round, mat4, vec3 }   from '../deps.js'
@@ -19,8 +20,9 @@ export default {
     	// input framebuffer texture with the scene drawn
     	{ name: 'color', type: 'textureView', format: 'bgra8unorm', access: 'read' },
 
-    	// displacement map (probably a perlin noise texture)
-        { name: 'map', type: 'textureView', format: 'bgra8unorm', access: 'read' },
+        // TODO: pass this in as an argument rather than hardcoding
+    	// displacement map (perlin noise texture works well here)
+        //{ name: 'map', type: 'textureView', format: 'bgra8unorm', access: 'read' },
 
         // result we're writing to
         { name: 'out', type: 'textureView', format: 'bgra8unorm', access: 'write' },
@@ -109,6 +111,9 @@ export default {
 async function init (cobalt, node) {
     const { device } = cobalt
     
+    // TODO: add scale option as a uniform
+
+
     const MAX_SPRITE_COUNT = 256  // max number of displacement sprites in this render pass
 
     const numInstances = MAX_SPRITE_COUNT
@@ -128,6 +133,8 @@ async function init (cobalt, node) {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
+    const mapTex = await createTextureFromUrl(cobalt, 'displacement map', './assets/displacement_map_repeat.jpg', 'bgra8unorm')
+
     const bindGroupLayout = device.createBindGroupLayout({
         entries: [
             {
@@ -135,18 +142,6 @@ async function init (cobalt, node) {
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { }
             },
-            /*
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                storageTexture: {
-                    access: 'write-only',
-                    format: 'rgba16float',
-                    viewDimension: '2d'
-                }
-            },
-            */
-            
             {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
@@ -157,13 +152,11 @@ async function init (cobalt, node) {
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: { }
             },
-            /*
             {
                 binding: 3,
                 visibility: GPUShaderStage.FRAGMENT,
                 texture:  { }
             }
-            */
         ],
     })
 
@@ -202,12 +195,10 @@ async function init (cobalt, node) {
                 binding: 2,
                 resource: sampler
             },
-            /*
             {
                 binding: 3,
-                resource: map.texture.view
+                resource: mapTex.view
             }
-            */
         ]
     }) 
 
@@ -276,6 +267,7 @@ async function init (cobalt, node) {
         uniformBuffer,
 
         sampler,
+        mapTex,
 
         pipeline,
 
@@ -305,7 +297,7 @@ function draw (cobalt, node, commandEncoder, runCount) {
         colorAttachments: [
             // color
             {
-                view: node.refs.out,
+                view: node.refs.out.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
                 storeOp: 'store'
@@ -367,12 +359,10 @@ function resize (cobalt, node) {
                 binding: 2,
                 resource: node.data.sampler
             },
-            /*
             {
                 binding: 3,
-                resource: map.texture.view
+                resource: node.data.mapTex.view
             }
-            */
         ]
     }) 
 }
