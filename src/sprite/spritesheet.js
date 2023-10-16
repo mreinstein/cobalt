@@ -1,8 +1,8 @@
-import createSpriteQuads    from './create-sprite-quads.js'
-import createTextureFromUrl from '../create-texture-from-url.js'
-import readSpriteSheet      from './read-spritesheet.js'
-import spriteWGSL           from './sprite.wgsl'
-import { mat4, vec3 }       from '../deps.js'
+import createSpriteQuads     from './create-sprite-quads.js'
+import createTextureFromUrl  from '../create-texture-from-url.js'
+import readSpriteSheet       from './read-spritesheet.js'
+import spriteWGSL            from './sprite.wgsl'
+import { round, mat4, vec3 } from '../deps.js'
 
 
 // shared spritesheet resource, used by each sprite render node
@@ -192,7 +192,7 @@ function _writeSpriteBuffer (cobalt, nodeData) {
     //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
 
     // set x,y,z camera position
-    vec3.set(-cobalt.viewport.position[0], -cobalt.viewport.position[1], 0, _tmpVec3)
+    vec3.set(-round(cobalt.viewport.position[0]), -round(cobalt.viewport.position[1]), 0, _tmpVec3)
     const view = mat4.translation(_tmpVec3)
 
     // might be useful if we ever switch to a 3d perspective camera setup
