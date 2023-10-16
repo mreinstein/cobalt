@@ -176,8 +176,7 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
             {
                 view: nodeData.refs.emissive.data.view,
                 clearValue: cobalt.clearValue,
-                // TODO: why less than 2?? what crazy ass magic number is this??
-                loadOp: 'clear', //(actualSpriteRenderCount < 2) ? 'clear' : 'load',
+                loadOp: 'clear',
                 storeOp: 'store'
             }
         ]

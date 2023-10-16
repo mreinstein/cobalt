@@ -31,26 +31,26 @@ export default {
 }
 
 
-async function init (cobalt, nodeData) {
+async function init (cobalt, node) {
     const { device } = cobalt
 
-    const { label, mip_count, format, usage, viewportScale } = nodeData.options
+    const { label, mip_count, format, usage, viewportScale } = node.options
 
     return createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage)
 }
 
 
-function destroy (cobalt, nodeData) {
+function destroy (node) {
     // destroy the existing texture before we re-create it to avoid leaking memory
-    nodeData.data.texture.destroy()
+    node.data.texture.destroy()
 }
 
 
-function resize (cobalt, nodeData) {
+function resize (cobalt, node) {
     const { device } = cobalt
-	destroy(cobalt, nodeData)
+	destroy(node)
     const { width, height } = cobalt.viewport
-    const { options } = nodeData
-    const scale = nodeData.options.viewportScale
-    nodeData.data = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage)
+    const { options } = node
+    const scale = node.options.viewportScale
+    node.data = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage)
 }
