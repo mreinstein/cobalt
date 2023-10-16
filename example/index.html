@@ -59,6 +59,7 @@
         </div>
 
 <script type="module">
+//import { webgpuDebugger } from './capture.js'
 //import './dist/webgpu-debugger.js';
 
 import Game             from './Game.js'
@@ -80,8 +81,8 @@ async function main () {
     const viewportHeight = constants.GAME_HEIGHT
     Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
-    const tileAtlasNode = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'tileAtlas',
+    // instantiate all resource nodes
+    const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
         type: 'tileAtlas',
         refs: { },
         options: {
@@ -92,8 +93,7 @@ async function main () {
         }
     })
 
-    const hdrTex = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'hdr',
+    const hdrTex = await Cobalt.initNode(Game.renderer, {
         type: 'fbTexture',
         refs: { },
         options: {
@@ -105,8 +105,7 @@ async function main () {
         }
     })
 
-    const spritesheet = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'spritesheet',
+    const spritesheet = await Cobalt.initNode(Game.renderer, {
         type: 'spritesheet',
         refs: { },
         options: {
@@ -116,8 +115,7 @@ async function main () {
         }
     })
 
-    const emissiveTex = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'emissive',
+    const emissiveTex = await Cobalt.initNode(Game.renderer, {
         type: 'fbTexture',
         refs: { },
         options: {
@@ -125,12 +123,11 @@ async function main () {
             format: 'rgba16float',
             mip_count: 1,
             viewportScale: 1.0,
-            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
         }
     })
 
-    const bloomTex = await Cobalt.addResourceNode(Game.renderer, {
-        name: 'bloom',
+    const bloomTex = await Cobalt.initNode(Game.renderer, {
         type: 'fbTexture',
         refs: { },
         options: {
@@ -142,6 +139,8 @@ async function main () {
         }
     })
 
+
+    // instantiate all runnable nodes
     const tileNode = await Cobalt.initNode(Game.renderer, {
         type: 'tile',
         refs: {
@@ -186,6 +185,7 @@ async function main () {
         }
     })
 
+
     const bloomNode = await Cobalt.initNode(Game.renderer, {
         type: 'bloom',
         refs: {
@@ -213,16 +213,81 @@ async function main () {
             ],
         }
     })
+    
+    const tmpTex = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'bloom + hdr + displacement compositing',
+            format: 'bgra8unorm',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
 
     const compositeNode = await Cobalt.initNode(Game.renderer, {
         type: 'composite',
         refs: {
             hdr: hdrTex,
             bloom: bloomTex,
-            combined: 'FRAME_TEXTURE_VIEW',
+            combined: tmpTex, //'FRAME_TEXTURE_VIEW',
         },
         options: { }
     })
+    
+
+    const tmpTex2 = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'bloom + hdr + displacement compositing',
+            format: 'bgra8unorm',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const displacement = await Cobalt.initNode(Game.renderer, {
+        type: 'displacement',
+        refs: {
+            color: tmpTex,
+            //map: 
+            out: tmpTex2,
+        },
+        options: {
+        }
+    })
+
+    displacement.addTriangle([
+        [ 140, 55 ],
+        [ 100, 110 ],
+        [ 180, 110 ],
+    ])
+
+    
+    const b = await Cobalt.initNode(Game.renderer, {
+        type: 'fbBlit',
+        refs: {
+            in: tmpTex,
+            out: 'FRAME_TEXTURE_VIEW',
+        },
+        options: { }
+    })
+
+    /*
+    const b2 = await Cobalt.initNode(Game.renderer, {
+        type: 'fbBlit',
+        refs: {
+            in: tmpTex2,
+            out: 'FRAME_TEXTURE_VIEW',
+        },
+        options: { }
+    })
+    */
+    
+
 
     const overlayNode = await Cobalt.initNode(Game.renderer, {
         type: 'overlay',
@@ -236,6 +301,7 @@ async function main () {
     })
 
 
+
     // use resizeViewport to init values on load:
     resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
 
@@ -247,6 +313,7 @@ async function main () {
     window.addEventListener('resize', debouncedResize, { passive: true })
 
 
+    
     const gui = new dat.GUI()
 
     const config = bloomNode.options
@@ -270,6 +337,7 @@ async function main () {
     gui.add(Game.renderer.viewport, 'zoom', 0.001, 4).onChange((v) => {
         Cobalt.setViewportPosition(Game.renderer, Game.renderer.viewport.position)
     })
+    
 
     const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
         const { device } = Game.renderer
@@ -300,6 +368,9 @@ async function main () {
     ECS.addSystem(world, rendererSystem(Game.renderer))
     //ECS.addSystem(world, animationSystem)
 
+    Cobalt.setViewportPosition(Game.renderer, [ 128, 170 ])
+
+    /*
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
             const elapsed = performance.now()
@@ -313,10 +384,12 @@ async function main () {
 
         return { onUpdate }
     })
+    */
     
 
     Game.world = world
 
+    
     // test sprites
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
@@ -340,11 +413,13 @@ async function main () {
         zIndex: 5,
         spriteNode: overlayNode,
     })
+    
 
     const gameLoop = function () {
         tick(Game)
         requestAnimationFrame(gameLoop)
     }
+
 
     requestAnimationFrame(gameLoop)
 }
