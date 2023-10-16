@@ -1,5 +1,4 @@
-import blitWGSL             from './fb-blit.wgsl'
-import createFullscreenQuad from '../create-fullscreen-quad.js'
+import blitWGSL from './fb-blit.wgsl'
 
 
 // blit a source texture into a destination texture
@@ -8,7 +7,7 @@ export default {
     type: 'fbBlit',
     refs: [
         { name: 'in', type: 'cobaltTexture', format: 'bgra8unorm', access: 'read' },
-        { name: 'out', type: 'textureView', format: 'bgra8unorm', access: 'write' },
+        { name: 'out', type: 'cobaltTexture', format: 'bgra8unorm', access: 'write' },
     ],
 
     // @params Object cobalt renderer world object
@@ -38,8 +37,6 @@ export default {
 
 async function init (cobalt, node) {
     const { device } = cobalt
-
-    const quad = createFullscreenQuad(device)
 
     const bindGroupLayout = device.createBindGroupLayout({
         entries: [
@@ -81,7 +78,7 @@ async function init (cobalt, node) {
                 code: blitWGSL
             }),
             entryPoint: 'vs_main',
-            buffers: [ quad.bufferLayout ]
+            buffers: [ /*quad.bufferLayout*/ ]
         },
 
         fragment: {
@@ -114,7 +111,6 @@ async function init (cobalt, node) {
     })
 
     return {
-        quad,
         bindGroupLayout,
         bindGroup,
         pipeline,
@@ -137,7 +133,7 @@ function draw (cobalt, node, commandEncoder) {
     })
 
     renderpass.setPipeline(node.data.pipeline)
-    renderpass.setVertexBuffer(0, node.data.quad.buffer)
+    //renderpass.setVertexBuffer(0, node.data.quad.buffer)
 
     renderpass.setBindGroup(0, node.data.bindGroup)
 

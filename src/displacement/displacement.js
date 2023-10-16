@@ -297,7 +297,7 @@ function draw (cobalt, node, commandEncoder, runCount) {
         colorAttachments: [
             // color
             {
-                view: node.refs.out.data.view,
+                view: node.refs.out,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
                 storeOp: 'store'

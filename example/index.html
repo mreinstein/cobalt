@@ -218,7 +218,7 @@ async function main () {
         type: 'fbTexture',
         refs: { },
         options: {
-            label: 'bloom + hdr + displacement compositing',
+            label: 'bloom + hdr compositing',
             format: 'bgra8unorm',
             mip_count: 1,
             viewportScale: 1.0,
@@ -231,42 +231,12 @@ async function main () {
         refs: {
             hdr: hdrTex,
             bloom: bloomTex,
-            combined: tmpTex, //'FRAME_TEXTURE_VIEW',
+            combined: tmpTex,
         },
         options: { }
     })
-    
 
-    const tmpTex2 = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
-        refs: { },
-        options: {
-            label: 'bloom + hdr + displacement compositing',
-            format: 'bgra8unorm',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
 
-    const displacement = await Cobalt.initNode(Game.renderer, {
-        type: 'displacement',
-        refs: {
-            color: tmpTex,
-            //map: 
-            out: tmpTex2,
-        },
-        options: {
-        }
-    })
-
-    displacement.addTriangle([
-        [ 140, 55 ],
-        [ 100, 110 ],
-        [ 180, 110 ],
-    ])
-
-    
     const b = await Cobalt.initNode(Game.renderer, {
         type: 'fbBlit',
         refs: {
@@ -276,19 +246,25 @@ async function main () {
         options: { }
     })
 
-    /*
-    const b2 = await Cobalt.initNode(Game.renderer, {
-        type: 'fbBlit',
+
+    const displacement = await Cobalt.initNode(Game.renderer, {
+        type: 'displacement',
         refs: {
-            in: tmpTex2,
+            color: tmpTex,
+            //map: 
             out: 'FRAME_TEXTURE_VIEW',
         },
-        options: { }
+        options: {
+        }
     })
-    */
+
+    displacement.addTriangle([
+        [ 250, 85 ],
+        [ 210, 140 ],
+        [ 310, 140 ],
+    ])
+
     
-
-
     const overlayNode = await Cobalt.initNode(Game.renderer, {
         type: 'overlay',
         refs: {
@@ -368,7 +344,7 @@ async function main () {
     ECS.addSystem(world, rendererSystem(Game.renderer))
     //ECS.addSystem(world, animationSystem)
 
-    Cobalt.setViewportPosition(Game.renderer, [ 128, 170 ])
+    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
 
     /*
     ECS.addSystem(world, function cameraLoopSystem(world) {

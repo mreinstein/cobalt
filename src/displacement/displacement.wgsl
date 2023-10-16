@@ -35,15 +35,15 @@ const c = cos(rot);
 // https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html
 
 const scaleM: mat4x4<f32> = mat4x4<f32>(sx, 0.0, 0.0, 0.0,
-                                     0.0,  sy, 0.0, 0.0,
-                                     0.0, 0.0, sz, 0.0,
-                                       0,   0,   0, 1.0);
+                                       0.0,  sy, 0.0, 0.0,
+                                       0.0, 0.0, sz, 0.0,
+                                         0,   0,   0, 1.0);
 
 // rotation and translation
 const modelM: mat4x4<f32> = mat4x4<f32>(c,   s, 0.0, 0.0,
-                                     -s,   c, 0.0, 0.0,
-                                    0.0, 0.0, 1.0, 0.0,
-                                     tx,  ty,  tz, 1.0) * scaleM;
+                                       -s,   c, 0.0, 0.0,
+                                      0.0, 0.0, 1.0, 0.0,
+                                       tx,  ty,  tz, 1.0) * scaleM;
 
 
 
@@ -56,6 +56,7 @@ fn vs_main (@location(0) vertexPosition: vec2<f32>) -> Fragment  {
 
     // convert screen space (-1 -> 1) to texture space (0 -> 1)
     output.TexCoord = vec2<f32>((output.Position.xy + 1.0) / 2.0);
+    output.TexCoord.y = 1.0 - output.TexCoord.y; // invert the Y because in texture space, y is positive up
     
     return output;
 }
@@ -66,11 +67,9 @@ fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
 
     var map: vec4<f32> = textureSample(mapTexture, mySampler, TexCoord);
 
-    let scale = 32.0;
+    let scale = 20.0;
 
     map -= 0.5; // convert map value from (0 -> 1) to (-0.5 -> 0.5)
-
-    //let inverseTileTextureSize = 1 / vec2<f32>(textureDimensions(tileTexture, 0));
 
     let invTexSize = 1 / vec2<f32>(textureDimensions(mapTexture, 0));
 
@@ -85,6 +84,5 @@ fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
 
     let outColor: vec4<f32> = textureSample(myTexture, mySampler, clamped);
 
-    //return outColor;
-    return vec4<f32>(0.0, 1.0, 0.0, 1.0);
+    return outColor;
 }
