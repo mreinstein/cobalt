@@ -147,7 +147,6 @@ async function init (cobalt, nodeData) {
     })
     
     return {
-        renderPassLookup: new Map(), // key is spriteId, value is the cobalt.renderPasses[] entry containing this sprite
         pipeline,
         uniformBuffer, // perspective and view matrices for the camera
         quads,
@@ -159,8 +158,7 @@ async function init (cobalt, nodeData) {
 }
 
 
-function destroy (nodeData) {    
-    nodeData.data.renderPassLookup.clear()
+function destroy (nodeData) {
     nodeData.data.quads.buffer.destroy()
     nodeData.data.colorTexture.buffer.destroy()
     nodeData.data.uniformBuffer.destroy()
