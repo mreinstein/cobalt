@@ -110,12 +110,12 @@ function init (cobalt, options) {
 
 
 // combine bloom and color textures and draw to a fullscreen quad
-function draw (cobalt, nodeData, commandEncoder) {
-  
+function draw (cobalt, node, commandEncoder) {
+
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: nodeData.refs.combined, //renderer.context.getCurrentTexture().createView(),
+          view: node.refs.combined.data.view, //renderer.context.getCurrentTexture().createView(),
           clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
           loadOp: 'clear',
           storeOp: 'store',
@@ -123,7 +123,7 @@ function draw (cobalt, nodeData, commandEncoder) {
       ],
     })
 
-    const { pipeline, bindGroup } = nodeData.data
+    const { pipeline, bindGroup } = node.data
 
     passEncoder.setPipeline(pipeline)
     passEncoder.setBindGroup(0, bindGroup)
@@ -132,8 +132,8 @@ function draw (cobalt, nodeData, commandEncoder) {
 }
 
 
-function resize (cobalt, nodeData) {
-    const { bindGroup, pipeline, params_buf } = nodeData.data
+function resize (cobalt, node) {
+    const { pipeline, params_buf } = node.data
     const { device } = cobalt
 
     nodeData.data.bindGroup = device.createBindGroup({
@@ -141,17 +141,17 @@ function resize (cobalt, nodeData) {
         entries: [
           {
             binding: 0,
-            resource: nodeData.refs.hdr.data.sampler,
+            resource: node.refs.hdr.data.sampler,
           },
           // color
           {
             binding: 1,
-            resource: nodeData.refs.hdr.data.view,
+            resource: node.refs.hdr.data.view,
           },
           // emissive
           {
             binding: 2,
-            resource: nodeData.refs.bloom.data.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
+            resource: node.refs.bloom.data.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
           },
           {
             binding: 3,

@@ -87,20 +87,23 @@ export async function initNode (c, nodeData) {
 
     if (!nodeDef)
         throw new Error(`Can't initialize a new node missing a type.`)
-    
-    const data = await nodeDef.onInit(c, nodeData)
 
     const node = {
         type: nodeData.type,
         refs: nodeData.refs || { },
         options: nodeData.options || { },
-        data: data || { },
+        data: { },
         enabled: true, // when disabled, the node won't be run
     }
 
-    for (const refName in node.refs)
-        if (node.refs[refName] === 'FRAME_TEXTURE_VIEW')
+    for (const refName in node.refs) {
+        if (node.refs[refName] === 'FRAME_TEXTURE_VIEW') {
             c.defaultTextureViewRefs.push({ node, refName })
+            node.refs[refName] = c.context.getCurrentTexture().createView()
+        }
+    }
+
+    node.data = await nodeDef.onInit(c, node)
 
     // TODO: should we validate that all of the refs from the node definition are included?
     //       if so, we might want a notion of required vs optional refs
