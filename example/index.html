@@ -383,7 +383,6 @@ async function main () {
     //ECS.addSystem(world, animationSystem)
 
     Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
-
     
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
@@ -399,7 +398,8 @@ async function main () {
 
 
             // loop the displacement offset
-            displacement.options.offsetX = (displacement.options.offsetX + 1) % 512
+            //displacement.options.offsetX = (displacement.options.offsetX + 1) % perlinTex.texture.width
+            displacement.options.offsetY = (displacement.options.offsetY + 1) % perlinTex.texture.height
 
             Game.renderer.device.queue.writeBuffer(
                 displacement.data.params_buf,

@@ -185,14 +185,17 @@ async function init (cobalt, node) {
         bindGroupLayouts: [ bindGroupLayout ]
     })
 
+    const addressMode = 'repeat' // 'clamp-to-edge'
+    const filter = 'linear' // linear | nearest
+
     const sampler = device.createSampler({
         label: `displacement ampler`,
-        addressModeU: 'clamp-to-edge',
-        addressModeV: 'clamp-to-edge',
-        addressModeW: 'clamp-to-edge',
-        magFilter: 'linear',
-        minFilter: 'linear',
-        mipmapFilter: 'linear',
+        addressModeU: addressMode,
+        addressModeV: addressMode,
+        addressModeW: addressMode,
+        magFilter: filter,
+        minFilter: filter,
+        mipmapFilter: filter,
     })
 
 
