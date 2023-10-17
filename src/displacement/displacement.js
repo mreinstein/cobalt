@@ -110,10 +110,9 @@ async function init (cobalt, node) {
     const { device } = cobalt
 
     // adjustable displacement settings
-    const scale = 20
-    const dat = new Float32Array([ 0,  // offsetX
-                                   0,  // offsetY
-                                   20, // scale
+    const dat = new Float32Array([ node.options.offseyX ?? 0,  // offsetX
+                                   node.options.offseyY ?? 0,  // offsetY
+                                   node.options.scale ?? 20, // scale
                                    0   // unused, for byte alignment
                                  ])
 
