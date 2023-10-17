@@ -1,18 +1,19 @@
 export { default as createTexture } from './create-texture.js'
 
+
 // built-in run nodes
-import bloomNode           from './bloom/bloom.js'
-import compositeNode       from './scene-composite/scene-composite.js'
-import spriteNode          from './sprite/sprite.js'
-import tileNode            from './tile/tile.js'
-import displacementNode    from './displacement/displacement.js'
-import overlayNode         from './overlay/overlay.js'    
-import fbBlitNode          from './fb-blit/fb-blit.js'  
+import bloomNode        from './bloom/bloom.js'
+import compositeNode    from './scene-composite/scene-composite.js'
+import spriteNode       from './sprite/sprite.js'
+import tileNode         from './tile/tile.js'
+import displacementNode from './displacement/displacement.js'
+import overlayNode      from './overlay/overlay.js'    
+import fbBlitNode       from './fb-blit/fb-blit.js'  
 
 // built-in resource nodes
-import tileAtlasNode       from './tile/atlas.js'
-import spritesheetNode     from './sprite/spritesheet.js'
-import fbTextureNode       from './fb-texture/fb-texture.js'
+import tileAtlasNode    from './tile/atlas.js'
+import spritesheetNode  from './sprite/spritesheet.js'
+import fbTextureNode    from './fb-texture/fb-texture.js'
 
 
 // create and initialize a WebGPU renderer for a given canvas
@@ -35,12 +36,12 @@ export async function init (canvas, viewportWidth, viewportHeight) {
     const nodeDefs = {
         // TODO: namespace the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
         //
-        // built in resource node types
+        // built in resource nodes
         tileAtlas: tileAtlasNode,
         spritesheet: spritesheetNode,
         fbTexture: fbTextureNode,
 
-        // builtin run node types
+        // builtin run nodes
         bloom: bloomNode,
         composite: compositeNode,
         sprite: spriteNode,
@@ -106,9 +107,6 @@ export async function initNode (c, nodeData) {
     }
 
     node.data = await nodeDef.onInit(c, node)
-
-    // TODO: should we validate that all of the refs from the node definition are included?
-    //       if so, we might want a notion of required vs optional refs
 
     // copy in all custom functions, and ensure the first parameter is the node itself 
     const customFunctions = nodeDef.customFunctions || { }

@@ -255,6 +255,9 @@ async function main () {
             out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
+            scale: 20,
+            offsetX: 0,
+            offsetY: 0,
         }
     })
 
@@ -338,6 +341,39 @@ async function main () {
                                 0, ])
         )
     }
+
+    const disp = gui.addFolder('displacement')
+
+    disp.add(displacement.options, 'scale', 0, 100).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
+    disp.add(displacement.options, 'offsetX', 0, 512).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
+    disp.add(displacement.options, 'offsetY', 0, 512).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
 
     
     const world = ECS.createWorld()

@@ -7,10 +7,17 @@ struct TransformData {
     projection: mat4x4<f32>
 };
 
+struct displacement_param {
+    offset: vec2<f32>,
+    scale: f32,
+    noop: f32
+};
+
 @binding(0) @group(0) var<uniform> transformUBO: TransformData;
 @binding(1) @group(0) var myTexture: texture_2d<f32>;
 @binding(2) @group(0) var mySampler: sampler;
 @binding(3) @group(0) var mapTexture: texture_2d<f32>;
+@binding(4) @group(0) var<uniform> param: displacement_param;
 
 struct Fragment {
     @builtin(position) Position : vec4<f32>,
@@ -65,13 +72,17 @@ fn vs_main (@location(0) vertexPosition: vec2<f32>) -> Fragment  {
 @fragment
 fn fs_main (@location(0) TexCoord: vec2<f32>) -> @location(0) vec4<f32> {
 
-    var map: vec4<f32> = textureSample(mapTexture, mySampler, TexCoord);
+    let dims = vec2<f32>(textureDimensions(mapTexture, 0));
+    let inv = param.offset / dims;
 
-    let scale = 20.0;
+    var map: vec4<f32> = textureSample(mapTexture, mySampler, TexCoord + inv);
+
+    let scale = param.scale;
 
     map -= 0.5; // convert map value from (0 -> 1) to (-0.5 -> 0.5)
 
-    let invTexSize = 1 / vec2<f32>(textureDimensions(mapTexture, 0));
+    
+    let invTexSize = 1 / dims;
 
     map.x = scale * invTexSize.x * map.x;
     map.y = scale * invTexSize.y * map.y;

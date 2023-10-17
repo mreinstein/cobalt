@@ -110,8 +110,25 @@ export default {
 // This corresponds to a WebGPU render pass.  It handles 1 sprite layer.
 async function init (cobalt, node) {
     const { device } = cobalt
-    
-    // TODO: add scale option as a uniform
+
+    // adjustable displacement settings
+    const scale = 20
+    const dat = new Float32Array([ 0,  // offsetX
+                                   0,  // offsetY
+                                   20, // scale
+                                   0   // unused, for byte alignment
+                                 ])
+
+    const params_buf = device.createBuffer({
+        label: 'displacement options buffer',
+        size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
+        mappedAtCreation: true,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+
+    new Float32Array(params_buf.getMappedRange()).set(dat)
+
+    params_buf.unmap()
 
 
     const MAX_SPRITE_COUNT = 256  // max number of displacement sprites in this render pass
@@ -156,7 +173,15 @@ async function init (cobalt, node) {
                 binding: 3,
                 visibility: GPUShaderStage.FRAGMENT,
                 texture:  { }
-            }
+            },
+            {
+                binding: 4,
+                visibility: GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    //minBindingSize: 24 // sizeOf(BloomParam)
+                }
+            },
         ],
     })
 
@@ -164,8 +189,6 @@ async function init (cobalt, node) {
         bindGroupLayouts: [ bindGroupLayout ]
     })
 
-    //const map = node.refs.map.data
-    //const color = node.refs.color.data
     const sampler = device.createSampler({
         label: `displacement ampler`,
         addressModeU: 'clamp-to-edge',
@@ -186,7 +209,6 @@ async function init (cobalt, node) {
                     buffer: uniformBuffer
                 }
             },
-        
             {
                 binding: 1,
                 resource: node.refs.color.data.view
@@ -198,7 +220,13 @@ async function init (cobalt, node) {
             {
                 binding: 3,
                 resource: mapTex.view
-            }
+            },
+            {
+                binding: 4,
+                resource: {
+                    buffer: params_buf
+                }
+            },
         ]
     }) 
 
@@ -271,6 +299,7 @@ async function init (cobalt, node) {
 
         pipeline,
 
+        params_buf,
         buffer, // where the per-triangle vertex data is stored
 
         // actual vertex data. this is used to update the buffer.
@@ -335,6 +364,9 @@ function destroy (node) {
     node.data.spriteData = null
     node.data.spriteIndices.clear()
     node.data.spriteIndices = null
+
+    node.data.params_buf.destroy()
+    node.data.params_buf = null
 }
 
 
@@ -362,7 +394,13 @@ function resize (cobalt, node) {
             {
                 binding: 3,
                 resource: node.data.mapTex.view
-            }
+            },
+            {
+                binding: 4,
+                resource: {
+                    buffer: node.data.params_buf
+                }
+            },
         ]
     }) 
 }
