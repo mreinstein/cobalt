@@ -246,12 +246,14 @@ async function main () {
         options: { }
     })
 
+    const perlinTex = await Cobalt.createTextureFromUrl(Game.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
+    //console.log(perlinTex)
 
     const displacement = await Cobalt.initNode(Game.renderer, {
         type: 'displacement',
         refs: {
             color: tmpTex,
-            //map: 
+            map: perlinTex,
             out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
@@ -382,9 +384,10 @@ async function main () {
 
     Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
 
-    /*
+    
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
+            /*
             const elapsed = performance.now()
             const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
             const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
@@ -392,11 +395,23 @@ async function main () {
             //const { tileScale } = Game.renderer.tile
 
             Cobalt.setViewportPosition(Game.renderer, [ x, y ])
+            */
+
+
+            // loop the displacement offset
+            displacement.options.offsetX = (displacement.options.offsetX + 1) % 512
+
+            Game.renderer.device.queue.writeBuffer(
+                displacement.data.params_buf,
+                0,
+                new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+            )
+
         }
 
         return { onUpdate }
     })
-    */
+    
     
 
     Game.world = world

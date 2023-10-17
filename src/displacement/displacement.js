@@ -4,8 +4,7 @@ import uuid             from '../uuid.js'
 import { round, mat4, vec3 }   from '../deps.js'
 
 
-// TODO:
-// adapt this to webgpu https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
+// adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
 
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
@@ -20,9 +19,8 @@ export default {
     	// input framebuffer texture with the scene drawn
     	{ name: 'color', type: 'textureView', format: 'bgra8unorm', access: 'read' },
 
-        // TODO: pass this in as an argument rather than hardcoding
     	// displacement map (perlin noise texture works well here)
-        //{ name: 'map', type: 'textureView', format: 'bgra8unorm', access: 'read' },
+        { name: 'map', type: 'cobaltTexture', format: 'bgra8unorm', access: 'read' },
 
         // result we're writing to
         { name: 'out', type: 'textureView', format: 'bgra8unorm', access: 'write' },
@@ -150,8 +148,6 @@ async function init (cobalt, node) {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
-    const mapTex = await createTextureFromUrl(cobalt, 'displacement map', './assets/displacement_map_repeat.jpg', 'bgra8unorm')
-
     const bindGroupLayout = device.createBindGroupLayout({
         entries: [
             {
@@ -219,7 +215,7 @@ async function init (cobalt, node) {
             },
             {
                 binding: 3,
-                resource: mapTex.view
+                resource: node.refs.map.view
             },
             {
                 binding: 4,
@@ -295,7 +291,6 @@ async function init (cobalt, node) {
         uniformBuffer,
 
         sampler,
-        mapTex,
 
         pipeline,
 
@@ -393,7 +388,7 @@ function resize (cobalt, node) {
             },
             {
                 binding: 3,
-                resource: node.data.mapTex.view
+                resource: node.refs.map.view
             },
             {
                 binding: 4,
