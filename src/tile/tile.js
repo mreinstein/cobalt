@@ -138,7 +138,9 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
 
     // on the first render, we should clear the color attachment.
     // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
-    const loadOp = (runCount === 0) ? 'clear' : 'load'
+    let loadOp = nodeData.options.loadOp
+    if (!loadOp)
+        loadOp = (runCount === 0) ? 'clear' : 'load'
 
 	const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
