@@ -130,17 +130,13 @@ async function init (cobalt, nodeData) {
 }
 
 
-
-// @param Integer runCount  how many nodes in the graph have been run already
-function draw (cobalt, nodeData, commandEncoder, runCount) {
+function draw (cobalt, nodeData, commandEncoder) {
 
     const { device } = cobalt
 
     // on the first render, we should clear the color attachment.
     // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
-    let loadOp = nodeData.options.loadOp
-    if (!loadOp)
-        loadOp = (runCount === 0) ? 'clear' : 'load'
+    const loadOp = nodeData.options.loadOp || 'load'
 
 	const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [

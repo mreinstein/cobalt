@@ -129,9 +129,6 @@ export function draw (c) {
 
     const v = c.context.getCurrentTexture().createView()
 
-    let runCount = 0 // track how many nodes have run so far this frame
-
-
     // some nodes may need a reference to the default texture view (the frame backing)
     // this is generated each draw frame so we need to update the references
     for (const r of c.defaultTextureViewRefs)
@@ -143,8 +140,7 @@ export function draw (c) {
             continue
 
         const nodeDef = c.nodeDefs[node.type]
-        nodeDef.onRun(c, node, commandEncoder, runCount)
-        runCount++
+        nodeDef.onRun(c, node, commandEncoder)
     }
 
     device.queue.submit([ commandEncoder.finish() ])

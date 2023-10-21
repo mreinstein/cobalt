@@ -34,9 +34,9 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, node, webGpuCommandEncoder, runCount) {
+    onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, node, webGpuCommandEncoder, runCount)
+        draw(cobalt, node, webGpuCommandEncoder)
     },
 
     onDestroy: function (cobalt, node) {
@@ -308,8 +308,7 @@ async function init (cobalt, node) {
 }
 
 
-// @param Integer runCount  how many nodes in the graph have been run already
-function draw (cobalt, node, commandEncoder, runCount) {
+function draw (cobalt, node, commandEncoder) {
 
 	if (node.data.spriteCount === 0)
 		return

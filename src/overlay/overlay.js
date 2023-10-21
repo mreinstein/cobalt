@@ -28,9 +28,9 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, node, webGpuCommandEncoder, runCount) {
+    onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, node, webGpuCommandEncoder, runCount)
+        draw(cobalt, node, webGpuCommandEncoder)
     },
 
     onDestroy: function (cobalt, node) {
@@ -211,26 +211,25 @@ async function init (cobalt, nodeData) {
 }
 
 
-// @param Integer runCount  how many nodes in the graph have been run already
-function draw (cobalt, nodeData, commandEncoder, runCount) {
+function draw (cobalt, node, commandEncoder) {
     const { device } = cobalt
 
     // on the first render, we should clear the color attachment.
     // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
-	const loadOp = (runCount === 0) ? 'clear' : 'load'
+    const loadOp = node.options.loadOp || 'load'
 
-    if (nodeData.data.dirty) {
-        _rebuildSpriteDrawCalls(nodeData.data)
-        nodeData.data.dirty = false
+    if (node.data.dirty) {
+        _rebuildSpriteDrawCalls(node.data)
+        node.data.dirty = false
     }
 
-    device.queue.writeBuffer(nodeData.data.spriteBuffer, 0, nodeData.data.spriteData.buffer)
+    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer)
 
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             // color
             {
-                view: nodeData.refs.color,
+                view: node.refs.color,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
                 storeOp: 'store'
@@ -238,9 +237,9 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
         ]
     })
 
-    renderpass.setPipeline(nodeData.data.pipeline)
-    renderpass.setBindGroup(0, nodeData.data.bindGroup)
-    renderpass.setVertexBuffer(0, nodeData.refs.spritesheet.data.quads.buffer)
+    renderpass.setPipeline(node.data.pipeline)
+    renderpass.setBindGroup(0, node.data.bindGroup)
+    renderpass.setVertexBuffer(0, node.refs.spritesheet.data.quads.buffer)
 
     // write sprite instance data into the storage buffer, sorted by sprite type. e.g.,
     //      renderpass.draw(6,  1,  0, 0)  //  1 hero instance
@@ -251,14 +250,14 @@ function draw (cobalt, nodeData, commandEncoder, runCount) {
     const vertexCount = 6
     let baseInstanceIdx = 0
 
-    for (let i=0; i < nodeData.data.instancedDrawCallCount; i++) {
+    for (let i=0; i < node.data.instancedDrawCallCount; i++) {
         // [
         //    baseVtxIdx0, instanceCount0,
         //    baseVtxIdx1, instanceCount1,
         //    ...
         // ]
-        const baseVertexIdx = nodeData.data.instancedDrawCalls[i*2  ] * vertexCount
-        const instanceCount = nodeData.data.instancedDrawCalls[i*2+1]
+        const baseVertexIdx = node.data.instancedDrawCalls[i*2  ] * vertexCount
+        const instanceCount = node.data.instancedDrawCalls[i*2+1]
         renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx)
         baseInstanceIdx += instanceCount
     }
