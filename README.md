@@ -19,7 +19,7 @@ This library is intentionally very low level. It provides a way to define nodes,
 It is _NOT_ a high level abstraction that enables you to forget about how webgpu works.
 
 This library is geared torwards people building their own renderers that want to leverage WebGpu, but want a minimal
-node graph implementation that simplifies the linking of textures and other assets between render passes.
+node graph implementation that simplifies the linking of textures and other assets between render/compute passes.
 
 
 ## Partial Example
