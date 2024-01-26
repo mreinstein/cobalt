@@ -84,7 +84,7 @@ export default {
 		    node.data.spriteCount--
         },
 
-        setPosition: function (cobalt, node, triangleId, vertices) {
+        setPosition: function (cobalt, node, triangleId, triangleVertices) {
         	
 			const spriteIdx = node.data.spriteIndices.get(triangleId)
 		    const offset = spriteIdx * FLOAT32S_PER_SPRITE
