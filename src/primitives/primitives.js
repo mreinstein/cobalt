@@ -52,7 +52,7 @@ export default {
 
     // optional
     customFunctions: {
-        addLine: function (cobalt, node, start, end, color, lineWidth=1) {
+        line: function (cobalt, node, start, end, color, lineWidth=1) {
             
             const delta = vec2.sub(end, start)
 
@@ -132,7 +132,7 @@ export default {
             cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
         },
 
-        addEllipse: function (cobalt, node, center, width, height, numSegments, color) {
+        filledEllipse: function (cobalt, node, center, halfWidth, halfHeight, numSegments, color) {
 
             const [ x, y ] = center
 
@@ -146,10 +146,10 @@ export default {
                 const nextAngle = (i + 1) * deltaAngle
 
                 // Calculate x and y for the current and next points on the ellipse
-                const currX = x + width * Math.cos(angle)
-                const currY = y + height * Math.sin(angle)
-                const nextX = x + width * Math.cos(nextAngle)
-                const nextY = y + height * Math.sin(nextAngle)
+                const currX = x + halfWidth * Math.cos(angle)
+                const currY = y + halfHeight * Math.sin(angle)
+                const nextX = x + halfWidth * Math.cos(nextAngle)
+                const nextY = y + halfHeight * Math.sin(nextAngle)
 
                 // Add vertices for the triangles (first point is always the center)
                 // First triangle vertex (center of ellipse)
@@ -196,6 +196,111 @@ export default {
             }
 
             node.data.vertexCount += (3 * numSegments)
+
+            cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+        },
+
+        filledBox: function (cobalt, node, center, width, height, color) {
+            const [ x, y ] = center
+
+            let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
+
+            // TODO:
+            /*
+
+    // Calculate the half width and half height for convenience
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Calculate corner positions
+    const topLeft = { x: x - halfWidth, y: y - halfHeight };
+    const topRight = { x: x + halfWidth, y: y - halfHeight };
+    const bottomLeft = { x: x - halfWidth, y: y + halfHeight };
+    const bottomRight = { x: x + halfWidth, y: y + halfHeight };
+
+    // First triangle (top left to bottom right)
+    vertices.push(
+        topLeft.x, topLeft.y,       // Top left vertex
+        bottomLeft.x, bottomLeft.y, // Bottom left vertex
+        topRight.x, topRight.y      // Top right vertex
+    );
+
+    // Second triangle (bottom right to top left)
+    vertices.push(
+        bottomLeft.x, bottomLeft.y, // Bottom left vertex
+        bottomRight.x, bottomRight.y, // Bottom right vertex
+        topRight.x, topRight.y      // Top right vertex
+    );
+
+    
+
+
+            // triangle 1
+            // pt 1
+            node.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 1] = start[1] + perp[1] * halfLineWidth
+
+            // pt1 color
+            node.data.vertices[i + 2] = color[0]
+            node.data.vertices[i + 3] = color[1]
+            node.data.vertices[i + 4] = color[2]
+            node.data.vertices[i + 5] = color[3]
+
+            // pt 2
+            node.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth
+
+            // pt2 color
+            node.data.vertices[i + 8] = color[0]
+            node.data.vertices[i + 9] = color[1]
+            node.data.vertices[i + 10] = color[2]
+            node.data.vertices[i + 11] = color[3]
+
+            // pt 3
+            node.data.vertices[i + 12] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 13] = end[1] + perp[1] * halfLineWidth
+
+            // pt3 color
+            node.data.vertices[i + 14] = color[0]
+            node.data.vertices[i + 15] = color[1]
+            node.data.vertices[i + 16] = color[2]
+            node.data.vertices[i + 17] = color[3]
+            
+
+            // triangle 2
+            // pt 2
+            node.data.vertices[i + 18] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 19] = start[1] - perp[1] * halfLineWidth
+
+            // pt2 color
+            node.data.vertices[i + 20] = color[0]
+            node.data.vertices[i + 21] = color[1]
+            node.data.vertices[i + 22] = color[2]
+            node.data.vertices[i + 23] = color[3]
+            
+            // pt 3
+            node.data.vertices[i + 24] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 25] = end[1] + perp[1] * halfLineWidth
+
+            // pt3 color
+            node.data.vertices[i + 26] = color[0]
+            node.data.vertices[i + 27] = color[1]
+            node.data.vertices[i + 28] = color[2]
+            node.data.vertices[i + 29] = color[3]
+
+            // pt 4
+            node.data.vertices[i + 30] = end[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 31] = end[1] - perp[1] * halfLineWidth
+
+            // pt4 color
+            node.data.vertices[i + 32] = color[0]
+            node.data.vertices[i + 33] = color[1]
+            node.data.vertices[i + 34] = color[2]
+            node.data.vertices[i + 35] = color[3]
+            */
+
+
+            node.data.vertexCount += 6 // 2 triangles in a box, baby
 
             cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
         },
