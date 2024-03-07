@@ -33,12 +33,14 @@ export default {
 }
 
 
-function init (cobalt, options) {
+function init (cobalt, node) {
+  const { options, refs } = node
+
     const { device } = cobalt
     const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
 
-    const bloom_intensity = 40.0
-    const bloom_combine_constant = 0.68
+    const bloom_intensity = options.bloom_intensity ?? 40.0
+    const bloom_combine_constant = options.bloom_combine_constant ?? 0.68
     const dat = new Float32Array([ bloom_intensity, bloom_combine_constant ])
     const params_buf = device.createBuffer({
         label: 'scene composite params buffer',
@@ -80,17 +82,17 @@ function init (cobalt, options) {
         entries: [
           {
             binding: 0,
-            resource: options.refs.hdr.data.sampler,
+            resource: refs.hdr.data.sampler,
           },
           // color
           {
             binding: 1,
-            resource: options.refs.hdr.data.view,
+            resource: refs.hdr.data.view,
           },
           // emissive
           {
             binding: 2,
-            resource: options.refs.bloom.data.mip_view[0],
+            resource: refs.bloom.data.mip_view[0],
           },
           {
             binding: 3,
