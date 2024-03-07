@@ -1,4 +1,4 @@
-import * as Cobalt         from '../bundle.js'
+import * as Cobalt         from '../../bundle.js'
 import animationComponent  from './component-animation.js'
 import transformComponent  from './component-transform.js'
 import { ECS, vec3, vec4 } from './deps.js'

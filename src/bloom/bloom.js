@@ -48,7 +48,7 @@ export default {
 }
 
 
-function init (cobalt, options) {
+function init (cobalt, nodeData) {
     const { device } = cobalt
     const viewportWidth = cobalt.viewport.width
     const viewportHeight = cobalt.viewport.height
@@ -137,7 +137,7 @@ function init (cobalt, options) {
 
     // link bloom_mat.bind_groups_textures[2]) to bloom_mat.bloomTexture
     //bloom_mat.bind_groups_textures.push(bloom_mat.bloomTexture)
-    bloom_mat.bind_groups_textures.push(options.refs.bloom.data)
+    bloom_mat.bind_groups_textures.push(nodeData.refs.bloom.data)
     /*
     bloom_mat.bind_groups_textures.push(createTexture(
         device,
@@ -164,7 +164,7 @@ function init (cobalt, options) {
         },
     })
 
-    set_all_bind_group(cobalt, bloom_mat, options.refs)
+    set_all_bind_group(cobalt, bloom_mat, nodeData)
 
     bloom_mat.compute_pipeline = compute_pipeline
 
@@ -173,13 +173,16 @@ function init (cobalt, options) {
 }
 
 
-function set_all_bind_group (cobalt, bloom_mat, refs={}) {
+function set_all_bind_group (cobalt, bloom_mat, node) {
+
+    const { refs } = node
+
     const { device } = cobalt
 
     // create a buffer that holds static parameters, shared across all bloom bind groups
-    const bloom_threshold = 0.1//1.0
-    const bloom_knee = 0.2
-    const combine_constant = 0.68
+    const bloom_threshold = node.options.bloom_threshold ?? 0.1 //1.0
+    const bloom_knee = node.options.bloom_knee ?? 0.2
+    const combine_constant = node.options.bloom_combine_constant ?? 0.68
 
     const dat = new Float32Array([ bloom_threshold,
                                 bloom_threshold - bloom_knee,
@@ -452,7 +455,7 @@ function resize (cobalt, nodeData) {
     ))
     */
 
-    set_all_bind_group(cobalt, bloom_mat, nodeData.refs)
+    set_all_bind_group(cobalt, bloom_mat, nodeData)
 }
 
 
