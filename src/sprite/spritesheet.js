@@ -43,17 +43,17 @@ export default {
 
 
 // configure the common settings for sprite rendering
-async function init (cobalt, nodeData) {
+async function init (cobalt, node) {
     const { canvas, device } = cobalt
 
-    let spritesheet = await fetchJson(nodeData.options.spriteSheetJsonUrl)
+    let spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
     spritesheet = readSpriteSheet(spritesheet)
     
     const quads = createSpriteQuads(device, spritesheet)
 
     const [ colorTexture, emissiveTexture ] = await Promise.all([
-        createTextureFromUrl(cobalt, 'sprite', nodeData.options.colorTextureUrl, 'rgba8unorm'),
-        createTextureFromUrl(cobalt, 'emissive sprite', nodeData.options.emissiveTextureUrl, 'rgba8unorm'),
+        createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, 'rgba8unorm'),
+        createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm'),
     ])
 
     // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
@@ -158,11 +158,11 @@ async function init (cobalt, nodeData) {
 }
 
 
-function destroy (nodeData) {
-    nodeData.data.quads.buffer.destroy()
-    nodeData.data.colorTexture.buffer.destroy()
-    nodeData.data.uniformBuffer.destroy()
-    nodeData.data.emissiveTexture.texture.destroy()
+function destroy (node) {
+    node.data.quads.buffer.destroy()
+    node.data.colorTexture.buffer.destroy()
+    node.data.uniformBuffer.destroy()
+    node.data.emissiveTexture.texture.destroy()
 }
 
 
@@ -172,7 +172,7 @@ async function fetchJson (url) {
 }
 
 
-function _writeSpriteBuffer (cobalt, nodeData) {
+function _writeSpriteBuffer (cobalt, node) {
 
     const { device } = cobalt
 
@@ -203,7 +203,7 @@ function _writeSpriteBuffer (cobalt, nodeData) {
     //mat4.fromScaling(view, [ 1.5, 1.5, 1 ])
     //mat4.translate(view, view, [ 0, 0, 0 ])
 
-    device.queue.writeBuffer(nodeData.data.uniformBuffer, 0, view.buffer)
-    device.queue.writeBuffer(nodeData.data.uniformBuffer, 64, projection.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
 }
 

@@ -59,11 +59,8 @@
         </div>
 
 <script type="module">
-//import { webgpuDebugger } from './capture.js'
-//import './dist/webgpu-debugger.js';
-
 import Game             from './Game.js'
-import * as Cobalt      from '../bundle.js'
+import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
 import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
 import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
@@ -82,14 +79,13 @@ async function main () {
     Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
     // instantiate all resource nodes
-    const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
-        type: 'tileAtlas',
+    const spritesheet = await Cobalt.initNode(Game.renderer, {
+        type: 'spritesheet',
         refs: { },
         options: {
-            label: 'tile atlas',
-            tileSize: 16,
-            tileScale: 1.0,
-            textureUrl: 'assets/spelunky-tiles.png'
+            spriteSheetJsonUrl: './assets/spritesheet.json',
+            colorTextureUrl: 'assets/spritesheet.png',
+            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
         }
     })
 
@@ -102,16 +98,6 @@ async function main () {
             mip_count: 1,
             viewportScale: 1.0,
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const spritesheet = await Cobalt.initNode(Game.renderer, {
-        type: 'spritesheet',
-        refs: { },
-        options: {
-            spriteSheetJsonUrl: './assets/spritesheet.json',
-            colorTextureUrl: 'assets/spritesheet.png',
-            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
         }
     })
 
@@ -139,53 +125,6 @@ async function main () {
         }
     })
 
-
-    // instantiate all runnable nodes
-    const tileNode = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            tileAtlas: tileAtlasNode,
-            hdr: hdrTex,
-        },
-        options: {
-            textureUrl: 'assets/spelunky1.png',
-            scrollScale: 0.6,
-            //zIndex: 0,
-        }
-    })
-
-    const tileNode2 = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            tileAtlas: tileAtlasNode,
-            hdr: hdrTex,
-        },
-        options: {
-            textureUrl: 'assets/spelunky0.png',
-            scrollScale: 1.0,
-            //zIndex: 5,
-        }
-    })
-
-    const spriteNode = await Cobalt.initNode(Game.renderer, {
-        type: 'sprite',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            spritesheet: spritesheet,
-            emissive: emissiveTex,
-            hdr: hdrTex,
-        },
-        options: {
-            //zIndex: 5,
-        }
-    })
-
-
     const bloomNode = await Cobalt.initNode(Game.renderer, {
         type: 'bloom',
         refs: {
@@ -197,11 +136,10 @@ async function main () {
         },
         options: {
             // any extra options you want to pass to this node
-            bloom_intensity: 45.0,
-            bloom_combine_constant: 0.3,
-            bloom_knee: 0.2,
+            bloom_intensity: 0.0,
+            bloom_knee: 0.0,
             bloom_threshold: 0.1, // 1.0
-
+            /*
             // sprite instance 1
             sprite_instances: [
                 {
@@ -211,9 +149,10 @@ async function main () {
                     emissive_intensity: 0.5,
                 },
             ],
+            */
         }
     })
-    
+
     const tmpTex = await Cobalt.initNode(Game.renderer, {
         type: 'fbTexture',
         refs: { },
@@ -226,6 +165,22 @@ async function main () {
         }
     })
 
+    // instantiate all runnable nodes
+    const spriteNode = await Cobalt.initNode(Game.renderer, {
+        type: 'sprite',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            spritesheet: spritesheet,
+            emissive: emissiveTex,
+            hdr: hdrTex,
+        },
+        options: {
+            loadOp: 'clear',
+        }
+    })
+
+
     const compositeNode = await Cobalt.initNode(Game.renderer, {
         type: 'composite',
         refs: {
@@ -233,7 +188,9 @@ async function main () {
             bloom: bloomTex,
             combined: tmpTex,
         },
-        options: { }
+        options: {
+            bloom_combine_constant: 0.0,
+        },
     })
 
 
@@ -245,42 +202,6 @@ async function main () {
         },
         options: { }
     })
-
-    const perlinTex = await Cobalt.createTextureFromUrl(Game.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
-    //console.log(perlinTex)
-
-    const displacement = await Cobalt.initNode(Game.renderer, {
-        type: 'displacement',
-        refs: {
-            color: tmpTex,
-            map: perlinTex,
-            out: 'FRAME_TEXTURE_VIEW',
-        },
-        options: {
-            scale: 32,
-            offsetX: 0,
-            offsetY: 0,
-        }
-    })
-
-    displacement.addTriangle([
-        [ 250, 85 ],
-        [ 210, 140 ],
-        [ 310, 140 ],
-    ])
-
-    
-    const overlayNode = await Cobalt.initNode(Game.renderer, {
-        type: 'overlay',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            spritesheet: spritesheet,
-            color: 'FRAME_TEXTURE_VIEW',
-        },
-        options: { }
-    })
-
 
 
     // use resizeViewport to init values on load:
@@ -295,98 +216,13 @@ async function main () {
 
 
     
-    const gui = new dat.GUI()
-
-    const config = bloomNode.options
-
-    gui.add(config, 'bloom_intensity', 0, 200).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_combine_constant', 0.0, 1.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_knee', 0.0, 50.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_threshold', 0.0, 1.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(Game.renderer.viewport, 'zoom', 0.001, 4).onChange((v) => {
-        Cobalt.setViewportPosition(Game.renderer, Game.renderer.viewport.position)
-    })
-    
-
-    const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            compositeNode.data.params_buf,
-            0,
-            new Float32Array([ bloom_intensity, bloom_combine_constant ])
-        )
-
-        device.queue.writeBuffer(
-            bloomNode.data.params_buf,
-            0,
-            new Float32Array([ bloom_threshold,
-                                bloom_threshold - bloom_knee,
-                                bloom_knee * 2.0,
-                                0.25 / bloom_knee,
-                                bloom_combine_constant,
-                                // require byte alignment bs
-                                0,
-                                0,
-                                0, ])
-        )
-    }
-
-    const disp = gui.addFolder('displacement')
-
-    disp.add(displacement.options, 'scale', 0, 100).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
-    })
-
-    disp.add(displacement.options, 'offsetX', 0, 512).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
-    })
-
-    disp.add(displacement.options, 'offsetY', 0, 512).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
-    })
-
-
-    
     const world = ECS.createWorld()
     ECS.addSystem(world, rendererSystem(Game.renderer))
-    //ECS.addSystem(world, animationSystem)
 
     Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
     
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
-            /*
             const elapsed = performance.now()
             const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
             const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
@@ -394,29 +230,13 @@ async function main () {
             //const { tileScale } = Game.renderer.tile
 
             Cobalt.setViewportPosition(Game.renderer, [ x, y ])
-            */
-
-
-            // loop the displacement offset
-            //displacement.options.offsetX = (displacement.options.offsetX + 1) % perlinTex.texture.width
-            displacement.options.offsetY = (displacement.options.offsetY + 1) % perlinTex.texture.height
-
-            Game.renderer.device.queue.writeBuffer(
-                displacement.data.params_buf,
-                0,
-                new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-            )
-
         }
 
         return { onUpdate }
     })
-    
-    
 
     Game.world = world
 
-    
     // test sprites
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
@@ -433,14 +253,6 @@ async function main () {
         emissiveIntensity: 0.5,
         spriteNode,
     })
-
-    const s3 = spriteEntity(world, {
-        name: 'health-0.png',
-        position: [ 20, 20 ],
-        zIndex: 5,
-        spriteNode: overlayNode,
-    })
-    
 
     const gameLoop = function () {
         tick(Game)

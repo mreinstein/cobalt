@@ -10,6 +10,7 @@ import tileNode         from './tile/tile.js'
 import displacementNode from './displacement/displacement.js'
 import overlayNode      from './overlay/overlay.js'    
 import fbBlitNode       from './fb-blit/fb-blit.js'  
+import primitivesNode   from './primitives/primitives.js'
 
 // built-in resource nodes
 import tileAtlasNode    from './tile/atlas.js'
@@ -50,6 +51,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         displacement: displacementNode,
         overlay: overlayNode,
         fbBlit: fbBlitNode,
+        primitives: primitivesNode,
     }
 
 	return {

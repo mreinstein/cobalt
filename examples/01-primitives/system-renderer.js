@@ -1,4 +1,4 @@
-import * as Cobalt from '../bundle.js'
+import * as Cobalt from '../../bundle.js'
 import Game        from './Game.js'
 import { ECS }     from './deps.js'
 

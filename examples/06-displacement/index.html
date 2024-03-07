@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title class="titleText">Web GPU prototyping</title>
+        <meta name="description" content="Web GPU 2d cobalt" />
+        <meta name="author" content="Mike Reinstein" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+
+        <style>
+            
+            body {
+                padding-inline: 40px;
+                margin: 0;
+            }
+
+            img {
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            .viewport-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            canvas {
+                background-color: green;
+                border: none;
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            canvas::-webkit-scrollbar {
+                display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1>Displacement Node</h1>
+        <p>
+            Useful for special effects like heat waves, etc.
+        </p>
+        <div class="viewport-container">
+            <canvas id="viewport" width="480" height="270"></canvas>
+        </div>
+
+<script type="module">
+import Game             from './Game.js'
+import * as Cobalt      from '../../bundle.js'
+import constants        from './constants.js'
+import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
+import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
+//import animationSystem  from './system-animation.js'
+import rendererSystem   from './system-renderer.js'
+import spriteEntity     from './entity-sprite.js'
+import { ECS, vec2 }    from './deps.js'
+
+
+async function main () {
+
+    const canvas = document.querySelector('canvas')
+
+    const viewportWidth = constants.GAME_WIDTH
+    const viewportHeight = constants.GAME_HEIGHT
+    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+
+    // instantiate all resource nodes
+    const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
+        type: 'tileAtlas',
+        refs: { },
+        options: {
+            label: 'tile atlas',
+            tileSize: 16,
+            tileScale: 1.0,
+            textureUrl: 'assets/spelunky-tiles.png'
+        }
+    })
+
+    const hdrTex = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr color texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const emissiveTex = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr emissive texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const bloomTex = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr bloom texture',
+            format: 'rgba16float',
+            mip_count: 7,
+            viewportScale: 0.5,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const bloomNode = await Cobalt.initNode(Game.renderer, {
+        type: 'bloom',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            emissive: emissiveTex,
+            hdr: hdrTex,
+            bloom: bloomTex
+        },
+        options: {
+            // any extra options you want to pass to this node
+            bloom_intensity: 0.0,
+            bloom_combine_constant: 0.0,
+            bloom_knee: 0.2,
+            bloom_threshold: 0.1, // 1.0
+
+            // sprite instance 1
+            sprite_instances: [
+                {
+                    emissive_intensity: 1.0,
+                },
+                {
+                    emissive_intensity: 0.5,
+                },
+            ],
+        }
+    })
+
+    const tmpTex = await Cobalt.initNode(Game.renderer, {
+        type: 'fbTexture',
+        refs: { },
+        options: {
+            label: 'bloom + hdr compositing',
+            format: 'bgra8unorm',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const perlinTex = await Cobalt.createTextureFromUrl(Game.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
+
+    // instantiate all runnable nodes
+    const tileNode = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: tileAtlasNode,
+            hdr: hdrTex,
+        },
+        options: {
+            textureUrl: 'assets/spelunky1.png',
+            scrollScale: 0.6,
+            //zIndex: 0,
+        }
+    })
+
+    const tileNode2 = await Cobalt.initNode(Game.renderer, {
+        type: 'tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: tileAtlasNode,
+            hdr: hdrTex,
+        },
+        options: {
+            textureUrl: 'assets/spelunky0.png',
+            scrollScale: 1.0,
+            //zIndex: 5,
+        }
+    })
+
+
+    const compositeNode = await Cobalt.initNode(Game.renderer, {
+        type: 'composite',
+        refs: {
+            hdr: hdrTex,
+            bloom: bloomTex,
+            combined: tmpTex,
+        },
+        options: {
+            bloom_combine_constant: 0.0,
+        }
+    })
+
+    const b = await Cobalt.initNode(Game.renderer, {
+        type: 'fbBlit',
+        refs: {
+            in: tmpTex,
+            out: 'FRAME_TEXTURE_VIEW',
+        },
+        options: { }
+    })
+
+    const displacement = await Cobalt.initNode(Game.renderer, {
+        type: 'displacement',
+        refs: {
+            color: tmpTex,
+            map: perlinTex,
+            out: 'FRAME_TEXTURE_VIEW',
+        },
+        options: {
+            scale: 32,
+            offsetX: 0,
+            offsetY: 0,
+        }
+    })
+
+    displacement.addTriangle([
+        [ 250, 85 ],
+        [ 210, 140 ],
+        [ 310, 140 ],
+    ])
+
+
+
+    // use resizeViewport to init values on load:
+    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+
+    // window resize is *expensive* - best to debounce:
+    const debouncedResize = debounce(function () {
+       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+    }, 50)
+
+    window.addEventListener('resize', debouncedResize, { passive: true })
+
+    const gui = new dat.GUI()
+
+    const disp = gui.addFolder('displacement')
+    disp.open()
+
+    disp.add(displacement.options, 'scale', 0, 100).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
+    disp.add(displacement.options, 'offsetX', 0, 512).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
+    disp.add(displacement.options, 'offsetY', 0, 512).onChange((v) => {
+        const { device } = Game.renderer
+        
+        device.queue.writeBuffer(
+            displacement.data.params_buf,
+            0,
+            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+        )
+    })
+
+
+    
+    const world = ECS.createWorld()
+    ECS.addSystem(world, rendererSystem(Game.renderer))
+
+    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
+
+    ECS.addSystem(world, function displacementSystem (world) {
+        const onUpdate = function (dt) {
+            // loop the displacement offset
+            //displacement.options.offsetX = (displacement.options.offsetX + 1) % perlinTex.texture.width
+            displacement.options.offsetY = (displacement.options.offsetY + 1) % perlinTex.texture.height
+
+            Game.renderer.device.queue.writeBuffer(
+                displacement.data.params_buf,
+                0,
+                new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
+            )
+        }
+
+        return { onUpdate }
+    })
+
+    Game.world = world
+
+
+    const gameLoop = function () {
+        tick(Game)
+        requestAnimationFrame(gameLoop)
+    }
+
+
+    requestAnimationFrame(gameLoop)
+}
+
+
+function tick (context) {
+    const newTime = performance.now()
+    const frameTime = newTime - context.lastFrameTime
+    context.lastFrameTime = newTime
+    ECS.update(context.world, frameTime)
+    ECS.cleanup(context.world)
+}
+
+
+function resizeViewport (renderer, width, height) {
+
+    const { canvas, device } = renderer
+
+    // determine which screen dimension is most constrained
+    // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
+    // certain float values (e.g., 3.0145833333333334)
+    const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
+
+    canvas.width = Math.ceil(constants.GAME_WIDTH)
+    canvas.height = Math.ceil(constants.GAME_HEIGHT)
+
+    Cobalt.setViewportDimensions(renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
+
+    // https://www.khronos.org/webgl/wiki/HandlingHighDPI
+    // webgl display resolution size within canvas
+    const resolution = window.devicePixelRatio || 1
+
+    // center the canvas if native window doesn't match aspect ratio
+    canvas.style.width = canvas.width * renderScale + 'px'
+    canvas.style.height = canvas.height * renderScale + 'px'
+    
+    canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
+    canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
+}
+
+
+main()
+
+</script>
+
+
+    </body>
+</html>

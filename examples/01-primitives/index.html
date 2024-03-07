@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title class="titleText">Web GPU prototyping</title>
+        <meta name="description" content="Web GPU 2d cobalt" />
+        <meta name="author" content="Mike Reinstein" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+
+        <style>
+            
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            img {
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            .viewport-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            canvas {
+                background-color: green;
+                border: none;
+                image-rendering: -moz-crisp-edges;
+                image-rendering: -webkit-crisp-edges;
+                image-rendering: pixelated;
+                image-rendering: crisp-edges;
+            }
+
+            canvas::-webkit-scrollbar {
+                display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        
+        <div class="viewport-container">
+            <canvas id="viewport" width="480" height="270"></canvas>
+        </div>
+
+<script type="module">
+import Game             from './Game.js'
+import * as Cobalt      from '../../bundle.js'
+import constants        from './constants.js'
+import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
+import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
+//import animationSystem  from './system-animation.js'
+import rendererSystem   from './system-renderer.js'
+import spriteEntity     from './entity-sprite.js'
+import { ECS, vec2 }    from './deps.js'
+
+
+async function main () {
+
+    const canvas = document.querySelector('canvas')
+
+    const viewportWidth = constants.GAME_WIDTH
+    const viewportHeight = constants.GAME_HEIGHT
+    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+
+    // instantiate all resource nodes
+    
+    const pNode = await Cobalt.initNode(Game.renderer, {
+        type: 'primitives',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            color: 'FRAME_TEXTURE_VIEW',
+        },
+        options: {
+            //zIndex: 5,
+        }
+    })
+
+    //              start        end            color        width
+    pNode.line([ 10, 10 ],  [ 150, 100 ], [ 1, 0, 0, 1 ], 5)
+    pNode.line([ 100, 10 ], [ 100, 100 ], [ 1, 1, 0, 1 ], 1)
+    pNode.line([ 450, 10 ], [ 100, 100 ], [ 0, 1, 1, 1 ], 1)
+
+    pNode.filledEllipse([ 180, 80 ], 20, 40, 20, [ 1, 0, 1, 0.6 ])
+
+    pNode.filledEllipse([ 192, 140 ], 8, 8, 20, [ 1, 1, 1, 0.9 ])
+
+    pNode.filledBox([ 50, 170 ], 42, 23, [ 0, 1, 0, 1 ])
+
+    pNode.box([ 120, 130 ], 42, 23, [ 1, 0, 1, 1 ], 1)
+
+
+    // use resizeViewport to init values on load:
+    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+
+    // window resize is *expensive* - best to debounce:
+    const debouncedResize = debounce(function () {
+       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+    }, 50)
+
+    window.addEventListener('resize', debouncedResize, { passive: true })
+
+
+    
+    const world = ECS.createWorld()
+    ECS.addSystem(world, rendererSystem(Game.renderer))
+
+    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
+    
+
+    Game.world = world
+
+
+    const gameLoop = function () {
+        tick(Game)
+        requestAnimationFrame(gameLoop)
+    }
+
+
+    requestAnimationFrame(gameLoop)
+}
+
+
+function tick (context) {
+    const newTime = performance.now()
+    const frameTime = newTime - context.lastFrameTime
+    context.lastFrameTime = newTime
+    ECS.update(context.world, frameTime)
+    ECS.cleanup(context.world)
+}
+
+
+function resizeViewport (renderer, width, height) {
+
+    const { canvas, device } = renderer
+
+    // determine which screen dimension is most constrained
+    // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
+    // certain float values (e.g., 3.0145833333333334)
+    const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
+
+    canvas.width = Math.ceil(constants.GAME_WIDTH)
+    canvas.height = Math.ceil(constants.GAME_HEIGHT)
+
+    Cobalt.setViewportDimensions(renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
+
+    // https://www.khronos.org/webgl/wiki/HandlingHighDPI
+    // webgl display resolution size within canvas
+    const resolution = window.devicePixelRatio || 1
+
+    // center the canvas if native window doesn't match aspect ratio
+    canvas.style.width = canvas.width * renderScale + 'px'
+    canvas.style.height = canvas.height * renderScale + 'px'
+    
+    canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
+    canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
+}
+
+
+main()
+
+</script>
+
+
+    </body>
+</html>
