@@ -1,25 +1,21 @@
-//import * as SpriteRenderPass   from './SpriteRenderPass.js'
-import { FLOAT32S_PER_SPRITE } from './constants.js'
+import primitivesWGSL              from './primitives.wgsl'
+import { FLOAT32S_PER_SPRITE }     from './constants.js'
+import { round, mat4, vec2, vec3 } from '../deps.js'
 
 
 // a graphics primitives renderer (lines, boxes, etc.)
 
 
-/*
-Sprites are typically dynamic; they can move, they are animated, they can be colored, rotated etc.
+// temporary variables, allocated once to avoid garbage collection
+const _tmpVec3 = vec3.create(0, 0, 0)
 
-These use a `SpriteRenderPass` data structure which allows for dynamically adding/removing/updating sprites at run time.
 
-Internally, `SpriteRenderPass` objects are rendered as instanced triangles.
-Adding and removing sprites pre-sorts all triangles based on they layer they're on + the type of sprite they are.
-This lines up the data nicely for WebGpu such that they don't require any work in the render loop.
+// return component of vector perpendicular to a unit basis vector
+// (IMPORTANT NOTE: assumes "basis" has unit magnitude (length==1))
+function perpendicularComponent (inp) {
+    return [ -inp[1], inp[0] ]
+}
 
-Each type of sprite is rendered as 2 triangles, with a number instances for each sprite.
-This instance data is transfered to the GPU, which is then calculated in the shaders (position, rotation, scale, tinting, opacity, etc.)
-
-All of the matrix math for these sprites is done in a vertex shader, so they are fairly efficient to move, color and rotate, but it's not free.
-There is still some CPU required as the number of sprites increases.
-*/
 
 export default {
     type: 'primitives',
@@ -47,80 +43,123 @@ export default {
 
     onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
+        _writeMatricesBuffer(cobalt, node)
     },
 
     onViewportPosition: function (cobalt, node) {
-
+        _writeMatricesBuffer(cobalt, node)
     },
 
     // optional
     customFunctions: {
-        /*...SpriteRenderPass,*/
+        addLine: function (cobalt, node, start, end, lineWidth=1) {
+            
+            const delta = vec2.sub(end, start)
+
+            const unitBasis = vec2.normalize(delta)
+            const perp = perpendicularComponent(unitBasis)
+
+            const halfLineWidth = lineWidth / 2
+            
+            let i = node.data.vertexCount
+
+            // triangle 1
+            // pt 1
+            node.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 1] = start[1] + perp[1] * halfLineWidth
+
+            // pt 2
+            node.data.vertices[i + 2] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 3] = start[1] - perp[1] * halfLineWidth
+
+            // pt 3
+            node.data.vertices[i + 4] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 5] = end[1] + perp[1] * halfLineWidth
+            
+
+            // triangle 2
+            // pt 2
+            node.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth
+            
+            // pt 3
+            node.data.vertices[i + 8] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 9] = end[1] + perp[1] * halfLineWidth
+
+            // pt 4
+            node.data.vertices[i + 10] = end[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 11] = end[1] - perp[1] * halfLineWidth
+
+
+            node.data.vertexCount += 12
+
+            cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+        },
+
+        clear: function (cobalt, node) {
+            node.data.vertexCount = 0
+        },
     },
 }
 
 
 // This corresponds to a WebGPU render pass.  It handles 1 sprite layer.
-async function init (cobalt, nodeData) {
+async function init (cobalt, node) {
     const { device } = cobalt
 
     // Define vertices and indices for your line represented as two triangles (a rectangle)
     // For example, this could represent a line segment from (10, 10) to (100, 10) with a thickness of 10 units
     // Updated vertices in normalized device coordinates (NDC)
-    const vertices = new Float32Array([
-        // First line (horizontal)
-        -0.8, -0.15, // Bottom left
-        -0.2, -0.15, // Bottom right
-        -0.8, -0.05, // Top left
-        -0.8, -0.05, // Top left
-        -0.2, -0.15, // Bottom right
-        -0.2, -0.05, // Top right
-        
-        // Second line (vertical)
-        0.15, 0.1,  // Bottom left
-        0.25, 0.1,  // Bottom right
-        0.15, 0.7,  // Top left
-        0.15, 0.7,  // Top left
-        0.25, 0.1,  // Bottom right
-        0.25, 0.7,  // Top right
-        
-        // Third line (diagonal, adjusted for visibility)
-        -0.55, -0.45, // Bottom left (slightly left and down from start point)
-        -0.45, -0.55, // Top left (slightly up and left from start point)
-         0.45,  0.55, // Bottom right (slightly right and up from end point)
-        -0.45, -0.55, // Top left (repeat for second triangle)
-         0.55,  0.45, // Top right (slightly right and down from end point)
-         0.45,  0.55, // Bottom right (repeat for second triangle)
-    ]);
-
+    const vertices = new Float32Array(10000) // up to 5,000 vertices
 
     const vertexBuffer = device.createBuffer({
         size: vertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        mappedAtCreation: true,
-    });
-    new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
-    vertexBuffer.unmap();
+        //mappedAtCreation: true,
+    })
+
+    //new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
+    //vertexBuffer.unmap()
+
+    const uniformBuffer = device.createBuffer({
+        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
 
     // Shader modules
     const shaderModule = device.createShaderModule({
-        code: `
-        @vertex
-        fn vs_main(@location(0) position: vec2<f32>) -> @builtin(position) vec4<f32> {
-            // Transform position here if necessary
-            return vec4<f32>(position, 0.0, 1.0);
-        }
+        code: primitivesWGSL,
+    })
 
-        @fragment
-        fn fs_main() -> @location(0) vec4<f32> {
-            return vec4<f32>(1.0, 0.0, 0.0, 1.0); // Red color for the line
-        }
-        `,
-    });
+    const bindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { }
+            },
+        ],
+    })
+
+    const pipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [ bindGroupLayout ]
+    })
+
+    const bindGroup = device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer
+                }
+            },
+        ]
+    })
 
     // Create render pipeline
     const pipeline = device.createRenderPipeline({
-        layout: 'auto',
+        layout: pipelineLayout,
         vertex: {
             module: shaderModule,
             entryPoint: 'vs_main',
@@ -141,17 +180,27 @@ async function init (cobalt, nodeData) {
         primitive: {
             topology: 'triangle-list',
         },
-    });
+    })
 
 
     return {
+        uniformBuffer, // perspective and view matrices for the camera
         vertexBuffer,
         pipeline,
+        bindGroup,
+
+        // triangle data used to render the primitives
+        vertexCount: 0,
+        vertices, // x, y, x, y, ...
     }
 }
 
 
 function draw (cobalt, node, commandEncoder) {
+
+    if (node.data.vertexCount === 0) // no primitives to draw, bail
+        return
+
     const { device } = cobalt
 
     const loadOp = node.options.loadOp || 'load'
@@ -168,15 +217,53 @@ function draw (cobalt, node, commandEncoder) {
         ]
     })
 
-    renderpass.setPipeline(node.data.pipeline);
-    renderpass.setVertexBuffer(0, node.data.vertexBuffer);
-    renderpass.draw(18); // Draw 6 vertices, forming two triangles
-    renderpass.end();
+    renderpass.setPipeline(node.data.pipeline)
+    renderpass.setBindGroup(0, node.data.bindGroup)
+    renderpass.setVertexBuffer(0, node.data.vertexBuffer)
+    renderpass.draw(node.data.vertexCount)  // Draw 18 vertices, forming six triangles
+    renderpass.end()
 }
 
 
-function destroy (nodeData) {
-    nodeData.data.vertexBuffer.destroy()
-    nodeData.data.vertexBuffer = null
+function destroy (node) {
+    node.data.vertexBuffer.destroy()
+    node.data.vertexBuffer = null
+    node.data.uniformBuffer.destroy()
+    node.data.uniformBuffer = null
+}
+
+
+function _writeMatricesBuffer (cobalt, node) {
+    const { device } = cobalt
+
+    // TODO: achieve zoom instead by adjusting the left/right/bottom/top based on scale factor?
+    //                out    left   right    bottom   top     near     far
+    //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
+
+    const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom
+    const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom
+
+    //                         left          right    bottom        top     near     far
+    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+
+
+    //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
+
+    // set x,y,z camera position
+    vec3.set(-round(cobalt.viewport.position[0]), -round(cobalt.viewport.position[1]), 0, _tmpVec3)
+    const view = mat4.translation(_tmpVec3)
+
+    // might be useful if we ever switch to a 3d perspective camera setup
+    //mat4.lookAt(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
+    //mat4.targetTo(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
+
+    // camera zoom
+    //mat4.scale(view, view, [ 0.9, 0.9, 1 ])
+
+    //mat4.fromScaling(view, [ 1.5, 1.5, 1 ])
+    //mat4.translate(view, view, [ 0, 0, 0 ])
+
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
 }
 
