@@ -52,7 +52,7 @@ export default {
 
     // optional
     customFunctions: {
-        addLine: function (cobalt, node, start, end, lineWidth=1) {
+        addLine: function (cobalt, node, start, end, color, lineWidth=1) {
             
             const delta = vec2.sub(end, start)
 
@@ -61,37 +61,141 @@ export default {
 
             const halfLineWidth = lineWidth / 2
             
-            let i = node.data.vertexCount
+            let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
 
             // triangle 1
             // pt 1
             node.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth
             node.data.vertices[i + 1] = start[1] + perp[1] * halfLineWidth
 
+            // pt1 color
+            node.data.vertices[i + 2] = color[0]
+            node.data.vertices[i + 3] = color[1]
+            node.data.vertices[i + 4] = color[2]
+            node.data.vertices[i + 5] = color[3]
+
             // pt 2
-            node.data.vertices[i + 2] = start[0] - perp[0] * halfLineWidth
-            node.data.vertices[i + 3] = start[1] - perp[1] * halfLineWidth
+            node.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth
+
+            // pt2 color
+            node.data.vertices[i + 8] = color[0]
+            node.data.vertices[i + 9] = color[1]
+            node.data.vertices[i + 10] = color[2]
+            node.data.vertices[i + 11] = color[3]
 
             // pt 3
-            node.data.vertices[i + 4] = end[0] + perp[0] * halfLineWidth
-            node.data.vertices[i + 5] = end[1] + perp[1] * halfLineWidth
+            node.data.vertices[i + 12] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 13] = end[1] + perp[1] * halfLineWidth
+
+            // pt3 color
+            node.data.vertices[i + 14] = color[0]
+            node.data.vertices[i + 15] = color[1]
+            node.data.vertices[i + 16] = color[2]
+            node.data.vertices[i + 17] = color[3]
             
 
             // triangle 2
             // pt 2
-            node.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth
-            node.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth
+            node.data.vertices[i + 18] = start[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 19] = start[1] - perp[1] * halfLineWidth
+
+            // pt2 color
+            node.data.vertices[i + 20] = color[0]
+            node.data.vertices[i + 21] = color[1]
+            node.data.vertices[i + 22] = color[2]
+            node.data.vertices[i + 23] = color[3]
             
             // pt 3
-            node.data.vertices[i + 8] = end[0] + perp[0] * halfLineWidth
-            node.data.vertices[i + 9] = end[1] + perp[1] * halfLineWidth
+            node.data.vertices[i + 24] = end[0] + perp[0] * halfLineWidth
+            node.data.vertices[i + 25] = end[1] + perp[1] * halfLineWidth
+
+            // pt3 color
+            node.data.vertices[i + 26] = color[0]
+            node.data.vertices[i + 27] = color[1]
+            node.data.vertices[i + 28] = color[2]
+            node.data.vertices[i + 29] = color[3]
 
             // pt 4
-            node.data.vertices[i + 10] = end[0] - perp[0] * halfLineWidth
-            node.data.vertices[i + 11] = end[1] - perp[1] * halfLineWidth
+            node.data.vertices[i + 30] = end[0] - perp[0] * halfLineWidth
+            node.data.vertices[i + 31] = end[1] - perp[1] * halfLineWidth
+
+            // pt4 color
+            node.data.vertices[i + 32] = color[0]
+            node.data.vertices[i + 33] = color[1]
+            node.data.vertices[i + 34] = color[2]
+            node.data.vertices[i + 35] = color[3]
 
 
-            node.data.vertexCount += 12
+            node.data.vertexCount += 6
+
+            cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+        },
+
+        addEllipse: function (cobalt, node, center, width, height, numSegments, color) {
+
+            const [ x, y ] = center
+
+            // angle between each segment
+            const deltaAngle = 2 * Math.PI / numSegments
+
+            // Generate points for the ellipsoid
+            for (let i = 0; i < numSegments; i++) {
+                // Angle for this and the next segment
+                const angle = i * deltaAngle
+                const nextAngle = (i + 1) * deltaAngle
+
+                // Calculate x and y for the current and next points on the ellipse
+                const currX = x + width * Math.cos(angle)
+                const currY = y + height * Math.sin(angle)
+                const nextX = x + width * Math.cos(nextAngle)
+                const nextY = y + height * Math.sin(nextAngle)
+
+                // Add vertices for the triangles (first point is always the center)
+                // First triangle vertex (center of ellipse)
+
+                const vi = (node.data.vertexCount * 6) + (i * 18)
+
+                //const vi = v * 6 // 2 floats position + 4 floats color per vertex * 3 vertices
+
+
+                // position
+                node.data.vertices[vi + 0] = x
+                node.data.vertices[vi + 1] = y
+
+                // color
+                node.data.vertices[vi + 2] = color[0]
+                node.data.vertices[vi + 3] = color[1]
+                node.data.vertices[vi + 4] = color[2]
+                node.data.vertices[vi + 5] = color[3]
+                
+
+                // Second triangle vertex (current point on ellipse)
+            
+                // position
+                node.data.vertices[vi + 6] = currX
+                node.data.vertices[vi + 7] = currY
+
+                // color
+                node.data.vertices[vi + 8] = color[0]
+                node.data.vertices[vi + 9] = color[1]
+                node.data.vertices[vi + 10] = color[2]
+                node.data.vertices[vi + 11] = color[3]
+
+                
+                // Third triangle vertex (next point on ellipse)
+                // position
+                node.data.vertices[vi + 12] = nextX
+                node.data.vertices[vi + 13] = nextY
+
+                // color
+                node.data.vertices[vi + 14] = color[0]
+                node.data.vertices[vi + 15] = color[1]
+                node.data.vertices[vi + 16] = color[2]
+                node.data.vertices[vi + 17] = color[3]
+            }
+
+            node.data.vertexCount += (3 * numSegments)
 
             cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
         },
@@ -117,6 +221,7 @@ async function init (cobalt, node) {
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         //mappedAtCreation: true,
     })
+
 
     //new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
     //vertexBuffer.unmap()
@@ -164,18 +269,42 @@ async function init (cobalt, node) {
             module: shaderModule,
             entryPoint: 'vs_main',
             buffers: [{
-                arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT, // 2 floats per vertex
-                attributes: [{
-                    shaderLocation: 0,
-                    offset: 0,
-                    format: 'float32x2',
-                }],
+                arrayStride: 6 * Float32Array.BYTES_PER_ELEMENT, // 2 floats per vertex position + 4 floats per vertex color
+                //stepMode: 'vertex',
+                attributes: [
+                    // position
+                    {
+                        shaderLocation: 0,
+                        offset: 0,
+                        format: 'float32x2',
+                    },
+                    // color
+                    {
+                        shaderLocation: 1,
+                        format: 'float32x4',
+                        offset: 8
+                    }
+                ],
             }],
         },
         fragment: {
             module: shaderModule,
             entryPoint: 'fs_main',
-            targets: [{ format: 'bgra8unorm' }],
+            targets: [
+                {
+                    format: 'bgra8unorm',
+                    blend: {
+                        color: {
+                            srcFactor: 'src-alpha',
+                            dstFactor: 'one-minus-src-alpha',
+                        },
+                        alpha: {
+                            srcFactor: 'zero',
+                            dstFactor: 'one'
+                        }
+                    }
+                },
+            ],
         },
         primitive: {
             topology: 'triangle-list',

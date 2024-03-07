@@ -5,8 +5,14 @@ struct TransformData {
 
 @binding(0) @group(0) var<uniform> transformUBO: TransformData;
 
+struct Fragment {
+    @builtin(position) Position : vec4<f32>,
+    @location(0) Color : vec4<f32>,
+};
+
 @vertex
-fn vs_main(@location(0) vertexPosition: vec2<f32>) -> @builtin(position) vec4<f32> {
+fn vs_main(@location(0) vertexPosition: vec2<f32>,
+           @location(1) vertexColor: vec4<f32>) -> Fragment {
     
     var sx: f32 = 1.0; //sprites.models[i_id].scale.x;
     var sy: f32 = 1.0; // sprites.models[i_id].scale.y;
@@ -34,12 +40,15 @@ fn vs_main(@location(0) vertexPosition: vec2<f32>) -> @builtin(position) vec4<f3
                                         0.0, 0.0, 1.0, 0.0,
                                          tx,  ty,  tz, 1.0) * scaleM;
 
-    return transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 0.0, 1.0);
+    var output : Fragment;
 
-    //return vec4<f32>(position, 0.0, 1.0);
+    output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 0.0, 1.0);
+    output.Color = vertexColor;
+
+    return output;
 }
 
 @fragment
-fn fs_main() -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 0.0, 0.0, 1.0); // Red color for the line
+fn fs_main(@location(0) Color: vec4<f32>) -> @location(0) vec4<f32> {
+    return Color;
 }

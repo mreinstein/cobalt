@@ -246,6 +246,21 @@ async function main () {
         options: { }
     })
 
+    /*
+    const pNode = await Cobalt.initNode(Game.renderer, {
+        type: 'primitives',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            color: tmpTex,
+        },
+        options: {
+            //zIndex: 5,
+        }
+    })
+    */
+
+
     const perlinTex = await Cobalt.createTextureFromUrl(Game.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
     //console.log(perlinTex)
 
@@ -281,6 +296,27 @@ async function main () {
         options: { }
     })
 
+    const pNode = await Cobalt.initNode(Game.renderer, {
+        type: 'primitives',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            color: 'FRAME_TEXTURE_VIEW',
+        },
+        options: {
+            //zIndex: 5,
+        }
+    })
+
+    //              start        end            color        width
+    pNode.addLine([ 10, 10 ],  [ 150, 100 ], [ 1, 0, 0, 1 ], 5)
+    pNode.addLine([ 100, 10 ], [ 100, 100 ], [ 1, 1, 0, 1 ], 1)
+    pNode.addLine([ 450, 10 ], [ 100, 100 ], [ 0, 1, 1, 1 ], 1)
+
+    pNode.addEllipse( [ 180, 80 ], 20, 40, 20, [ 1, 0, 1, 0.6 ])
+
+    pNode.addEllipse( [ 192, 140 ], 8, 8, 20, [ 1, 1, 1, 0.9 ])
+    //pNode.clear()
 
 
     // use resizeViewport to init values on load:
@@ -292,7 +328,6 @@ async function main () {
     }, 50)
 
     window.addEventListener('resize', debouncedResize, { passive: true })
-
 
     
     const gui = new dat.GUI()
