@@ -175,9 +175,9 @@ function destroy (data) {
 
 
 function _writeTileBuffer (c, nodeData) {
-    // viewOffset.  [ 0, 0 ] is the top left corner of the level
-    _buf[0] = c.viewport.position[0] // viewoffset[0] 
-    _buf[1] = c.viewport.position[1] // viewOffset[1]
+    // c.viewport.position is the top left visible corner of the level
+    _buf[0] = c.viewport.position[0]
+    _buf[1] = c.viewport.position[1]
 
     const tile = nodeData.data
     const { tileScale, tileSize } = tile
@@ -193,24 +193,6 @@ function _writeTileBuffer (c, nodeData) {
 
     _buf[6] = tileSize
     _buf[7] = 1.0 / tileSize                            // inverseTileSize
-
-    /*
-    // copy each tile layer's instance data into the UBO
-    let i = 8
-    for (const node of c.nodes) {
-        if (node.type === 'tile') {
-            const tileTexture = node.data.material.size
-
-            _buf[i]   = node.options.scrollScale        // scrollScale[0]
-            _buf[i+1] = node.options.scrollScale        // scrollScale[1]
-            _buf[i+2] = 1/tileTexture.width  // inverseTileTextureSize[0]
-            _buf[i+3] = 1/tileTexture.height // inverseTileTextureSize[1]
-            i += 4
-        }
-    }
-
-    c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, i)
-    */
     
     c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, 8)
 }

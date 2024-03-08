@@ -22,7 +22,7 @@ import fbTextureNode    from './fb-texture/fb-texture.js'
 // returns the data structure containing all WebGPU related stuff
 export async function init (canvas, viewportWidth, viewportHeight) {
 
-	const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
+    const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
 
     const device = await adapter?.requestDevice()
     const context = canvas.getContext('webgpu')
@@ -54,7 +54,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
         primitives: primitivesNode,
     }
 
-	return {
+    return {
         nodeDefs,
         // runnable nodes. ordering dictates render order (first to last)
         nodes: [ ],
@@ -76,7 +76,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
             zoom: 1.0,
             position: [ 0, 0 ]  // [ top, left ] visible point
         },
-	}
+    }
 }
 
 

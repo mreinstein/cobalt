@@ -174,34 +174,17 @@ async function fetchJson (url) {
 
 function _writeSpriteBuffer (cobalt, node) {
 
-    const { device } = cobalt
+    const { device, viewport } = cobalt
 
-    // TODO: achieve zoom instead by adjusting the left/right/bottom/top based on scale factor?
-    //                out    left   right    bottom   top     near     far
-    //mat4.ortho(projection,    0,    800,      600,    0,   -10.0,   10.0)
-
-    const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom
-    const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom
+    const GAME_WIDTH = viewport.width / viewport.zoom
+    const GAME_HEIGHT = viewport.height / viewport.zoom
 
     //                         left          right    bottom        top     near     far
     const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
-
-    //mat4.scale(projection, projection, [1.5, 1.5, 1 ])
-
-    // set x,y,z camera position
-    vec3.set(-round(cobalt.viewport.position[0]), -round(cobalt.viewport.position[1]), 0, _tmpVec3)
+    // set 3d camera position
+    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
     const view = mat4.translation(_tmpVec3)
-
-    // might be useful if we ever switch to a 3d perspective camera setup
-    //mat4.lookAt(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
-    //mat4.targetTo(view, [0, 0, 0], [0, 0, -1], [0, 1, 0])
-
-    // camera zoom
-    //mat4.scale(view, view, [ 0.9, 0.9, 1 ])
-
-    //mat4.fromScaling(view, [ 1.5, 1.5, 1 ])
-    //mat4.translate(view, view, [ 0, 0, 0 ])
 
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
     device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
