@@ -182,8 +182,18 @@ function _writeSpriteBuffer (cobalt, node) {
     //                         left          right    bottom        top     near     far
     const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
+    
+    // TODO: if this doesn't introduce jitter into the crossroads render, remove this disabled code entirely.
+    //
+    // I'm disabling the rounding because I think it fails in cases where units are not expressed in pixels
+    // e.g., most physics engines operate on meters, not pixels, so we don't want to round to the nearest integer as that 
+    // probably isn't high enough resolution. That would mean the camera could be snapped by up to 0.5 meters
+    // in that case. I think the better solution for expressing camera position in pixels is to round before calling
+    // cobalt.setViewportPosition(...)
+    //
     // set 3d camera position
-    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
+    //vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
+    vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
     const view = mat4.translation(_tmpVec3)
 
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)

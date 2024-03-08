@@ -302,6 +302,8 @@ function _rebuildSpriteDrawCalls (renderPass) {
 function _writeOverlayBuffer (cobalt, nodeData) {
     // TODO: I think this buffer can be written just once since the overlays never change. (0,0 always top left corner)
     const zoom = 1.0 // cobalt.viewport.zoom
+
+    // TODO: is rounding really needed here?
     const GAME_WIDTH = Math.round(cobalt.viewport.width / zoom)
     const GAME_HEIGHT = Math.round(cobalt.viewport.height / zoom)
 
