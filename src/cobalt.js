@@ -20,20 +20,43 @@ import fbTextureNode    from './fb-texture/fb-texture.js'
 
 // create and initialize a WebGPU renderer for a given canvas
 // returns the data structure containing all WebGPU related stuff
-export async function init (canvas, viewportWidth, viewportHeight) {
+export async function init (ctx, viewportWidth, viewportHeight) {
 
-    const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
+    let device, gpu, context, canvas
 
-    const device = await adapter?.requestDevice()
-    const context = canvas.getContext('webgpu')
+    // determine if an sdl/gpu context was passed, or if this is a browser canvas
+    if (ctx.sdlWindow && ctx.gpu) {
+        // this is an sdl/gpu context
+        gpu = ctx.gpu
+        
+        const instance = gpu.create([ "verbose=1" ])
+        const adapter = await instance.requestAdapter()
+        device = await adapter.requestDevice()
+        context = gpu.renderGPUDeviceToWindow({ device, window: ctx.sdlWindow })
 
-    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
+        // gpu module doesn't expose these globals to node namespace so manually wire them up
+        global.GPUBufferUsage = gpu.GPUBufferUsage
+        global.GPUShaderStage = gpu.GPUShaderStage
+        global.GPUTextureUsage = gpu.GPUTextureUsage
 
-    context.configure({
-        device,
-        format,
-        alphaMode: 'opaque'
-    })
+    } else {
+        // ctx is a canvas element
+        canvas = ctx
+
+        const adapter = await navigator.gpu?.requestAdapter({ powerPreference: 'high-performance' })
+
+        device = await adapter?.requestDevice()
+        gpu = navigator.gpu
+
+        context = canvas.getContext('webgpu')
+
+        context.configure({
+            device,
+            format: navigator.gpu?.getPreferredCanvasFormat(), // bgra8unorm
+            alphaMode: 'opaque'
+        })
+    }
+    
 
     const nodeDefs = {
         // TODO: namespace the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
@@ -66,6 +89,7 @@ export async function init (canvas, viewportWidth, viewportHeight) {
 		canvas,
 		device,
 		context,
+        gpu,
 
         // used in the color attachments of renderpass
         clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
@@ -105,7 +129,7 @@ export async function initNode (c, nodeData) {
     for (const refName in node.refs) {
         if (node.refs[refName] === 'FRAME_TEXTURE_VIEW') {
             c.defaultTextureViewRefs.push({ node, refName })
-            node.refs[refName] = c.context.getCurrentTexture().createView()
+            node.refs[refName] = getCurrentTextureView(c)
         }
     }
 
@@ -129,7 +153,7 @@ export function draw (c) {
 
     const commandEncoder = device.createCommandEncoder()
 
-    const v = c.context.getCurrentTexture().createView()
+    const v = getCurrentTextureView(c)
 
     // some nodes may need a reference to the default texture view (the frame backing)
     // this is generated each draw frame so we need to update the references
@@ -146,6 +170,10 @@ export function draw (c) {
     }
 
     device.queue.submit([ commandEncoder.finish() ])
+
+    // for sdl + gpu setups, we need to do this swap() step
+    if (!c.canvas)
+        c.context.swap()
 }
 
 
@@ -180,4 +208,20 @@ export function setViewportPosition (c, pos) {
         const nodeDef = c.nodeDefs[n.type]
         nodeDef.onViewportPosition(c, n)
     }
+}
+
+
+export function getPreferredFormat (cobalt) {
+    if (cobalt.canvas)
+        return navigator.gpu.getPreferredCanvasFormat()
+    else
+        cobalt.context.getPreferredFormat()
+}
+
+
+export function getCurrentTextureView (cobalt) {
+    if (cobalt.canvas)
+        return cobalt.context.getCurrentTexture().createView()
+    else
+        return cobalt.context.getCurrentTextureView()
 }

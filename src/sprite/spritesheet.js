@@ -56,8 +56,11 @@ async function init (cobalt, node) {
         createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm'),
     ])
 
-    // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
-    canvas.style.imageRendering = 'pixelated'
+    // canvas is only present in browser contexts, not in node + sdl + gpu
+    if (canvas) {
+        // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
+        canvas.style.imageRendering = 'pixelated'
+    }
 
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)

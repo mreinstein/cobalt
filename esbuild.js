@@ -1,4 +1,5 @@
 import esbuild  from 'esbuild'
+import { http } from '@hyrious/esbuild-plugin-http'
 import { glsl } from 'esbuild-plugin-glsl'
 
 
@@ -11,7 +12,8 @@ esbuild.build({
     plugins: [
         // minifying used to break the code for some reason, but I think it's fixed
         // so I'll re-enable this and see how it goes!
-        glsl({ minify: true })
+        glsl({ minify: true }),
+        http()
     ],
     outfile: 'bundle.js',
     minify: true,

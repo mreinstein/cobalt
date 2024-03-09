@@ -1,3 +1,4 @@
+import * as Cobalt        from '../cobalt.js'
 import sceneCompositeWGSL from './scene-composite.wgsl'
 
 
@@ -37,7 +38,7 @@ function init (cobalt, node) {
   const { options, refs } = node
 
     const { device } = cobalt
-    const format = navigator.gpu.getPreferredCanvasFormat() // bgra8unorm
+    const format = Cobalt.getPreferredFormat(cobalt) // bgra8unorm
 
     const bloom_intensity = options.bloom_intensity ?? 40.0
     const bloom_combine_constant = options.bloom_combine_constant ?? 0.68
@@ -117,7 +118,7 @@ function draw (cobalt, node, commandEncoder) {
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: node.refs.combined.data.view, //renderer.context.getCurrentTexture().createView(),
+          view: node.refs.combined.data.view, //getCurrentTextureView(cobalt)
           clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
           loadOp: 'clear',
           storeOp: 'store',
