@@ -57,6 +57,14 @@ async function createTextureFromUrl(c, label, url, format = "rgba8unorm") {
   const usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT;
   const mip_count = 1;
   const t = createTexture(c.device, label, imageData.width, imageData.height, mip_count, format, usage);
+  c.device.queue.copyExternalImageToTexture(
+    { source: imageData },
+    { texture: t.texture },
+    {
+      width: imageData.width,
+      height: imageData.height
+    }
+  );
   const samplerDescriptor = {
     addressModeU: "repeat",
     // repeat | clamp-to-edge

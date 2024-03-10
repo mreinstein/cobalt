@@ -11,7 +11,6 @@ export default async function createTextureFromUrl (c, label, url, format='rgba8
     const mip_count = 1
     const t = createTexture(c.device, label, imageData.width, imageData.height, mip_count, format, usage)
 
-/*
     c.device.queue.copyExternalImageToTexture(
         { source: imageData },
         { texture: t.texture },
@@ -20,7 +19,6 @@ export default async function createTextureFromUrl (c, label, url, format='rgba8
             height: imageData.height
         }
     )
-*/
 
     // nearest neighbor filtering is good for da pixel art
     const samplerDescriptor = {
