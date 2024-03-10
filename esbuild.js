@@ -16,5 +16,5 @@ esbuild.build({
         http()
     ],
     outfile: 'bundle.js',
-    minify: true,
+    minify: false,
 })

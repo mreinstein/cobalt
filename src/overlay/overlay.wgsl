@@ -84,4 +84,5 @@ fn fs_main (@location(0) TexCoord: vec2<f32>,
     var output = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
 
     return output;
+    //return vec4<f32>(1.0, 0.0, 1.0, 1.0);
 }

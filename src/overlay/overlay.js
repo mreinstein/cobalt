@@ -231,7 +231,7 @@ function draw (cobalt, node, commandEncoder) {
             {
                 view: node.refs.color,
                 clearValue: cobalt.clearValue,
-                loadOp: 'load',
+                loadOp: loadOp,
                 storeOp: 'store'
             },
         ]
@@ -332,11 +332,5 @@ function destroy (nodeData) {
     nodeData.data.spriteData = null
     nodeData.data.spriteIndices.clear()
     nodeData.data.spriteIndices = null
-}
-
-
-async function fetchJson (url) {
-    const raw = await fetch(url)
-    return raw.json()
 }
 

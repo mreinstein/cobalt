@@ -1,8 +1,9 @@
-import createSpriteQuads     from './create-sprite-quads.js'
-import createTextureFromUrl  from '../create-texture-from-url.js'
-import readSpriteSheet       from './read-spritesheet.js'
-import spriteWGSL            from './sprite.wgsl'
-import { round, mat4, vec3 } from '../deps.js'
+import createSpriteQuads       from './create-sprite-quads.js'
+import createTextureFromBuffer from '../create-texture-from-buffer.js'
+import createTextureFromUrl    from '../create-texture-from-url.js'
+import readSpriteSheet         from './read-spritesheet.js'
+import spriteWGSL              from './sprite.wgsl'
+import { round, mat4, vec3 }   from '../deps.js'
 
 
 // shared spritesheet resource, used by each sprite render node
@@ -46,15 +47,25 @@ export default {
 async function init (cobalt, node) {
     const { canvas, device } = cobalt
 
-    let spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
-    spritesheet = readSpriteSheet(spritesheet)
+    let spritesheet, colorTexture, emissiveTexture
+
+    if (canvas) {
+        // the browser based canvas path
+        spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
+        spritesheet = readSpriteSheet(spritesheet)
+
+        colorTexture = await createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, 'rgba8unorm')
+        emissiveTexture = await createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm')
+    }
+    else {
+        // the sdl + gpu based path
+        spritesheet = readSpriteSheet(node.options.spriteSheetJson)
+
+        colorTexture = await createTextureFromBuffer(cobalt, 'sprite', node.options.colorTexture, 'rgba8unorm')
+        emissiveTexture = await createTextureFromBuffer(cobalt, 'emissive sprite', node.options.emissiveTexture, 'rgba8unorm')
+    }
     
     const quads = createSpriteQuads(device, spritesheet)
-
-    const [ colorTexture, emissiveTexture ] = await Promise.all([
-        createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, 'rgba8unorm'),
-        createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm'),
-    ])
 
     // canvas is only present in browser contexts, not in node + sdl + gpu
     if (canvas) {

@@ -215,13 +215,15 @@ export function getPreferredFormat (cobalt) {
     if (cobalt.canvas)
         return navigator.gpu.getPreferredCanvasFormat()
     else
-        cobalt.context.getPreferredFormat()
+        return cobalt.context.getPreferredFormat()
 }
 
 
 export function getCurrentTextureView (cobalt) {
     if (cobalt.canvas)
         return cobalt.context.getCurrentTexture().createView()
-    else
+    else {
+        //return cobalt.context.getCurrentTexture().createView()
         return cobalt.context.getCurrentTextureView()
+    }
 }
