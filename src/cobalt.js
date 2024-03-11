@@ -98,7 +98,7 @@ export async function init (ctx, viewportWidth, viewportHeight) {
             width: viewportWidth,
             height: viewportHeight,
             zoom: 1.0,
-            position: [ 0, 0 ]  // [ top, left ] visible point
+            position: [ 0, 0 ], // top-left corner of the viewport
         },
     }
 }
@@ -199,7 +199,7 @@ export function setViewportDimensions (c, width, height) {
 }
 
 
-// @param Array pos top left corner of da viewport
+// @param Array pos 2D point the viewport is centered on
 export function setViewportPosition (c, pos) {
     c.viewport.position[0] = pos[0] - (c.viewport.width / 2 / c.viewport.zoom)
     c.viewport.position[1] = pos[1] - (c.viewport.height / 2 / c.viewport.zoom)
