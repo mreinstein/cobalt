@@ -1,5 +1,6 @@
 export { default as createTexture }        from './create-texture.js'
 export { default as createTextureFromUrl } from './create-texture-from-url.js'
+export { default as createTextureFromBuffer } from './create-texture-from-buffer.js'
 
 
 // built-in run nodes
