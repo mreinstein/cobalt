@@ -1,4 +1,4 @@
-import * as SpriteRenderPass   from './SpriteRenderPass.js'
+import * as publicAPI          from '../sprite/api.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 
@@ -56,7 +56,7 @@ export default {
 
     // optional
     customFunctions: {
-        ...SpriteRenderPass,
+        ...publicAPI,
     },
 }
 

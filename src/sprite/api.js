@@ -64,6 +64,16 @@ export function removeSprite (cobalt, renderPass, spriteId) {
 }
 
 
+// remove all sprites
+export function clear (cobalt, renderPass) {
+    renderPass = renderPass.data
+    renderPass.spriteIndices.clear()
+    renderPass.spriteCount = 0
+    renderPass.instancedDrawCallCount = 0
+    renderPass.dirty = true
+}
+
+
 export function setSpriteName (cobalt, renderPass, spriteId, name, scale) {
     const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
