@@ -160,7 +160,8 @@ export default {
         cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
     },
 
-    box: function (cobalt, node, center, width, height, color, lineWidth=1) {
+    // @param Number angle rotation (radians)
+    box: function (cobalt, node, center, width, height, color, angle=0, lineWidth=1) {
         const [ x, y ] = center
         
         const halfWidth = width / 2
@@ -171,32 +172,51 @@ export default {
         const bottomLeft = [ x - halfWidth, y + halfHeight ]
         const bottomRight = [ x + halfWidth, y + halfHeight ]
 
+        if (angle !== 0) {
+            // rotate the point by <angle> rads around origin
+            //      point    origin   rads     out 
+            _rotate(topLeft, center, angle, topLeft)
+            _rotate(topRight, center, angle, topRight)
+            _rotate(bottomLeft, center, angle, bottomLeft)
+            _rotate(bottomRight, center, angle, bottomRight)
+        }
+
         line(cobalt, node, topLeft, topRight, color, lineWidth)
         line(cobalt, node, bottomLeft, bottomRight, color, lineWidth)
         line(cobalt, node, topLeft, bottomLeft, color, lineWidth)
         line(cobalt, node, topRight, bottomRight, color, lineWidth)
     },
 
-    // TODO: angledBox? would take in rotation in rads 
+    
 
-    filledBox: function (cobalt, node, center, width, height, color) {
+    // @param Number angle rotation (radians)
+    filledBox: function (cobalt, node, center, width, height, color, angle=0) {
         const [ x, y ] = center
         
         const halfWidth = width / 2
         const halfHeight = height / 2
 
-        const topLeft = { x: x - halfWidth, y: y - halfHeight };
-        const topRight = { x: x + halfWidth, y: y - halfHeight };
-        const bottomLeft = { x: x - halfWidth, y: y + halfHeight };
-        const bottomRight = { x: x + halfWidth, y: y + halfHeight };
+        const topLeft = [ x - halfWidth, y - halfHeight ];
+        const topRight = [ x + halfWidth, y - halfHeight ];
+        const bottomLeft = [ x - halfWidth, y + halfHeight ];
+        const bottomRight = [ x + halfWidth, y + halfHeight ];
+
+        if (angle !== 0) {
+            // rotate the point by <angle> rads around origin
+            //      point    origin   rads     out 
+            _rotate(topLeft, center, angle, topLeft)
+            _rotate(topRight, center, angle, topRight)
+            _rotate(bottomLeft, center, angle, bottomLeft)
+            _rotate(bottomRight, center, angle, bottomRight)
+        }
 
         let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
 
 
         // triangle 1
         // pt 1
-        node.data.vertices[i + 0] = topLeft.x
-        node.data.vertices[i + 1] = topLeft.y
+        node.data.vertices[i + 0] = topLeft[0]
+        node.data.vertices[i + 1] = topLeft[1]
 
         // pt1 color
         node.data.vertices[i + 2] = color[0]
@@ -205,8 +225,8 @@ export default {
         node.data.vertices[i + 5] = color[3]
 
         // pt 2
-        node.data.vertices[i + 6] = bottomLeft.x
-        node.data.vertices[i + 7] = bottomLeft.y
+        node.data.vertices[i + 6] = bottomLeft[0]
+        node.data.vertices[i + 7] = bottomLeft[1]
 
         // pt2 color
         node.data.vertices[i + 8] = color[0]
@@ -215,8 +235,8 @@ export default {
         node.data.vertices[i + 11] = color[3]
 
         // pt 3
-        node.data.vertices[i + 12] = topRight.x
-        node.data.vertices[i + 13] = topRight.y
+        node.data.vertices[i + 12] = topRight[0]
+        node.data.vertices[i + 13] = topRight[1]
 
         // pt3 color
         node.data.vertices[i + 14] = color[0]
@@ -227,8 +247,8 @@ export default {
 
         // triangle 2
         // pt 2
-        node.data.vertices[i + 18] = bottomLeft.x
-        node.data.vertices[i + 19] = bottomLeft.y
+        node.data.vertices[i + 18] = bottomLeft[0]
+        node.data.vertices[i + 19] = bottomLeft[1]
 
         // pt2 color
         node.data.vertices[i + 20] = color[0]
@@ -237,8 +257,8 @@ export default {
         node.data.vertices[i + 23] = color[3]
         
         // pt 3
-        node.data.vertices[i + 24] = bottomRight.x
-        node.data.vertices[i + 25] = bottomRight.y
+        node.data.vertices[i + 24] = bottomRight[0]
+        node.data.vertices[i + 25] = bottomRight[1]
 
         // pt3 color
         node.data.vertices[i + 26] = color[0]
@@ -247,8 +267,8 @@ export default {
         node.data.vertices[i + 29] = color[3]
 
         // pt 4
-        node.data.vertices[i + 30] = topRight.x
-        node.data.vertices[i + 31] = topRight.y
+        node.data.vertices[i + 30] = topRight[0]
+        node.data.vertices[i + 31] = topRight[1]
 
         // pt4 color
         node.data.vertices[i + 32] = color[0]
@@ -266,3 +286,18 @@ export default {
         node.data.vertexCount = 0
     },
 }
+
+
+function _rotate (a, b, rad, out) {
+    //Translate point to the origin
+    let p0 = a[0] - b[0],
+        p1 = a[1] - b[1],
+        sinC = Math.sin(rad),
+        cosC = Math.cos(rad);
+
+    //perform rotation and translate to correct position
+    out[0] = p0 * cosC - p1 * sinC + b[0];
+    out[1] = p0 * sinC + p1 * cosC + b[1];
+    return out;
+}
+
