@@ -50,15 +50,18 @@ async function init (cobalt, node) {
     let spritesheet, colorTexture, emissiveTexture
 
     if (canvas) {
-        // the browser based canvas path
+        // browser (canvas) path
         spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
         spritesheet = readSpriteSheet(spritesheet)
 
         colorTexture = await createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, 'rgba8unorm')
         emissiveTexture = await createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm')
+        
+        // for some reason this needs to be done _after_ creating the material, or the rendering will be blurry
+        canvas.style.imageRendering = 'pixelated'
     }
     else {
-        // the sdl + gpu based path
+        // sdl + gpu path
         spritesheet = readSpriteSheet(node.options.spriteSheetJson)
 
         colorTexture = await createTextureFromBuffer(cobalt, 'sprite', node.options.colorTexture, 'rgba8unorm')
@@ -67,17 +70,10 @@ async function init (cobalt, node) {
     
     const quads = createSpriteQuads(device, spritesheet)
 
-    // canvas is only present in browser contexts, not in node + sdl + gpu
-    if (canvas) {
-        // for some reason this needs to be done _after_ creating the material, or the rendering will be pixelated
-        canvas.style.imageRendering = 'pixelated'
-    }
-
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
-
 
     const bindGroupLayout = device.createBindGroupLayout({
         entries: [

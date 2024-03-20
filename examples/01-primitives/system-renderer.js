@@ -17,7 +17,6 @@ export default function createRendererSystem (renderer) {
     }
 
     return function rendererSystem (world) {
-    
         const onUpdate = function (/*dt*/) {
      
             const device = renderer.device
