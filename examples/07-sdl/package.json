@@ -14,6 +14,6 @@
     "@kmamal/gpu": "^0.1.3",
     "@kmamal/sdl": "^0.10.2",
     "pngjs": "^7.0.0",
-    "wgpu-matrix": "^2.5.1"
+    "wgpu-matrix": "^3.0.2"
   }
 }
