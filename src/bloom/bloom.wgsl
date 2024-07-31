@@ -134,7 +134,7 @@ fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 
 	let imgSize = textureDimensions(output_texture);
 
-	if (global_invocation_id.x <= u32(imgSize.x) && global_invocation_id.y <= u32(imgSize.y)) {
+	if (global_invocation_id.x < u32(imgSize.x) && global_invocation_id.y < u32(imgSize.y)) {
 		
 		var texCoords: vec2<f32> = vec2<f32>(f32(global_invocation_id.x) / f32(imgSize.x), f32(global_invocation_id.y) / f32(imgSize.y));
 		texCoords = texCoords + (1.0 / vec2<f32>(imgSize)) * 0.5;
