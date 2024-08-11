@@ -23,7 +23,6 @@ export default {
 
     onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        
     },
 
     onResize: function (cobalt, node) {
@@ -133,12 +132,10 @@ function draw (cobalt, node, commandEncoder) {
     })
 
     renderpass.setPipeline(node.data.pipeline)
-    //renderpass.setVertexBuffer(0, node.data.quad.buffer)
 
     renderpass.setBindGroup(0, node.data.bindGroup)
 
-    // vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx
-    renderpass.draw(6, 1, 0, 0)
+    renderpass.draw(3)
 
     renderpass.end()
 }
