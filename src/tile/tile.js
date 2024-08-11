@@ -152,15 +152,13 @@ function draw (cobalt, nodeData, commandEncoder) {
     const tileAtlas = nodeData.refs.tileAtlas.data
 
     renderpass.setPipeline(tileAtlas.pipeline)
-    renderpass.setVertexBuffer(0, tileAtlas.quad.buffer)
 
     renderpass.setBindGroup(0, nodeData.data.bindGroup)
 
     // common stuff; the transform data and the tile atlas texture
     renderpass.setBindGroup(1, tileAtlas.atlasBindGroup)
 
-    // vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx
-    renderpass.draw(6, 1, 0, 0)
+    renderpass.draw(3) // fullscreen triangle
 
     renderpass.end()
 }

@@ -1,5 +1,4 @@
 import createTextureFromUrl from '../create-texture-from-url.js'
-import createFullscreenQuad from '../create-fullscreen-quad.js'
 import tileWGSL             from './tile.wgsl'
 
 
@@ -39,8 +38,6 @@ export default {
 
 async function init (cobalt, nodeData) {
     const { device } = cobalt
-
-    const quad = createFullscreenQuad(device)
 
     const atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl)
 
@@ -120,7 +117,7 @@ async function init (cobalt, nodeData) {
                 code: tileWGSL
             }),
             entryPoint: 'vs_main',
-            buffers: [ quad.bufferLayout ]
+            buffers: [ ]
         },
 
         fragment: {
@@ -159,8 +156,6 @@ async function init (cobalt, nodeData) {
         atlasMaterial,
 
         tileBindGroupLayout,
-
-        quad,
 
         tileSize: nodeData.options.tileSize,
         tileScale: nodeData.options.tileScale,
