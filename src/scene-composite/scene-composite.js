@@ -130,7 +130,7 @@ function draw (cobalt, node, commandEncoder) {
 
     passEncoder.setPipeline(pipeline)
     passEncoder.setBindGroup(0, bindGroup)
-    passEncoder.draw(6, 1, 0, 0)
+    passEncoder.draw(3)
     passEncoder.end()
 }
 

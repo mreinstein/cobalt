@@ -8,7 +8,7 @@ struct Fragment {
     @location(0) TexCoord : vec2<f32>
 };
 
-
+// fullscreen triangle position and uvs
 const positions = array<vec2<f32>, 3>(
     vec2<f32>(-1.0, -3.0),
     vec2<f32>(3.0, 1.0),
