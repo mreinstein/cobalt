@@ -17,7 +17,7 @@ const MODE_UPSAMPLE       = 3
 
 
 export default {
-    type: 'bloom',
+    type: 'cobalt:bloom',
     refs: [
         { name: 'emissive', type: 'textureView', format: 'rgba16', access: 'read' },
         { name: 'hdr',      type: 'textureView', format: 'rgba16', access: 'read' },

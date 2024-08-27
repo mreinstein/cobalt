@@ -22,7 +22,7 @@ There is still some CPU required as the number of sprites increases.
 */
 
 export default {
-    type: 'sprite',
+    type: 'cobalt:sprite',
     refs: [
         { name: 'spritesheet', type: 'customResource', access: 'read' },
         { name: 'hdr', type: 'textureView', format: 'rgba16float', access: 'write' },

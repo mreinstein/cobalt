@@ -16,7 +16,7 @@ Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gp
 
 
 export default {
-    type: 'tile',
+    type: 'cobalt:tile',
     refs: [
         { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'write' },
     ],

@@ -67,7 +67,6 @@ import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
 import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
 import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
-//import animationSystem  from './system-animation.js'
 import rendererSystem   from './system-renderer.js'
 import spriteEntity     from './entity-sprite.js'
 import { ECS, vec2 }    from './deps.js'
@@ -83,7 +82,7 @@ async function main () {
 
     // instantiate all resource nodes
     const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
-        type: 'tileAtlas',
+        type: 'cobalt:tileAtlas',
         refs: { },
         options: {
             label: 'tile atlas',
@@ -94,7 +93,7 @@ async function main () {
     })
 
     const hdrTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr color texture',
@@ -106,7 +105,7 @@ async function main () {
     })
 
     const emissiveTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr emissive texture',
@@ -118,7 +117,7 @@ async function main () {
     })
 
     const bloomTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr bloom texture',
@@ -130,7 +129,7 @@ async function main () {
     })
 
     const bloomNode = await Cobalt.initNode(Game.renderer, {
-        type: 'bloom',
+        type: 'cobalt:bloom',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -158,7 +157,7 @@ async function main () {
     })
 
     const tmpTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'bloom + hdr compositing',
@@ -173,7 +172,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const tileNode = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
+        type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -188,7 +187,7 @@ async function main () {
     })
 
     const tileNode2 = await Cobalt.initNode(Game.renderer, {
-        type: 'tile',
+        type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -204,7 +203,7 @@ async function main () {
 
 
     const compositeNode = await Cobalt.initNode(Game.renderer, {
-        type: 'composite',
+        type: 'cobalt:composite',
         refs: {
             hdr: hdrTex,
             bloom: bloomTex,
@@ -216,7 +215,7 @@ async function main () {
     })
 
     const b = await Cobalt.initNode(Game.renderer, {
-        type: 'fbBlit',
+        type: 'cobalt:fbBlit',
         refs: {
             in: tmpTex,
             out: 'FRAME_TEXTURE_VIEW',
@@ -225,7 +224,7 @@ async function main () {
     })
 
     const displacement = await Cobalt.initNode(Game.renderer, {
-        type: 'displacement',
+        type: 'cobalt:displacement',
         refs: {
             color: tmpTex,
             map: perlinTex,

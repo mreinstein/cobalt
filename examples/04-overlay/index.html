@@ -78,7 +78,7 @@ async function main () {
 
     // instantiate all resource nodes
     const spritesheet = await Cobalt.initNode(renderer, {
-        type: 'spritesheet',
+        type: 'cobalt:spritesheet',
         refs: { },
         options: {
             spriteSheetJsonUrl: './assets/spritesheet.json',
@@ -88,7 +88,7 @@ async function main () {
     })
 
     const overlayNode = await Cobalt.initNode(renderer, {
-        type: 'overlay',
+        type: 'cobalt:overlay',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary

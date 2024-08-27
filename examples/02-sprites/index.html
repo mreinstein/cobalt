@@ -80,7 +80,7 @@ async function main () {
 
     // instantiate all resource nodes
     const spritesheet = await Cobalt.initNode(Game.renderer, {
-        type: 'spritesheet',
+        type: 'cobalt:spritesheet',
         refs: { },
         options: {
             spriteSheetJsonUrl: './assets/spritesheet.json',
@@ -90,7 +90,7 @@ async function main () {
     })
 
     const hdrTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr color texture',
@@ -102,7 +102,7 @@ async function main () {
     })
 
     const emissiveTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr emissive texture',
@@ -114,7 +114,7 @@ async function main () {
     })
 
     const bloomTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'hdr bloom texture',
@@ -126,7 +126,7 @@ async function main () {
     })
 
     const bloomNode = await Cobalt.initNode(Game.renderer, {
-        type: 'bloom',
+        type: 'cobalt:bloom',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -154,7 +154,7 @@ async function main () {
     })
 
     const tmpTex = await Cobalt.initNode(Game.renderer, {
-        type: 'fbTexture',
+        type: 'cobalt:fbTexture',
         refs: { },
         options: {
             label: 'bloom + hdr compositing',
@@ -167,7 +167,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const spriteNode = await Cobalt.initNode(Game.renderer, {
-        type: 'sprite',
+        type: 'cobalt:sprite',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -182,7 +182,7 @@ async function main () {
 
 
     const compositeNode = await Cobalt.initNode(Game.renderer, {
-        type: 'composite',
+        type: 'cobalt:composite',
         refs: {
             hdr: hdrTex,
             bloom: bloomTex,
@@ -195,7 +195,7 @@ async function main () {
 
 
     const b = await Cobalt.initNode(Game.renderer, {
-        type: 'fbBlit',
+        type: 'cobalt:fbBlit',
         refs: {
             in: tmpTex,
             out: 'FRAME_TEXTURE_VIEW',

@@ -14,7 +14,7 @@ const _tmpVec3 = vec3.create(0, 0, 0)
 
 
 export default {
-    type: 'spritesheet',
+    type: 'cobalt:spritesheet',
     refs: [ ],
 
     // @params Object cobalt renderer world object

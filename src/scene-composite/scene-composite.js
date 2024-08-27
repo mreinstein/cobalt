@@ -3,7 +3,7 @@ import sceneCompositeWGSL from './scene-composite.wgsl'
 
 
 export default {
-    type: 'bloom',
+    type: 'cobalt:bloom',
     refs: [
         { name: 'hdr',      type: 'textureView', format: 'rgba16', access: 'read' },
         { name: 'bloom',    type: 'textureView', format: 'rgba16', access: 'read' },

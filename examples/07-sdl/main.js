@@ -34,7 +34,7 @@ async function main () {
     
 
     const pNode = await Cobalt.initNode(c, {
-        type: 'primitives',
+        type: 'cobalt:primitives',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -61,7 +61,7 @@ async function main () {
     
 
     const spritesheet = await Cobalt.initNode(c, {
-        type: 'spritesheet',
+        type: 'cobalt:spritesheet',
         refs: { },
         options: {
             spriteSheetJson,
@@ -72,7 +72,7 @@ async function main () {
 
     
     const overlayNode = await Cobalt.initNode(c, {
-        type: 'overlay',
+        type: 'cobalt:overlay',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary

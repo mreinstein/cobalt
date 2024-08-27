@@ -14,7 +14,7 @@ const _tmpVec3 = vec3.create()
 
 
 export default {
-    type: 'overlay',
+    type: 'cobalt:overlay',
     refs: [
         { name: 'spritesheet', type: 'customResource', access: 'read' },
         { name: 'color', type: 'textView', format: 'rgba8unorm', access: 'write' },

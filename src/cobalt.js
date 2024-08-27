@@ -12,6 +12,7 @@ import displacementNode from './displacement/displacement.js'
 import overlayNode      from './overlay/overlay.js'    
 import fbBlitNode       from './fb-blit/fb-blit.js'  
 import primitivesNode   from './primitives/primitives.js'
+import lightNode        from './light/light.js'
 
 // built-in resource nodes
 import tileAtlasNode    from './tile/atlas.js'
@@ -30,7 +31,7 @@ export async function init (ctx, viewportWidth, viewportHeight) {
         // this is an sdl/gpu context
         gpu = ctx.gpu
         
-        const instance = gpu.create([ "verbose=1" ])
+        const instance = gpu.create([ 'verbose=1' ])
         const adapter = await instance.requestAdapter()
         device = await adapter.requestDevice()
         context = gpu.renderGPUDeviceToWindow({ device, window: ctx.sdlWindow })
@@ -57,25 +58,25 @@ export async function init (ctx, viewportWidth, viewportHeight) {
             alphaMode: 'opaque'
         })
     }
-    
 
+    // all available node defintions the renderer knows about are defined here.
+    // the cobalt:* nodes are built in. New nodes can be defined at run time with Cobalt.defineNode(...)
     const nodeDefs = {
-        // TODO: namespace the builtins?  e.g., builtin_bloom or cobalt_bloom, etc.
-        //
         // built in resource nodes
-        tileAtlas: tileAtlasNode,
-        spritesheet: spritesheetNode,
-        fbTexture: fbTextureNode,
+        'cobalt:tileAtlas': tileAtlasNode,
+        'cobalt:spritesheet': spritesheetNode,
+        'cobalt:fbTexture': fbTextureNode,
 
         // builtin run nodes
-        bloom: bloomNode,
-        composite: compositeNode,
-        sprite: spriteNode,
-        tile: tileNode,
-        displacement: displacementNode,
-        overlay: overlayNode,
-        fbBlit: fbBlitNode,
-        primitives: primitivesNode,
+        'cobalt:bloom': bloomNode,
+        'cobalt:composite': compositeNode,
+        'cobalt:sprite': spriteNode,
+        'cobalt:tile': tileNode,
+        'cobalt:displacement': displacementNode,
+        'cobalt:overlay': overlayNode,
+        'cobalt:fbBlit': fbBlitNode,
+        'cobalt:primitives': primitivesNode,
+        'cobalt:light': lightNode,
     }
 
     return {

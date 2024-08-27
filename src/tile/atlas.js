@@ -7,7 +7,7 @@ const _buf = new Float32Array(8) //(136)  // tile instance data stored in a UBO
 
 // shared tile atlas resource, used by each tile render node
 export default {
-    type: 'tileAtlas',
+    type: 'cobalt:tileAtlas',
     refs: [ ],
 
     // @params Object cobalt renderer world object

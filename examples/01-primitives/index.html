@@ -81,7 +81,7 @@ async function main () {
     // instantiate all resource nodes
     
     const pNode = await Cobalt.initNode(Game.renderer, {
-        type: 'primitives',
+        type: 'cobalt:primitives',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -125,7 +125,7 @@ async function main () {
     let box2Angle = 0
 
     const render = function (context) {
-        const pNode = context.renderer.nodes.find((n) => n.type === 'primitives')
+        const pNode = context.renderer.nodes.find((n) => n.type === 'cobalt:primitives')
 
         pNode.clear()
 

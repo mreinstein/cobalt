@@ -13,7 +13,7 @@ const FLOAT32S_PER_SPRITE = 6 // vec2(translate) + vec2(scale) + rotation + opac
 
 
 export default {
-    type: 'displacement',
+    type: 'cobalt:displacement',
     refs: [
 
     	// input framebuffer texture with the scene drawn

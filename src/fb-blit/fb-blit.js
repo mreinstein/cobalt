@@ -4,7 +4,7 @@ import blitWGSL from './fb-blit.wgsl'
 // blit a source texture into a destination texture
 
 export default {
-    type: 'fbBlit',
+    type: 'cobalt:fbBlit',
     refs: [
         { name: 'in', type: 'cobaltTexture', format: 'bgra8unorm', access: 'read' },
         { name: 'out', type: 'cobaltTexture', format: 'bgra8unorm', access: 'write' },

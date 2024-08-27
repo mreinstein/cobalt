@@ -12,7 +12,7 @@ const _tmpVec3 = vec3.create(0, 0, 0)
 
 
 export default {
-    type: 'primitives',
+    type: 'cobalt:primitives',
     refs: [
         { name: 'color', type: 'textView', format: 'rgba8unorm', access: 'write' },
     ],
