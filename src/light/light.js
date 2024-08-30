@@ -1,4 +1,5 @@
 import testWGSL       from './test.wgsl'
+import { testFoo }    from './test'
 import * as publicAPI from './public-api.js'
 
 
@@ -55,6 +56,10 @@ async function init (cobalt, node) {
 
     // a 2048x2048 light texture with 4 channels (rgba) with each light lighting a 256x256 region can hold 256 lights
     //const MAX_LIGHT_COUNT = 256
+
+
+    // TODO: remove this. just demos how to import a ts module within cobalt
+    console.log('test:', testFoo(Math.random()))
 
 
     const bindGroupLayout = device.createBindGroupLayout({

@@ -11,5 +11,8 @@
     "@hyrious/esbuild-plugin-http": "^0.1.5",
     "esbuild": "^0.23.0",
     "esbuild-plugin-glsl": "^1.1.0"
+  },
+  "dependencies": {
+    "wgpu-matrix": "^3.0.2"
   }
 }
