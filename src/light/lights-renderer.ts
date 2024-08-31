@@ -24,6 +24,8 @@ type Parameters = {
 class LightsRenderer {
     private readonly device: GPUDevice;
 
+    public readonly ambientLight: [number, number, number] = [0.2, 0.2, 0.2];
+
     private readonly targetTexture: TextureRenderable;
 
     private readonly renderPipeline: GPURenderPipeline;
@@ -45,15 +47,16 @@ class LightsRenderer {
 
         this.uniformsBufferGpu = params.device.createBuffer({
             label: "LightsRenderer uniforms buffer",
-            size: 64,
+            size: 80,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
         const shaderModule = params.device.createShaderModule({
             label: "LightsRenderer shader module",
             code: `
-struct Uniforms {                  //           align(16) size(64)
-    invertViewMatrix: mat4x4<f32>, // offset(0) align(16) size(64)
+struct Uniforms {                  //            align(16) size(80)
+    invertViewMatrix: mat4x4<f32>, // offset(0)  align(16) size(64)
+    ambientLight: vec3<f32>,       // offset(64) align(16) size(12)
 };
 
 ${LightsBuffer.structs.definition}
@@ -119,8 +122,7 @@ fn sampleLightIntensity(lightId: u32, localUv: vec2<f32>) -> f32 {
 }
     
 fn compute_lights(worldPosition: vec2<f32>) -> vec3<f32> {
-    const ambiant = vec3<f32>(0.2);
-    var color = vec3<f32>(ambiant);
+    var color = vec3<f32>(uniforms.ambientLight);
 
     const maxUvDistance = f32(${1 - 2 / params.lightsTextureProperties.resolutionPerLight});
 
@@ -188,7 +190,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 },
                 {
                     binding: 2,
-                    resource: this.lightsTexture.texture.createView({label: "LightsRenderer lightsTexture view"}),
+                    resource: this.lightsTexture.texture.createView({ label: "LightsRenderer lightsTexture view" }),
                 },
                 {
                     binding: 3,
@@ -212,8 +214,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     }
 
     public render(renderpassEncoder: GPURenderPassEncoder, viewMatrix: wgpuMatrix.Mat4Arg): void {
-        const invertViewMatrix = wgpuMatrix.mat4.inverse(viewMatrix);
-        this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, invertViewMatrix);
+        const uniformsBufferCpu = new ArrayBuffer(80);
+        new Float32Array(uniformsBufferCpu, 0, 16).set(wgpuMatrix.mat4.inverse(viewMatrix));
+        new Float32Array(uniformsBufferCpu, 64, 3).set(this.ambientLight);
+        this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, uniformsBufferCpu);
 
         renderpassEncoder.executeBundles([this.renderBundle]);
     }

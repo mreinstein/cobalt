@@ -9074,6 +9074,7 @@ var LightsTexture = class {
 // src/light/lights-renderer.ts
 var LightsRenderer = class {
   device;
+  ambientLight = [0.2, 0.2, 0.2];
   targetTexture;
   renderPipeline;
   uniformsBufferGpu;
@@ -9089,14 +9090,15 @@ var LightsRenderer = class {
     this.lightsTexture = new LightsTexture(params.device, params.lightsBuffer, params.lightsTextureProperties);
     this.uniformsBufferGpu = params.device.createBuffer({
       label: "LightsRenderer uniforms buffer",
-      size: 64,
+      size: 80,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
     const shaderModule = params.device.createShaderModule({
       label: "LightsRenderer shader module",
       code: `
-struct Uniforms {                  //           align(16) size(64)
-    invertViewMatrix: mat4x4<f32>, // offset(0) align(16) size(64)
+struct Uniforms {                  //            align(16) size(80)
+    invertViewMatrix: mat4x4<f32>, // offset(0)  align(16) size(64)
+    ambientLight: vec3<f32>,       // offset(64) align(16) size(12)
 };
 
 ${LightsBuffer.structs.definition}
@@ -9162,8 +9164,7 @@ fn sampleLightIntensity(lightId: u32, localUv: vec2<f32>) -> f32 {
 }
     
 fn compute_lights(worldPosition: vec2<f32>) -> vec3<f32> {
-    const ambiant = vec3<f32>(0.2);
-    var color = vec3<f32>(ambiant);
+    var color = vec3<f32>(uniforms.ambientLight);
 
     const maxUvDistance = f32(${1 - 2 / params.lightsTextureProperties.resolutionPerLight});
 
@@ -9249,8 +9250,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     this.lightsTexture.update(commandEncoder);
   }
   render(renderpassEncoder, viewMatrix) {
-    const invertViewMatrix = mat42.inverse(viewMatrix);
-    this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, invertViewMatrix);
+    const uniformsBufferCpu = new ArrayBuffer(80);
+    new Float32Array(uniformsBufferCpu, 0, 16).set(mat42.inverse(viewMatrix));
+    new Float32Array(uniformsBufferCpu, 64, 3).set(this.ambientLight);
+    this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, uniformsBufferCpu);
     renderpassEncoder.executeBundles([this.renderBundle]);
   }
   setAlbedo(albedo) {
