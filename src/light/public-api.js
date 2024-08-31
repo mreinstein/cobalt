@@ -16,7 +16,15 @@ import { vec2 } from '../deps.js'
  */
 
 export function addLight (cobalt, node, position) {
-	node.data.lights.push({ id: uuid(), position: vec2.clone(position) })
+	node.data.lights.push({
+		id: uuid(),
+		position: vec2.clone(position),
+		size: 50,
+		color: [1, 0.5, 0.5],
+		intensity: 1,
+		attenuationLinear: 0,
+		attenuationExp: 7,
+	})
 }
 
 

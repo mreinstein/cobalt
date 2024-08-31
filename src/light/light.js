@@ -1,6 +1,7 @@
 import * as publicAPI from './public-api.js'
 import { Viewport } from "./viewport";
 import { LightsRenderer } from './lights-renderer.js';
+import { LightsBuffer } from './lights-buffer.js';
 
 
 /**
@@ -56,7 +57,9 @@ async function init(cobalt, node) {
     const { device } = cobalt
 
     // a 2048x2048 light texture with 4 channels (rgba) with each light lighting a 256x256 region can hold 256 lights
-    //const MAX_LIGHT_COUNT = 256
+    const MAX_LIGHT_COUNT = 256;
+    const MAX_LIGHT_SIZE = 256;
+    const lightsBuffer = new LightsBuffer(device, MAX_LIGHT_COUNT);
 
     const viewport = new Viewport({
         canvasSize: {
@@ -74,13 +77,23 @@ async function init(cobalt, node) {
             sampler: node.refs.in.data.sampler
         },
         targetTexture: node.refs.out.data.texture,
+        lightsBuffer,
+        maxLightSize: MAX_LIGHT_SIZE,
     });
 
     return {
+        lightsBuffer,
         lightsRenderer,
         viewport,
 
-        lights: [], // light config
+        lights: [{
+            position: [0, 0],
+            size: MAX_LIGHT_SIZE,
+            color: [1, 0.5, 0.5],
+            intensity: 1,
+            attenuationLinear: 0,
+            attenuationExp: 7,
+        }], // light config
     }
 }
 
@@ -104,6 +117,9 @@ function draw(cobalt, node, commandEncoder) {
             }
         ]
     })
+
+    const lightsBuffer = node.data.lightsBuffer;
+    lightsBuffer.setLights(node.data.lights);
 
     const viewMatrix = node.data.viewport.viewMatrix;
     const lightsRenderer = node.data.lightsRenderer;

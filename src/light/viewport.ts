@@ -13,9 +13,9 @@ type Parameters = {
 class Viewport {
     private readonly vMatrix: wgpuMatrix.Mat4Arg = wgpuMatrix.mat4.create();
 
+    private readonly canvasSize = { width: 1, height: 1 };
     private readonly center: Point = [0, 0];
     private zoom: number = 1;
-    private aspectRatio: number = 1;
 
     public constructor(params: Parameters) {
         this.setCanvasSize(params.canvasSize.width, params.canvasSize.height);
@@ -36,7 +36,9 @@ class Viewport {
     }
 
     public setCanvasSize(width: number, height: number): void {
-        this.aspectRatio = width / height;
+        this.canvasSize.width = width;
+        this.canvasSize.height = height;
+
         this.updateViewMatrix();
     }
 
@@ -61,7 +63,7 @@ class Viewport {
 
     private updateViewMatrix(): void {
         wgpuMatrix.mat4.identity(this.vMatrix);
-        wgpuMatrix.mat4.scale(this.vMatrix, [this.zoom / this.aspectRatio, this.zoom, 1], this.vMatrix);
+        wgpuMatrix.mat4.scale(this.vMatrix, [this.zoom / this.canvasSize.width, this.zoom / this.canvasSize.height, 1], this.vMatrix);
         wgpuMatrix.mat4.translate(this.vMatrix, [-this.center[0], -this.center[1], 0], this.vMatrix);
     }
 }

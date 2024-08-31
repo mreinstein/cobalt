@@ -1,6 +1,7 @@
 /// <reference types="@webgpu/types"/>
 
 import * as wgpuMatrix from "wgpu-matrix";
+import { LightsBuffer } from "./lights-buffer";
 
 type TextureSamplable = {
     readonly view: GPUTextureView;
@@ -15,6 +16,8 @@ type Parameters = {
     readonly device: GPUDevice;
     readonly albedo: TextureSamplable;
     readonly targetTexture: TextureRenderable;
+    readonly lightsBuffer: LightsBuffer;
+    readonly maxLightSize: number;
 };
 
 class LightsRenderer {
@@ -28,10 +31,13 @@ class LightsRenderer {
     private bindgroup1: GPUBindGroup;
     private renderBundle: GPURenderBundle;
 
+    private readonly lightsBuffer: LightsBuffer;
+
     public constructor(params: Parameters) {
         this.device = params.device;
 
         this.targetTexture = params.targetTexture;
+        this.lightsBuffer = params.lightsBuffer;
 
         this.uniformsBufferGpu = params.device.createBuffer({
             label: "LightsRenderer uniforms buffer",
@@ -46,7 +52,10 @@ struct Uniforms {                  //           align(16) size(64)
     invertViewMatrix: mat4x4<f32>, // offset(0) align(16) size(64)
 };
 
+${LightsBuffer.structs.definition}
+
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var<storage,read> lightsBuffer: LightsBuffer;
 @group(1) @binding(0) var albedoTexture: texture_2d<f32>;
 @group(1) @binding(1) var albedoSampler: sampler;
 
@@ -81,13 +90,31 @@ struct FragmentOut {
     @location(0) color: vec4<f32>,
 };
 
+fn compute_lights(worldPosition: vec2<f32>) -> vec3<f32> {
+    const ambiant = vec3<f32>(0.2);
+    var color = vec3<f32>(ambiant);
+
+    const maxUvDistance = 1.0;
+
+    let lightsCount = lightsBuffer.count;
+    for (var iLight = 0u; iLight < lightsCount; iLight++) {
+        let light = lightsBuffer.lights[iLight];
+        let lightSize = f32(${params.maxLightSize});
+        let relativePosition = (worldPosition - light.position) / lightSize;
+        if (max(abs(relativePosition.x), abs(relativePosition.y)) < maxUvDistance) {
+            let lightIntensity = 1.0;
+            color += lightIntensity * light.color;
+        }
+    }
+
+    return color;
+}
+
 @fragment
 fn main_fragment(in: VertexOut) -> FragmentOut {
-    const light = vec3<f32>(1.0);
-
+    let light = compute_lights(in.worldPosition);
     let albedo = textureSample(albedoTexture, albedoSampler, in.uv);
-
-    let color = albedo.rgb * light + 0.0001 * vec3<f32>(in.worldPosition, 0.0);
+    let color = albedo.rgb * light;
 
     var out: FragmentOut;
     out.color = vec4<f32>(color, 1.0);
@@ -125,6 +152,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 {
                     binding: 0,
                     resource: { buffer: this.uniformsBufferGpu },
+                },
+                {
+                    binding: 1,
+                    resource: { buffer: this.lightsBuffer.gpuBuffer },
                 },
             ]
         });
@@ -176,7 +207,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
 
 export {
-    LightsRenderer,
-    // type LightObstacle
+    LightsRenderer
 };
 

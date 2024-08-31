@@ -5425,7 +5425,15 @@ __export(public_api_exports, {
   removeLight: () => removeLight
 });
 function addLight(cobalt, node, position) {
-  node.data.lights.push({ id: _uuid(), position: vec2.clone(position) });
+  node.data.lights.push({
+    id: _uuid(),
+    position: vec2.clone(position),
+    size: 50,
+    color: [1, 0.5, 0.5],
+    intensity: 1,
+    attenuationLinear: 0,
+    attenuationExp: 7
+  });
 }
 function removeLight(cobalt, node, lightId) {
   const light = node.data.lights.find((L) => L.id === lightId);
@@ -8705,9 +8713,9 @@ var {
 // src/light/viewport.ts
 var Viewport = class {
   vMatrix = mat42.create();
+  canvasSize = { width: 1, height: 1 };
   center = [0, 0];
   zoom = 1;
-  aspectRatio = 1;
   constructor(params) {
     this.setCanvasSize(params.canvasSize.width, params.canvasSize.height);
     const initialCenter = params.center ?? this.center;
@@ -8722,7 +8730,8 @@ var Viewport = class {
     return mat42.inverse(this.vMatrix);
   }
   setCanvasSize(width, height) {
-    this.aspectRatio = width / height;
+    this.canvasSize.width = width;
+    this.canvasSize.height = height;
     this.updateViewMatrix();
   }
   setCenter(x, y) {
@@ -8743,8 +8752,81 @@ var Viewport = class {
   }
   updateViewMatrix() {
     mat42.identity(this.vMatrix);
-    mat42.scale(this.vMatrix, [this.zoom / this.aspectRatio, this.zoom, 1], this.vMatrix);
+    mat42.scale(this.vMatrix, [this.zoom / this.canvasSize.width, this.zoom / this.canvasSize.height, 1], this.vMatrix);
     mat42.translate(this.vMatrix, [-this.center[0], -this.center[1], 0], this.vMatrix);
+  }
+};
+
+// src/light/lights-buffer.ts
+var LightsBuffer = class _LightsBuffer {
+  static structs = {
+    definition: `
+struct Light {                //             align(16) size(48)
+    color: vec3<f32>,         // offset(0)   align(16) size(12)
+    size: f32,                // offset(12)  align(4)  size(4)
+    position: vec2<f32>,      // offset(16)  align(8)  size(8)
+    intensity: f32,           // offset(24)  align(4)  size(4)
+    attenuationLinear: f32,   // offset(28)  align(4)  size(4)
+    attenuationExp: f32,      // offset(32)  align(4)  size(4)
+};
+
+struct LightsBuffer {         //             align(16)
+    count: u32,               // offset(0)   align(4)  size(4)
+    // padding
+    lights: array<Light>,     // offset(16)  align(16)
+};
+`,
+    light: {
+      size: { offset: 12 },
+      position: { offset: 16 }
+    },
+    lightsBuffer: {
+      lights: { offset: 16, stride: 48 }
+    }
+  };
+  device;
+  maxLightsCount;
+  currentLightsCount = 0;
+  buffer;
+  get gpuBuffer() {
+    return this.buffer.bufferGpu;
+  }
+  constructor(device, maxLightsCount) {
+    this.device = device;
+    this.maxLightsCount = maxLightsCount;
+    const bufferCpu = new ArrayBuffer(_LightsBuffer.computeBufferBytesLength(maxLightsCount));
+    const bufferGpu = device.createBuffer({
+      label: "LightsBuffer buffer",
+      size: bufferCpu.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX
+    });
+    this.buffer = { bufferCpu, bufferGpu };
+    this.setLights([]);
+  }
+  setLights(lights) {
+    if (lights.length > this.maxLightsCount) {
+      throw new Error(`Too many lights "${lights.length}", max is "${this.maxLightsCount}".`);
+    }
+    const newBufferLength = _LightsBuffer.computeBufferBytesLength(lights.length);
+    new Uint32Array(this.buffer.bufferCpu, 0, 1).set([lights.length]);
+    lights.forEach((light, index) => {
+      new Float32Array(this.buffer.bufferCpu, _LightsBuffer.structs.lightsBuffer.lights.offset + _LightsBuffer.structs.lightsBuffer.lights.stride * index, 9).set([
+        ...light.color,
+        light.size,
+        ...light.position,
+        light.intensity,
+        light.attenuationLinear,
+        light.attenuationExp
+      ]);
+    });
+    this.device.queue.writeBuffer(this.buffer.bufferGpu, 0, this.buffer.bufferCpu, 0, newBufferLength);
+    this.currentLightsCount = lights.length;
+  }
+  get lightsCount() {
+    return this.currentLightsCount;
+  }
+  static computeBufferBytesLength(lightsCount) {
+    return _LightsBuffer.structs.lightsBuffer.lights.offset + _LightsBuffer.structs.lightsBuffer.lights.stride * lightsCount;
   }
 };
 
@@ -8757,9 +8839,11 @@ var LightsRenderer = class {
   bindgroup0;
   bindgroup1;
   renderBundle;
+  lightsBuffer;
   constructor(params) {
     this.device = params.device;
     this.targetTexture = params.targetTexture;
+    this.lightsBuffer = params.lightsBuffer;
     this.uniformsBufferGpu = params.device.createBuffer({
       label: "LightsRenderer uniforms buffer",
       size: 64,
@@ -8772,7 +8856,10 @@ struct Uniforms {                  //           align(16) size(64)
     invertViewMatrix: mat4x4<f32>, // offset(0) align(16) size(64)
 };
 
+${LightsBuffer.structs.definition}
+
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var<storage,read> lightsBuffer: LightsBuffer;
 @group(1) @binding(0) var albedoTexture: texture_2d<f32>;
 @group(1) @binding(1) var albedoSampler: sampler;
 
@@ -8807,13 +8894,31 @@ struct FragmentOut {
     @location(0) color: vec4<f32>,
 };
 
+fn compute_lights(worldPosition: vec2<f32>) -> vec3<f32> {
+    const ambiant = vec3<f32>(0.2);
+    var color = vec3<f32>(ambiant);
+
+    const maxUvDistance = 1.0;
+
+    let lightsCount = lightsBuffer.count;
+    for (var iLight = 0u; iLight < lightsCount; iLight++) {
+        let light = lightsBuffer.lights[iLight];
+        let lightSize = f32(${params.maxLightSize});
+        let relativePosition = (worldPosition - light.position) / lightSize;
+        if (max(abs(relativePosition.x), abs(relativePosition.y)) < maxUvDistance) {
+            let lightIntensity = 1.0;
+            color += lightIntensity * light.color;
+        }
+    }
+
+    return color;
+}
+
 @fragment
 fn main_fragment(in: VertexOut) -> FragmentOut {
-    const light = vec3<f32>(1.0);
-
+    let light = compute_lights(in.worldPosition);
     let albedo = textureSample(albedoTexture, albedoSampler, in.uv);
-
-    let color = albedo.rgb * light + 0.0001 * vec3<f32>(in.worldPosition, 0.0);
+    let color = albedo.rgb * light;
 
     var out: FragmentOut;
     out.color = vec4<f32>(color, 1.0);
@@ -8848,6 +8953,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         {
           binding: 0,
           resource: { buffer: this.uniformsBufferGpu }
+        },
+        {
+          binding: 1,
+          resource: { buffer: this.lightsBuffer.gpuBuffer }
         }
       ]
     });
@@ -8925,6 +9034,9 @@ var light_default = {
 };
 async function init9(cobalt, node) {
   const { device } = cobalt;
+  const MAX_LIGHT_COUNT = 256;
+  const MAX_LIGHT_SIZE = 256;
+  const lightsBuffer = new LightsBuffer(device, MAX_LIGHT_COUNT);
   const viewport = new Viewport({
     canvasSize: {
       width: cobalt.viewport.width,
@@ -8939,12 +9051,22 @@ async function init9(cobalt, node) {
       view: node.refs.in.data.view,
       sampler: node.refs.in.data.sampler
     },
-    targetTexture: node.refs.out.data.texture
+    targetTexture: node.refs.out.data.texture,
+    lightsBuffer,
+    maxLightSize: MAX_LIGHT_SIZE
   });
   return {
+    lightsBuffer,
     lightsRenderer,
     viewport,
-    lights: []
+    lights: [{
+      position: [0, 0],
+      size: MAX_LIGHT_SIZE,
+      color: [1, 0.5, 0.5],
+      intensity: 1,
+      attenuationLinear: 0,
+      attenuationExp: 7
+    }]
     // light config
   };
 }
@@ -8959,6 +9081,8 @@ function draw9(cobalt, node, commandEncoder) {
       }
     ]
   });
+  const lightsBuffer = node.data.lightsBuffer;
+  lightsBuffer.setLights(node.data.lights);
   const viewMatrix = node.data.viewport.viewMatrix;
   const lightsRenderer = node.data.lightsRenderer;
   lightsRenderer.render(renderpass, viewMatrix);
