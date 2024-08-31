@@ -1,6 +1,6 @@
-import testWGSL       from './test.wgsl'
-import { testFoo }    from './test'
 import * as publicAPI from './public-api.js'
+import { Viewport } from "./viewport";
+import { LightsRenderer } from './lights-renderer.js';
 
 
 /**
@@ -20,7 +20,7 @@ export default {
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -41,6 +41,7 @@ export default {
 
     onViewportPosition: function (cobalt, node) {
         // runs when the viewport position changes
+        node.data.viewport.setCenter(...cobalt.viewport.position);
     },
 
     // optional
@@ -50,102 +51,41 @@ export default {
 }
 
 
-async function init (cobalt, node) {
+async function init(cobalt, node) {
 
     const { device } = cobalt
 
     // a 2048x2048 light texture with 4 channels (rgba) with each light lighting a 256x256 region can hold 256 lights
     //const MAX_LIGHT_COUNT = 256
 
-
-    // TODO: remove this. just demos how to import a ts module within cobalt
-    console.log('test:', testFoo(Math.random()))
-
-
-    const bindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            }
-        ],
-    })
-
-    const bindGroup = device.createBindGroup({
-        layout: bindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: node.refs.in.data.view
-            },
-            {
-                binding: 1,
-                resource: node.refs.in.data.sampler
-            }
-        ]
-    })
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
-    })
-
-    const pipeline = device.createRenderPipeline({
-        label: 'lights-shadows',
-        vertex: {
-            module: device.createShaderModule({
-                code: testWGSL
-            }),
-            entryPoint: 'vs_main'
+    const viewport = new Viewport({
+        canvasSize: {
+            width: cobalt.viewport.width,
+            height: cobalt.viewport.height,
         },
+        center: cobalt.viewport.position,
+        zoom: cobalt.viewport.zoom,
+    });
 
-        fragment: {
-            module: device.createShaderModule({
-                code: testWGSL
-            }),
-            entryPoint: 'fs_main',
-            targets: [
-                {
-                    format: 'rgba16float',
-                    blend: {
-                        color: {
-                            srcFactor: 'src-alpha',
-                            dstFactor: 'one-minus-src-alpha',
-                        },
-                        alpha: {
-                            srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                }
-            ]
+    const lightsRenderer = new LightsRenderer(
+        device,
+        {
+            view: node.refs.in.data.view,
+            sampler: node.refs.in.data.sampler
         },
-
-        primitive: {
-            topology: 'triangle-list'
-        },
-
-        layout: pipelineLayout
-    })
+        node.refs.out.data.texture.format,
+    );
 
     return {
-        bindGroupLayout,
-        bindGroup,
-        pipeline,
+        lightsRenderer,
+        viewport,
 
-        lights: [ ], // light config
+        lights: [], // light config
     }
 }
 
 
-function draw (cobalt, node, commandEncoder) {
-    const { device } = cobalt
-
+function draw(cobalt, node, commandEncoder) {
     // TODO: put all the renderpass logic in here
     /*
     lighting pseudo code:
@@ -153,7 +93,7 @@ function draw (cobalt, node, commandEncoder) {
         draw shadow projections to light texture
         combine input texture and light texture into output texture
     */
-    
+
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             {
@@ -165,36 +105,22 @@ function draw (cobalt, node, commandEncoder) {
         ]
     })
 
-    renderpass.setPipeline(node.data.pipeline)
-
-    renderpass.setBindGroup(0, node.data.bindGroup)
-
-    renderpass.draw(3)
+    const viewMatrix = node.data.viewport.viewMatrix;
+    const lightsRenderer = node.data.lightsRenderer;
+    lightsRenderer.render(renderpass, viewMatrix);
 
     renderpass.end()
 }
 
-
-function destroy (node) {
+function destroy(node) {
     // TODO: cleanup WebGpu buffers, etc. here
 }
 
+function resize(cobalt, node) {
+    node.data.lightsRenderer.setAlbedo({
+        view: node.refs.in.data.view,
+        sampler: node.refs.in.data.sampler
+    });
 
-function resize (cobalt, node) {
-    const { device } = cobalt
-
-    // re-build the bind group
-    node.data.bindGroup = device.createBindGroup({
-        layout: node.data.bindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: node.refs.in.data.view
-            },
-            {
-                binding: 1,
-                resource: node.refs.in.data.sampler
-            }
-        ]
-    })
+    node.data.viewport.setCanvasSize(cobalt.viewport.width, cobalt.viewport.height);
 }
