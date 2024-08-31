@@ -8730,15 +8730,9 @@ var Viewport = class {
     this.center[1] = y;
     this.updateViewMatrix();
   }
-  getCenter() {
-    return { ...this.center };
-  }
   setZoom(zoom) {
     this.zoom = zoom;
     this.updateViewMatrix();
-  }
-  getZoom() {
-    return this.zoom;
   }
   viewportToWorld(position) {
     const result = vec42.transformMat4([...position, 0, 1], this.invertViewMatrix);
@@ -8757,21 +8751,21 @@ var Viewport = class {
 // src/light/lights-renderer.ts
 var LightsRenderer = class {
   device;
-  targetTextureFormat;
+  targetTexture;
   renderPipeline;
   uniformsBufferGpu;
   bindgroup0;
   bindgroup1;
   renderBundle;
-  constructor(device, albedo, targetTextureFormat) {
-    this.device = device;
-    this.targetTextureFormat = targetTextureFormat;
-    this.uniformsBufferGpu = device.createBuffer({
+  constructor(params) {
+    this.device = params.device;
+    this.targetTexture = params.targetTexture;
+    this.uniformsBufferGpu = params.device.createBuffer({
       label: "LightsRenderer uniforms buffer",
       size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
-    const shaderModule = device.createShaderModule({
+    const shaderModule = params.device.createShaderModule({
       label: "LightsRenderer shader module",
       code: `
 struct Uniforms {                  //           align(16) size(64)
@@ -8827,7 +8821,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
             `
     });
-    this.renderPipeline = device.createRenderPipeline({
+    this.renderPipeline = params.device.createRenderPipeline({
       label: "LightsRenderer renderpipeline",
       layout: "auto",
       vertex: {
@@ -8838,7 +8832,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         module: shaderModule,
         entryPoint: "main_fragment",
         targets: [{
-          format: targetTextureFormat
+          format: this.targetTexture.format
         }]
       },
       primitive: {
@@ -8847,7 +8841,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
       }
     });
     const bindgroupLayout = this.renderPipeline.getBindGroupLayout(0);
-    this.bindgroup0 = device.createBindGroup({
+    this.bindgroup0 = params.device.createBindGroup({
       label: "LightsRenderer bindgroup 0",
       layout: bindgroupLayout,
       entries: [
@@ -8857,7 +8851,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         }
       ]
     });
-    this.bindgroup1 = this.buildBindgroup1(albedo);
+    this.bindgroup1 = this.buildBindgroup1(params.albedo);
     this.renderBundle = this.buildRenderBundle();
   }
   render(renderpassEncoder, viewMatrix) {
@@ -8888,7 +8882,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
   buildRenderBundle() {
     const renderBundleEncoder = this.device.createRenderBundleEncoder({
       label: "LightsRenderer renderbundle encoder",
-      colorFormats: [this.targetTextureFormat]
+      colorFormats: [this.targetTexture.format]
     });
     renderBundleEncoder.setPipeline(this.renderPipeline);
     renderBundleEncoder.setBindGroup(0, this.bindgroup0);
@@ -8939,14 +8933,14 @@ async function init9(cobalt, node) {
     center: cobalt.viewport.position,
     zoom: cobalt.viewport.zoom
   });
-  const lightsRenderer = new LightsRenderer(
+  const lightsRenderer = new LightsRenderer({
     device,
-    {
+    albedo: {
       view: node.refs.in.data.view,
       sampler: node.refs.in.data.sampler
     },
-    node.refs.out.data.texture.format
-  );
+    targetTexture: node.refs.out.data.texture
+  });
   return {
     lightsRenderer,
     viewport,

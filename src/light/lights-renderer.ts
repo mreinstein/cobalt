@@ -11,6 +11,12 @@ type TextureRenderable = {
     readonly format: GPUTextureFormat;
 };
 
+type Parameters = {
+    readonly device: GPUDevice;
+    readonly albedo: TextureSamplable;
+    readonly targetTexture: TextureRenderable;
+};
+
 class LightsRenderer {
     private readonly device: GPUDevice;
 
@@ -22,18 +28,18 @@ class LightsRenderer {
     private bindgroup1: GPUBindGroup;
     private renderBundle: GPURenderBundle;
 
-    public constructor(device: GPUDevice, albedo: TextureSamplable, targetTexture: TextureRenderable) {
-        this.device = device;
+    public constructor(params: Parameters) {
+        this.device = params.device;
 
-        this.targetTexture = targetTexture;
+        this.targetTexture = params.targetTexture;
 
-        this.uniformsBufferGpu = device.createBuffer({
+        this.uniformsBufferGpu = params.device.createBuffer({
             label: "LightsRenderer uniforms buffer",
             size: 64,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
-        const shaderModule = device.createShaderModule({
+        const shaderModule = params.device.createShaderModule({
             label: "LightsRenderer shader module",
             code: `
 struct Uniforms {                  //           align(16) size(64)
@@ -90,7 +96,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             `,
         });
 
-        this.renderPipeline = device.createRenderPipeline({
+        this.renderPipeline = params.device.createRenderPipeline({
             label: "LightsRenderer renderpipeline",
             layout: "auto",
             vertex: {
@@ -112,7 +118,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 
         const bindgroupLayout = this.renderPipeline.getBindGroupLayout(0);
 
-        this.bindgroup0 = device.createBindGroup({
+        this.bindgroup0 = params.device.createBindGroup({
             label: "LightsRenderer bindgroup 0",
             layout: bindgroupLayout,
             entries: [
@@ -123,7 +129,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             ]
         });
 
-        this.bindgroup1 = this.buildBindgroup1(albedo);
+        this.bindgroup1 = this.buildBindgroup1(params.albedo);
         this.renderBundle = this.buildRenderBundle();
     }
 

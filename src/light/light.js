@@ -67,14 +67,14 @@ async function init(cobalt, node) {
         zoom: cobalt.viewport.zoom,
     });
 
-    const lightsRenderer = new LightsRenderer(
+    const lightsRenderer = new LightsRenderer({
         device,
-        {
+        albedo: {
             view: node.refs.in.data.view,
             sampler: node.refs.in.data.sampler
         },
-        node.refs.out.data.texture,
-    );
+        targetTexture: node.refs.out.data.texture,
+    });
 
     return {
         lightsRenderer,
