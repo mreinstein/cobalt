@@ -7,10 +7,14 @@ type TextureSamplable = {
     readonly sampler: GPUSampler;
 };
 
+type TextureRenderable = {
+    readonly format: GPUTextureFormat;
+};
+
 class LightsRenderer {
     private readonly device: GPUDevice;
 
-    private readonly targetTextureFormat: GPUTextureFormat;
+    private readonly targetTexture: TextureRenderable;
 
     private readonly renderPipeline: GPURenderPipeline;
     private readonly uniformsBufferGpu: GPUBuffer;
@@ -18,10 +22,10 @@ class LightsRenderer {
     private bindgroup1: GPUBindGroup;
     private renderBundle: GPURenderBundle;
 
-    public constructor(device: GPUDevice, albedo: TextureSamplable, targetTextureFormat: GPUTextureFormat) {
+    public constructor(device: GPUDevice, albedo: TextureSamplable, targetTexture: TextureRenderable) {
         this.device = device;
 
-        this.targetTextureFormat = targetTextureFormat;
+        this.targetTexture = targetTexture;
 
         this.uniformsBufferGpu = device.createBuffer({
             label: "LightsRenderer uniforms buffer",
@@ -97,7 +101,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: targetTextureFormat,
+                    format: this.targetTexture.format,
                 }],
             },
             primitive: {
@@ -155,7 +159,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     private buildRenderBundle(): GPURenderBundle {
         const renderBundleEncoder = this.device.createRenderBundleEncoder({
             label: "LightsRenderer renderbundle encoder",
-            colorFormats: [this.targetTextureFormat],
+            colorFormats: [this.targetTexture.format],
         });
         renderBundleEncoder.setPipeline(this.renderPipeline);
         renderBundleEncoder.setBindGroup(0, this.bindgroup0);

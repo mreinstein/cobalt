@@ -73,7 +73,7 @@ async function init(cobalt, node) {
             view: node.refs.in.data.view,
             sampler: node.refs.in.data.sampler
         },
-        node.refs.out.data.texture.format,
+        node.refs.out.data.texture,
     );
 
     return {
