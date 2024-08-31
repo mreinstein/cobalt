@@ -78,7 +78,12 @@ async function init(cobalt, node) {
         },
         targetTexture: node.refs.out.data.texture,
         lightsBuffer,
-        maxLightSize: MAX_LIGHT_SIZE,
+        lightsTextureProperties: {
+            resolutionPerLight: MAX_LIGHT_SIZE,
+            maxLightSize: MAX_LIGHT_SIZE,
+            antialiased: false,
+            filtering: "nearest",
+        },
     });
 
     return {
@@ -107,6 +112,12 @@ function draw(cobalt, node, commandEncoder) {
         combine input texture and light texture into output texture
     */
 
+    const lightsBuffer = node.data.lightsBuffer;
+    lightsBuffer.setLights(node.data.lights);
+
+    const lightsRenderer = node.data.lightsRenderer;
+    lightsRenderer.computeLightsTexture(commandEncoder);
+
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
             {
@@ -118,11 +129,7 @@ function draw(cobalt, node, commandEncoder) {
         ]
     })
 
-    const lightsBuffer = node.data.lightsBuffer;
-    lightsBuffer.setLights(node.data.lights);
-
     const viewMatrix = node.data.viewport.viewMatrix;
-    const lightsRenderer = node.data.lightsRenderer;
     lightsRenderer.render(renderpass, viewMatrix);
 
     renderpass.end()
