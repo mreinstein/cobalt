@@ -3,6 +3,7 @@
 import * as wgpuMatrix from "wgpu-matrix";
 import { LightsBuffer } from "./lights-buffer";
 import { LightsTexture, type LightsTextureProperties } from "./texture/lights-texture";
+import { type LightObstacle } from "./texture/lights-texture-mask";
 
 type TextureSamplable = {
     readonly view: GPUTextureView;
@@ -225,6 +226,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     public setAlbedo(albedo: TextureSamplable): void {
         this.bindgroup1 = this.buildBindgroup1(albedo);
         this.renderBundle = this.buildRenderBundle();
+    }
+
+    public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
+        this.lightsTexture.setObstacles(obstacles);
     }
 
     private buildBindgroup1(albedo: TextureSamplable): GPUBindGroup {

@@ -2,9 +2,9 @@
 
 import { type LightsBuffer } from "../lights-buffer";
 import { LightsTextureInitializer } from "./lights-texture-initializer";
+import { type LightObstacle, LightsTextureMask } from "./lights-texture-mask";
 
 type ILightsTexture = {
-    // readonly texture: GPUTexture;
     readonly gridSize: { readonly x: number, readonly y: number };
     readonly format: GPUTextureFormat;
     readonly sampleCount: number;
@@ -27,8 +27,9 @@ class LightsTexture {
     private readonly textureRenderpassDescriptor: GPURenderPassDescriptor;
 
     private readonly textureInitializer: LightsTextureInitializer;
+    private readonly textureMask: LightsTextureMask;
 
-    public constructor(device: GPUDevice, /*targetTextureFormat: GPUTextureFormat,*/ lightsBuffer: LightsBuffer, lightsTextureProperties: LightsTextureProperties) {
+    public constructor(device: GPUDevice, lightsBuffer: LightsBuffer, lightsTextureProperties: LightsTextureProperties) {
         this.lightsBuffer = lightsBuffer;
 
         const cellsCount = this.lightsBuffer.maxLightsCount / 4;
@@ -51,7 +52,6 @@ class LightsTexture {
             format,
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
         });
-        // this.textureViewer = new TextureViewer(device, targetTextureFormat, this.texture);
 
         if (lightsTextureProperties.antialiased) {
             this.textureMultisampled = device.createTexture({
@@ -85,17 +85,25 @@ class LightsTexture {
             sampleCount: this.textureMultisampled?.sampleCount ?? 1,
         };
         this.textureInitializer = new LightsTextureInitializer(device, lightsBuffer, lightsTexture, lightsTextureProperties.maxLightSize);
+        this.textureMask = new LightsTextureMask(device, lightsBuffer, lightsTexture, lightsTextureProperties.maxLightSize);
     }
 
     public update(commandEncoder: GPUCommandEncoder): void {
+        this.textureMask.setLightsCount(this.lightsBuffer.lightsCount);
+        
         const renderpassEncoder = commandEncoder.beginRenderPass(this.textureRenderpassDescriptor);
         const [textureWidth, textureHeight] = [this.texture.width, this.texture.height];
         renderpassEncoder.setViewport(0, 0, textureWidth, textureHeight, 0, 1);
         renderpassEncoder.setScissorRect(0, 0, textureWidth, textureHeight);
         renderpassEncoder.executeBundles([
             this.textureInitializer.getRenderBundle(),
+            this.textureMask.getRenderBundle(),
         ]);
         renderpassEncoder.end();
+    }
+
+    public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
+        this.textureMask.setObstacles(obstacles);
     }
 }
 

@@ -38,3 +38,10 @@ export function removeLight (cobalt, node, lightId) {
 	node.data.lights.removeItem(lightIdx)
 }
 
+export function addOccluders(cobalt, node, obstaclesList) {
+	node.data.lightsRenderer.setObstacles(obstaclesList);
+}
+
+export function clearOccluders(cobalt, node) {
+	node.data.lightsRenderer.setObstacles([]);
+}

@@ -104,14 +104,6 @@ async function init(cobalt, node) {
 
 
 function draw(cobalt, node, commandEncoder) {
-    // TODO: put all the renderpass logic in here
-    /*
-    lighting pseudo code:
-        draw lights to light texture
-        draw shadow projections to light texture
-        combine input texture and light texture into output texture
-    */
-
     const lightsBuffer = node.data.lightsBuffer;
     lightsBuffer.setLights(node.data.lights);
 
