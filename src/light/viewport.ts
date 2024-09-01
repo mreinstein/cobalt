@@ -63,8 +63,8 @@ class Viewport {
 
     private updateViewMatrix(): void {
         wgpuMatrix.mat4.identity(this.vMatrix);
-        wgpuMatrix.mat4.scale(this.vMatrix, [this.zoom / this.canvasSize.width, this.zoom / this.canvasSize.height, 1], this.vMatrix);
-        wgpuMatrix.mat4.translate(this.vMatrix, [-this.center[0], -this.center[1], 0], this.vMatrix);
+        wgpuMatrix.mat4.scale(this.vMatrix, [2 * this.zoom / this.canvasSize.width, 2 * this.zoom / this.canvasSize.height, 1], this.vMatrix);
+        wgpuMatrix.mat4.translate(this.vMatrix, [-this.center[0], this.center[1], 0], this.vMatrix);
     }
 }
 
