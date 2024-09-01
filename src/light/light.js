@@ -88,7 +88,11 @@ async function init(cobalt, node) {
 
     return {
         lightsBuffer,
+        lightsBufferNeedsUpdate: true,
+
+        lightsTextureNeedsUpdate: true,
         lightsRenderer,
+
         viewport,
 
         lights: [{
@@ -104,11 +108,19 @@ async function init(cobalt, node) {
 
 
 function draw(cobalt, node, commandEncoder) {
-    const lightsBuffer = node.data.lightsBuffer;
-    lightsBuffer.setLights(node.data.lights);
+    if (node.data.lightsBufferNeedsUpdate) {
+        const lightsBuffer = node.data.lightsBuffer;
+        lightsBuffer.setLights(node.data.lights);
+        node.data.lightsBufferNeedsUpdate = false;
+        node.data.lightsTextureNeedsUpdate = true;
+    }
 
     const lightsRenderer = node.data.lightsRenderer;
-    lightsRenderer.computeLightsTexture(commandEncoder);
+
+    if (node.data.lightsTextureNeedsUpdate) {
+        lightsRenderer.computeLightsTexture(commandEncoder);
+        node.data.lightsTextureNeedsUpdate = false;
+    }
 
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [

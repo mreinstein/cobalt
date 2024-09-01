@@ -25,6 +25,7 @@ export function addLight (cobalt, node, position) {
 		attenuationLinear: 0,
 		attenuationExp: 7,
 	})
+	node.data.lightsBufferNeedsUpdate = true;
 }
 
 
@@ -36,12 +37,15 @@ export function removeLight (cobalt, node, lightId) {
 		return
 
 	node.data.lights.removeItem(lightIdx)
+	node.data.lightsBufferNeedsUpdate = true;
 }
 
 export function addOccluders(cobalt, node, obstaclesList) {
 	node.data.lightsRenderer.setObstacles(obstaclesList);
+	node.data.lightsTextureNeedsUpdate = true;
 }
 
 export function clearOccluders(cobalt, node) {
 	node.data.lightsRenderer.setObstacles([]);
+	node.data.lightsTextureNeedsUpdate = true;
 }
