@@ -36,6 +36,8 @@ class LightsTextureMask {
         this.device = device;
         this.lightsBuffer = lightsBuffer;
 
+        const obstaclesAreTwoWay = true as boolean;
+
         const shaderModule = device.createShaderModule({
             label: "LightsTextureMask shader module",
             code: `
@@ -151,11 +153,11 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                             srcFactor: "one",
                             dstFactor: "one",
                         },
-                    }
+                    },
                 }],
             },
             primitive: {
-                cullMode: "back",
+                cullMode: obstaclesAreTwoWay ? "none" : "back",
                 topology: "triangle-list",
             },
             multisample: {
