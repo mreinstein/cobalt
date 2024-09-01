@@ -66,6 +66,8 @@ import dat         from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRw
 import debounce    from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
 import { ECS }     from './deps.js'
 
+let mouseViewportPosition = [0, 0];
+const mouseButtonsDown = new Map();
 
 async function main () {
 
@@ -74,6 +76,8 @@ async function main () {
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
     Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+
+    const viewportCenter = [240, 135];
 
     // instantiate all resource nodes
     const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
@@ -207,6 +211,21 @@ async function main () {
     })
 
 
+    const convertToViewportPosition = (clientPosition /* [number, number] */) /* [number, number] */ => {
+        const canvasBox = canvas.getBoundingClientRect();
+        return [
+             +((clientPosition[0] - canvasBox.left) / canvasBox.width  - 0.5) * constants.GAME_WIDTH,
+             +((clientPosition[1] - canvasBox.top)  / canvasBox.height - 0.5) * constants.GAME_HEIGHT,
+        ];
+    }
+
+    const convertToWorldPosition = (viewportPosition /* [number, number] */) /* [number, number] */ => {
+        return [
+            viewportCenter[0] + viewportPosition[0]    - 0.5 * constants.GAME_WIDTH,
+            -(viewportCenter[1] + viewportPosition[1]  - 0.5 * constants.GAME_HEIGHT),// - 0.5 * constants.GAME_HEIGHT,
+        ];
+    };
+
     // lights and shadows node
     const light = await Cobalt.initNode(Game.renderer, {
         type: 'cobalt:light',
@@ -217,8 +236,112 @@ async function main () {
         options: {
         }
     })
-    light.addLight([ 69, 42 ])
+    light.setAmbientLight([0.3, 0.3, 0.3]);
 
+    const permanentObstacleSegments = [];
+    
+    let temporaryObstacleSegment = null;
+
+    const allOccluders = () => {
+        const segments = [
+            ...permanentObstacleSegments,
+        ];
+        if (temporaryObstacleSegment) {
+            segments.push(temporaryObstacleSegment);
+        }
+
+        return [{borderSegments: segments}];
+
+    };
+    canvas.addEventListener("mouseenter", event => {
+        mouseViewportPosition = convertToViewportPosition([event.clientX, event.clientY]);
+    });
+
+    canvas.addEventListener("mousedown", event => {
+        mouseButtonsDown.set(event.button, true);
+
+        if (event.button === 0) {
+            temporaryObstacleSegment = {
+                p1: convertToWorldPosition(mouseViewportPosition),
+                p2: convertToWorldPosition(mouseViewportPosition),
+            };
+        }
+    });
+
+    canvas.addEventListener("mouseup", event => {
+        mouseButtonsDown.set(event.button, false);
+
+        if (temporaryObstacleSegment) {
+            permanentObstacleSegments.push(temporaryObstacleSegment);
+            temporaryObstacleSegment = null;
+            light.setOccluders(allOccluders());
+        }
+    });
+
+    canvas.addEventListener("mouseleave", event => {
+        for (const key of mouseButtonsDown.keys()) {
+            mouseButtonsDown.set(key, false);
+        }
+    });
+
+    canvas.addEventListener("mousemove", event => {
+        const newmouseViewportPosition = convertToViewportPosition([event.clientX, event.clientY]);
+        const movement = [
+            newmouseViewportPosition[0] - mouseViewportPosition[0],
+            newmouseViewportPosition[1] - mouseViewportPosition[1],
+        ];
+        mouseViewportPosition = newmouseViewportPosition;
+
+        if (mouseButtonsDown.get(1) === true) {
+            viewportCenter[0] -= movement[0];
+            viewportCenter[1] -= movement[1];
+
+            Cobalt.setViewportPosition(Game.renderer, viewportCenter)
+        }
+
+        if (temporaryObstacleSegment) {
+            temporaryObstacleSegment.p2 = convertToWorldPosition(mouseViewportPosition);
+            light.setOccluders(allOccluders());
+        }
+    });
+    
+    const mouseLight = {
+        position: convertToWorldPosition(mouseViewportPosition),
+        size: 100,
+        color: [1, 1, 1],
+        intensity: 2,
+        attenuationLinear: 0,
+        attenuationExp: 5,
+    };
+
+    canvas.addEventListener("wheel", event => {
+        mouseLight.intensity *= 1 + 0.001 * event.deltaY;
+    });
+
+    const movingRedLight = {
+        position: [ 69, 42 ],
+        size: 150,
+        color: [1, 0, 0],
+        intensity: 2,
+        attenuationLinear: 0,
+        attenuationExp: 7,
+    };
+
+    const movingGreenLight = {
+        position: [ 69, 42 ],
+        size: 50,
+        color: [0, 1, 0],
+        intensity: 10,
+        attenuationLinear: 0,
+        attenuationExp: 3,
+    };
+
+    const lights = [
+        mouseLight,
+        movingRedLight,
+        movingGreenLight,
+    ];
+    light.setLights(lights)
 
     const compositeNode = await Cobalt.initNode(Game.renderer, {
         type: 'cobalt:composite',
@@ -257,21 +380,35 @@ async function main () {
 
     ECS.addSystem(world, function rendererSystem (world) {
         const onUpdate = function (/*dt*/) {
+
+            mouseLight.position = convertToWorldPosition(mouseViewportPosition);
+
+            movingGreenLight.position = [
+                40 * Math.cos(performance.now() / 500),
+                40 * Math.sin(performance.now() / 500),
+            ];
+
+            movingRedLight.position = [
+                40 * Math.cos(performance.now() / 500),
+                60,
+            ];
+            light.setLights(lights)
+
             Cobalt.draw(Game.renderer)
         }
 
         return { onUpdate }
     })
 
-    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
+    Cobalt.setViewportPosition(Game.renderer, viewportCenter)
     
     ECS.addSystem(world, function cameraLoopSystem(world) {
         const onUpdate = function (dt) {
-            const elapsed = performance.now()
-            const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
-            const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
+            // const elapsed = performance.now()
+            // const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
+            // const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
 
-            Cobalt.setViewportPosition(Game.renderer, [ x, y ])
+            // Cobalt.setViewportPosition(Game.renderer, [ x, y ])
         }
 
         return { onUpdate }
@@ -300,6 +437,9 @@ function tick (context) {
 
 
 function resizeViewport (renderer, width, height) {
+    // reset mouse position
+    mouseViewportPosition[0] = 0;
+    mouseViewportPosition[1] = 0;
 
     const { canvas, device } = renderer
 

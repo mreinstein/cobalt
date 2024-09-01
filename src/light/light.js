@@ -95,14 +95,7 @@ async function init(cobalt, node) {
 
         viewport,
 
-        lights: [{
-            position: [0, 0],
-            size: MAX_LIGHT_SIZE,
-            color: [1, 0.5, 0.5],
-            intensity: 1,
-            attenuationLinear: 0,
-            attenuationExp: 7,
-        }], // light config
+        lights: [],
     }
 }
 

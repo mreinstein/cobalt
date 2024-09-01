@@ -25,7 +25,7 @@ type Parameters = {
 class LightsRenderer {
     private readonly device: GPUDevice;
 
-    public readonly ambientLight: [number, number, number] = [0.2, 0.2, 0.2];
+    private ambientLight: [number, number, number] = [0.2, 0.2, 0.2];
 
     private readonly targetTexture: TextureRenderable;
 
@@ -226,6 +226,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     public setAlbedo(albedo: TextureSamplable): void {
         this.bindgroup1 = this.buildBindgroup1(albedo);
         this.renderBundle = this.buildRenderBundle();
+    }
+
+    public setAmbientLight(color: [number, number, number]): void {
+        this.ambientLight = [...color];
     }
 
     public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
