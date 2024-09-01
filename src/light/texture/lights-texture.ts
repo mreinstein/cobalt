@@ -1,3 +1,5 @@
+/// <reference types="@webgpu/types"/>
+
 import { type LightsBuffer } from "../lights-buffer";
 import { LightsTextureInitializer } from "./lights-texture-initializer";
 

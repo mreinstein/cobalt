@@ -1,3 +1,5 @@
+/// <reference types="@webgpu/types"/>
+
 import { type Light } from "./types";
 
 class LightsBuffer {
