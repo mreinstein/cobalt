@@ -179,6 +179,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     public getRenderBundle(): GPURenderBundle {
         return this.renderBundle;
     }
+
+    public destroy(): void {
+        // nothing to do
+    }
 }
 
 export {

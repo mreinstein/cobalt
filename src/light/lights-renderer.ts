@@ -232,6 +232,12 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         this.lightsTexture.setObstacles(obstacles);
     }
 
+    public destroy(): void {
+        this.uniformsBufferGpu.destroy();
+
+        this.lightsTexture.destroy();
+    }
+
     private buildBindgroup1(albedo: TextureSamplable): GPUBindGroup {
         return this.device.createBindGroup({
             label: "LightsRenderer bindgroup 1",

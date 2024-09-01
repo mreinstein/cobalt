@@ -128,7 +128,8 @@ function draw(cobalt, node, commandEncoder) {
 }
 
 function destroy(node) {
-    // TODO: cleanup WebGpu buffers, etc. here
+    node.data.lightsBuffer.destroy();
+    node.data.lightsRenderer.destroy();
 }
 
 function resize(cobalt, node) {

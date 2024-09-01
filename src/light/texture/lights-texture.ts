@@ -90,7 +90,7 @@ class LightsTexture {
 
     public update(commandEncoder: GPUCommandEncoder): void {
         this.textureMask.setLightsCount(this.lightsBuffer.lightsCount);
-        
+
         const renderpassEncoder = commandEncoder.beginRenderPass(this.textureRenderpassDescriptor);
         const [textureWidth, textureHeight] = [this.texture.width, this.texture.height];
         renderpassEncoder.setViewport(0, 0, textureWidth, textureHeight, 0, 1);
@@ -104,6 +104,14 @@ class LightsTexture {
 
     public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
         this.textureMask.setObstacles(obstacles);
+    }
+
+    public destroy(): void {
+        this.texture.destroy();
+        this.textureMultisampled?.destroy();
+
+        this.textureInitializer.destroy();
+        this.textureMask.destroy();
     }
 }
 

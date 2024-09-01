@@ -84,6 +84,10 @@ struct LightsBuffer {         //             align(16)
         return this.currentLightsCount;
     }
 
+    public destroy(): void {
+        this.buffer.bufferGpu.destroy();
+    }
+
     private static computeBufferBytesLength(lightsCount: number): number {
         return LightsBuffer.structs.lightsBuffer.lights.offset + LightsBuffer.structs.lightsBuffer.lights.stride * lightsCount;
     }

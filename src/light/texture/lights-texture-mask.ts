@@ -247,6 +247,12 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         this.setIndirectInstanceCount(count);
     }
 
+    public destroy(): void {
+        this.indirectDrawing.bufferGpu.destroy();
+        this.obstacles?.positionsBufferGpu.destroy();
+        this.obstacles?.indexBufferGpu.destroy();
+    }
+
     private setIndirectIndexCount(indexCount: number): void {
         const drawIndexedIndirectParameters = new Uint32Array(this.indirectDrawing.bufferCpu);
         if (drawIndexedIndirectParameters[0] !== indexCount) {
