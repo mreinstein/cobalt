@@ -13,8 +13,8 @@ export function setAmbientLight(cobalt, node, color) {
 	node.data.lightsRenderer.setAmbientLight(color);
 }
 
-export function setOccluders(cobalt, node, obstaclesList) {
-	node.data.lightsRenderer.setObstacles(obstaclesList);
+export function setOccluders(cobalt, node, segmentsList) {
+	node.data.lightsRenderer.setObstacles(segmentsList);
 	node.data.lightsTextureNeedsUpdate = true;
 }
 

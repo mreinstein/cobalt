@@ -3,7 +3,7 @@
 import * as wgpuMatrix from "wgpu-matrix";
 import { LightsBuffer } from "./lights-buffer";
 import { LightsTexture, type LightsTextureProperties } from "./texture/lights-texture";
-import { type LightObstacle } from "./texture/lights-texture-mask";
+import { type LightObstacleSegment } from "./texture/lights-texture-mask";
 
 type TextureSamplable = {
     readonly view: GPUTextureView;
@@ -232,8 +232,8 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         this.ambientLight = [...color];
     }
 
-    public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
-        this.lightsTexture.setObstacles(obstacles);
+    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
+        this.lightsTexture.setObstacles(segments);
     }
 
     public destroy(): void {

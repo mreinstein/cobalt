@@ -2,7 +2,7 @@
 
 import { type LightsBuffer } from "../lights-buffer";
 import { LightsTextureInitializer } from "./lights-texture-initializer";
-import { type LightObstacle, LightsTextureMask } from "./lights-texture-mask";
+import { type LightObstacleSegment, LightsTextureMask } from "./lights-texture-mask";
 
 type ILightsTexture = {
     readonly gridSize: { readonly x: number, readonly y: number };
@@ -102,8 +102,8 @@ class LightsTexture {
         renderpassEncoder.end();
     }
 
-    public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
-        this.textureMask.setObstacles(obstacles);
+    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
+        this.textureMask.setObstacles(segments);
     }
 
     public destroy(): void {

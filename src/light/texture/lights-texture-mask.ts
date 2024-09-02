@@ -1,16 +1,10 @@
 /// <reference types="@webgpu/types"/>
 
 import { LightsBuffer } from "../lights-buffer";
+import { type Point } from "../types";
 import { type ILightsTexture } from "./lights-texture";
 
-type LineObstacleSegment = {
-    readonly p1: [number, number];
-    readonly p2: [number, number];
-};
-
-type LightObstacle = {
-    readonly borderSegments: ReadonlyArray<LineObstacleSegment>;
-};
+type LightObstacleSegment = [Point, Point];
 
 class LightsTextureMask {
     private readonly device: GPUDevice;
@@ -187,25 +181,23 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         return this.renderBundle;
     }
 
-    public setObstacles(obstacles: ReadonlyArray<LightObstacle>): void {
+    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
         const positions: number[] = [];
         const indices: number[] = [];
-        for (const obstacle of obstacles) {
-            for (const segment of obstacle.borderSegments) {
-                const firstQuadIndex = positions.length / 3;
+        for (const segment of segments) {
+            const firstQuadIndex = positions.length / 3;
 
-                positions.push(
-                    ...segment.p1, 0,
-                    ...segment.p2, 0,
-                    ...segment.p1, 1,
-                    ...segment.p2, 1,
-                );
+            positions.push(
+                ...segment[0], 0,
+                ...segment[1], 0,
+                ...segment[0], 1,
+                ...segment[1], 1,
+            );
 
-                indices.push(
-                    firstQuadIndex + 0, firstQuadIndex + 1, firstQuadIndex + 3,
-                    firstQuadIndex + 0, firstQuadIndex + 3, firstQuadIndex + 2,
-                );
-            }
+            indices.push(
+                firstQuadIndex + 0, firstQuadIndex + 1, firstQuadIndex + 3,
+                firstQuadIndex + 0, firstQuadIndex + 3, firstQuadIndex + 2,
+            );
         }
 
         let gpuBuffersChanged = false;
@@ -289,6 +281,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
 
 export {
-    LightsTextureMask, type LightObstacle, type LineObstacleSegment
+    LightsTextureMask, type LightObstacleSegment
 };
 
