@@ -42,7 +42,7 @@ export default {
 
     onViewportPosition: function (cobalt, node) {
         // runs when the viewport position changes
-        node.data.viewport.setCenter(...cobalt.viewport.position);
+        node.data.viewport.setTopLeft(...cobalt.viewport.position);
     },
 
     // optional
@@ -62,7 +62,7 @@ async function init(cobalt, node) {
     const lightsBuffer = new LightsBuffer(device, MAX_LIGHT_COUNT);
 
     const viewport = new Viewport({
-        canvasSize: {
+        viewportSize: {
             width: cobalt.viewport.width,
             height: cobalt.viewport.height,
         },
@@ -126,7 +126,7 @@ function draw(cobalt, node, commandEncoder) {
         ]
     })
 
-    const invertVpMatrix = node.data.viewport.invertViewMatrix;
+    const invertVpMatrix = node.data.viewport.invertViewProjectionMatrix;
     lightsRenderer.render(renderpass, invertVpMatrix);
 
     renderpass.end()
@@ -143,5 +143,5 @@ function resize(cobalt, node) {
         sampler: node.refs.in.data.sampler
     });
 
-    node.data.viewport.setCanvasSize(cobalt.viewport.width, cobalt.viewport.height);
+    node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
 }
