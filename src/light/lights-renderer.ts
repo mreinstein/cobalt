@@ -104,7 +104,7 @@ struct FragmentOut {
 const cellsGridSizeU = vec2<u32>(${this.lightsTexture.gridSize.x}, ${this.lightsTexture.gridSize.y});
 const cellsGridSizeF = vec2<f32>(${this.lightsTexture.gridSize.x}, ${this.lightsTexture.gridSize.y});
 
-fn sampleLightIntensity(lightId: u32, localUv: vec2<f32>) -> f32 {
+fn sampleLightBaseIntensity(lightId: u32, localUv: vec2<f32>) -> f32 {
     let cellIndex = lightId / 4u;
     let indexInCell = lightId % 4u;
 
@@ -134,7 +134,7 @@ fn compute_lights(worldPosition: vec2<f32>) -> vec3<f32> {
         let relativePosition = (worldPosition - light.position) / lightSize;
         if (max(abs(relativePosition.x), abs(relativePosition.y)) < maxUvDistance) {
             let localUv = 0.5 + 0.5 * relativePosition;    
-            let lightIntensity = sampleLightIntensity(iLight, localUv);
+            let lightIntensity = light.intensity * sampleLightBaseIntensity(iLight, localUv);
             color += lightIntensity * light.color;
         }
     }

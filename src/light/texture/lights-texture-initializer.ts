@@ -65,7 +65,7 @@ fn get_light_properties(lightId: u32) -> LightProperties {
     if (lightId < lightsBuffer.count) {
         let light = lightsBuffer.lights[lightId];
         lightProperties.size = light.size;
-        lightProperties.intensity = light.intensity;
+        lightProperties.intensity = 1.0;
         lightProperties.attenuationLinear = light.attenuationLinear;
         lightProperties.attenuationExp = light.attenuationExp;
     } else {
