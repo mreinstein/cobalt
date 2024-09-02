@@ -250,7 +250,7 @@ async function main () {
             segments.push(temporaryObstacleSegment);
         }
 
-        return [{borderSegments: segments}];
+        return segments;
 
     };
     canvas.addEventListener("mouseenter", event => {
@@ -261,10 +261,10 @@ async function main () {
         mouseButtonsDown.set(event.button, true);
 
         if (event.button === 0) {
-            temporaryObstacleSegment = {
-                p1: convertToWorldPosition(mouseViewportPosition),
-                p2: convertToWorldPosition(mouseViewportPosition),
-            };
+            temporaryObstacleSegment = [
+                convertToWorldPosition(mouseViewportPosition),
+                convertToWorldPosition(mouseViewportPosition),
+            ];
         }
     });
 
@@ -300,7 +300,7 @@ async function main () {
         }
 
         if (temporaryObstacleSegment) {
-            temporaryObstacleSegment.p2 = convertToWorldPosition(mouseViewportPosition);
+            temporaryObstacleSegment[1] = convertToWorldPosition(mouseViewportPosition);
             light.setOccluders(allOccluders());
         }
     });
