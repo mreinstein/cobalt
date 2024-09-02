@@ -307,7 +307,7 @@ async function main () {
     
     const mouseLight = {
         position: convertToWorldPosition(mouseViewportPosition),
-        size: 100,
+        radius: 100,
         color: [1, 1, 1],
         intensity: 20,
         attenuationLinear: 0,
@@ -320,7 +320,7 @@ async function main () {
 
     const movingRedLight = {
         position: [ 69, 42 ],
-        size: 150,
+        radius: 150,
         color: [1, 0, 0],
         intensity: 2,
         attenuationLinear: 0,
@@ -329,7 +329,7 @@ async function main () {
 
     const movingGreenLight = {
         position: [ 69, 42 ],
-        size: 50,
+        radius: 50,
         color: [0, 1, 0],
         intensity: 10,
         attenuationLinear: 0,

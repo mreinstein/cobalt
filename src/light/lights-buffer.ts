@@ -68,7 +68,7 @@ struct LightsBuffer {         //             align(16)
         lights.forEach((light: Light, index: number) => {
             new Float32Array(this.buffer.bufferCpu, LightsBuffer.structs.lightsBuffer.lights.offset + LightsBuffer.structs.lightsBuffer.lights.stride * index, 9).set([
                 ...light.color,
-                light.size,
+                light.radius,
                 ...light.position,
                 light.intensity,
                 light.attenuationLinear,

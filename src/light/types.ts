@@ -1,12 +1,12 @@
 type Point = [number, number];
 
 type Light = {
-    readonly position: Point;
-    readonly size: number;
-    readonly color: [number, number, number];
-    readonly intensity: number;
-    readonly attenuationLinear: number;
-    readonly attenuationExp: number;
+    readonly position: Point;                 // center of the light
+    readonly radius: number;                  // radius of the light
+    readonly color: [number, number, number]; // color (normalized)
+    readonly intensity: number;               // intensity at the center
+    readonly attenuationLinear: number;       // describes how the intensity declines with distance
+    readonly attenuationExp: number;          // describes how the intensity declines with distance
 };
 /* The light intensity is computed as follow:
                      intensity
