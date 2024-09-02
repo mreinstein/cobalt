@@ -123,7 +123,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                         attributes: [
                             {
                                 shaderLocation: 1,
-                                offset: LightsBuffer.structs.light.size.offset,
+                                offset: LightsBuffer.structs.light.radius.offset,
                                 format: "float32",
                             },
                             {

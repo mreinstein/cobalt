@@ -7,7 +7,7 @@ class LightsBuffer {
         definition: `
 struct Light {                //             align(16) size(48)
     color: vec3<f32>,         // offset(0)   align(16) size(12)
-    size: f32,                // offset(12)  align(4)  size(4)
+    radius: f32,              // offset(12)  align(4)  size(4)
     position: vec2<f32>,      // offset(16)  align(8)  size(8)
     intensity: f32,           // offset(24)  align(4)  size(4)
     attenuationLinear: f32,   // offset(28)  align(4)  size(4)
@@ -21,7 +21,7 @@ struct LightsBuffer {         //             align(16)
 };
 `,
         light: {
-            size: { offset: 12 },
+            radius: { offset: 12 },
             position: { offset: 16 },
         },
         lightsBuffer: {

@@ -54,7 +54,7 @@ struct FragmentOut {
 };
 
 struct LightProperties {
-    size: f32,
+    radius: f32,
     intensity: f32,
     attenuationLinear: f32,
     attenuationExp: f32,
@@ -64,12 +64,12 @@ fn get_light_properties(lightId: u32) -> LightProperties {
     var lightProperties: LightProperties;
     if (lightId < lightsBuffer.count) {
         let light = lightsBuffer.lights[lightId];
-        lightProperties.size = light.size;
+        lightProperties.radius = light.radius;
         lightProperties.intensity = 1.0;
         lightProperties.attenuationLinear = light.attenuationLinear;
         lightProperties.attenuationExp = light.attenuationExp;
     } else {
-        lightProperties.size = 0.0;
+        lightProperties.radius = 0.0;
         lightProperties.intensity = 0.0;
         lightProperties.attenuationLinear = 0.0;
         lightProperties.attenuationExp = 0.0;
@@ -90,10 +90,10 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     );
 
     let sizes = vec4<f32>(
-        lightProperties[0].size,
-        lightProperties[1].size,
-        lightProperties[2].size,
-        lightProperties[3].size,
+        lightProperties[0].radius,
+        lightProperties[1].radius,
+        lightProperties[2].radius,
+        lightProperties[3].radius,
     );
 
     let localUv = fract(in.uv);
