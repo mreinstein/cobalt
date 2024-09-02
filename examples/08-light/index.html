@@ -76,6 +76,7 @@ async function main () {
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
     Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+    Game.renderer.viewport.zoom = 1;
 
     const viewportCenter = [0, 0];
 
@@ -214,15 +215,15 @@ async function main () {
     const convertToViewportPosition = (clientPosition /* [number, number] */) /* [number, number] */ => {
         const canvasBox = canvas.getBoundingClientRect();
         return [
-             ((clientPosition[0] - canvasBox.left) / canvasBox.width) * constants.GAME_WIDTH,
-             ((clientPosition[1] - canvasBox.top) / canvasBox.height) * constants.GAME_HEIGHT,
+             ((clientPosition[0] - canvasBox.left) / canvasBox.width) * constants.GAME_WIDTH  /Game.renderer.viewport.zoom,
+             ((clientPosition[1] - canvasBox.top) / canvasBox.height) * constants.GAME_HEIGHT /Game.renderer.viewport.zoom,
         ];
     }
 
     const convertToWorldPosition = (viewportPosition /* [number, number] */) /* [number, number] */ => {
         return [
-            viewportPosition[0] + viewportCenter[0] - 0.5 * constants.GAME_WIDTH,
-            viewportPosition[1] + viewportCenter[1] - 0.5 * constants.GAME_HEIGHT,
+            viewportPosition[0] + viewportCenter[0] - 0.5 * constants.GAME_WIDTH / Game.renderer.viewport.zoom,
+            viewportPosition[1] + viewportCenter[1] - 0.5 * constants.GAME_HEIGHT/ Game.renderer.viewport.zoom,
         ];
     };
 
@@ -384,8 +385,8 @@ async function main () {
             mouseLight.position = convertToWorldPosition(mouseViewportPosition);
 
             movingGreenLight.position = [
-                40 * Math.cos(performance.now() / 500),
-                40 * Math.sin(performance.now() / 500),
+                80 * Math.cos(performance.now() / 500),
+                80 * Math.sin(performance.now() / 500),
             ];
 
             movingRedLight.position = [
