@@ -214,9 +214,9 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         this.lightsTexture.update(commandEncoder);
     }
 
-    public render(renderpassEncoder: GPURenderPassEncoder, viewMatrix: wgpuMatrix.Mat4Arg): void {
+    public render(renderpassEncoder: GPURenderPassEncoder, invertVpMatrix: wgpuMatrix.Mat4Arg): void {
         const uniformsBufferCpu = new ArrayBuffer(80);
-        new Float32Array(uniformsBufferCpu, 0, 16).set(wgpuMatrix.mat4.inverse(viewMatrix));
+        new Float32Array(uniformsBufferCpu, 0, 16).set(invertVpMatrix);
         new Float32Array(uniformsBufferCpu, 64, 3).set(this.ambientLight);
         this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, uniformsBufferCpu);
 

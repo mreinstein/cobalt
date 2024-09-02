@@ -126,8 +126,8 @@ function draw(cobalt, node, commandEncoder) {
         ]
     })
 
-    const viewMatrix = node.data.viewport.viewMatrix;
-    lightsRenderer.render(renderpass, viewMatrix);
+    const invertVpMatrix = node.data.viewport.invertViewMatrix;
+    lightsRenderer.render(renderpass, invertVpMatrix);
 
     renderpass.end()
 }
