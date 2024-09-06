@@ -126,6 +126,7 @@ function draw(cobalt, node, commandEncoder) {
         ]
     })
 
+    node.data.viewport.setZoom(cobalt.viewport.zoom);
     const invertVpMatrix = node.data.viewport.invertViewProjectionMatrix;
     lightsRenderer.render(renderpass, invertVpMatrix);
 
