@@ -4,29 +4,17 @@ import { vec2 } from '../deps.js'
 
 // public API to interact with a lighting/shadows node.
 
-/**
- * TODO: design the actual functions:
- * 
- * add light
- * remove light
- * update light property
- * 
- * add occluders
- * clear occluders
- */
-
-export function addLight (cobalt, node, position) {
-	node.data.lights.push({ id: uuid(), position: vec2.clone(position) })
+export function setLights(cobalt, node, lights) {
+	node.data.lights = lights;
+	node.data.lightsBufferNeedsUpdate = true;
 }
 
+export function setAmbientLight(cobalt, node, color) {
+	node.data.lightsRenderer.setAmbientLight(color);
+}
 
-export function removeLight (cobalt, node, lightId) {
-	const light = node.data.lights.find((L) => L.id === lightId)
-	const lightIdx = node.data.lights.indexOf(light)
-
-	if (lightIdx < 0)
-		return
-
-	node.data.lights.removeItem(lightIdx)
+export function setOccluders(cobalt, node, segmentsList) {
+	node.data.lightsRenderer.setObstacles(segmentsList);
+	node.data.lightsTextureNeedsUpdate = true;
 }
 
