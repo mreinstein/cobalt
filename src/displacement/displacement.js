@@ -1,16 +1,14 @@
 import createTextureFromUrl from '../create-texture-from-url.js'
 import displacementWGSL from './displacement.wgsl'
-import uuid             from '../uuid.js'
-import { round, mat4, vec3 }   from '../deps.js'
+import uuid from '../uuid.js'
+import { round, mat4, vec3 } from '../deps.js'
+import { TrianglesBuffer } from './triangles-buffer.js'
 
 
 // adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
 
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
-
-const FLOAT32S_PER_SPRITE = 6 // vec2(translate) + vec2(scale) + rotation + opacity 
-
 
 export default {
     type: 'cobalt:displacement',
@@ -57,49 +55,15 @@ export default {
     customFunctions: {
     
         addTriangle: function (cobalt, node, triangleVertices) {
-        	const triangleId = uuid()
-        	const insertIdx = node.data.spriteCount
-        	node.data.spriteIndices.set(triangleId, insertIdx)
-
-        	const offset = insertIdx * FLOAT32S_PER_SPRITE
-
-			// p0
-		    node.data.spriteData[offset]   = triangleVertices[0][0]
-		    node.data.spriteData[offset+1] = triangleVertices[0][1]
-		    
-		    // p1
-		    node.data.spriteData[offset+2] = triangleVertices[1][0]
-		    node.data.spriteData[offset+3] = triangleVertices[1][1]
-
-		    // p2
-		    node.data.spriteData[offset+4] = triangleVertices[2][0]
-		    node.data.spriteData[offset+5] = triangleVertices[2][1]
-
-			node.data.spriteCount++
-        	return triangleId
+            return node.data.trianglesBuffer.addTriangle(triangleVertices);
         },
 
         removeTriangle: function (cobalt, node, triangleId) {
-			node.data.spriteIndices.delete(triangleId)
-		    node.data.spriteCount--
+            node.data.trianglesBuffer.removeTriangle(triangleId);
         },
 
         setPosition: function (cobalt, node, triangleId, triangleVertices) {
-        	
-			const spriteIdx = node.data.spriteIndices.get(triangleId)
-		    const offset = spriteIdx * FLOAT32S_PER_SPRITE
-
-		    // p0
-		    node.data.spriteData[offset]   = triangleVertices[0][0]
-		    node.data.spriteData[offset+1] = triangleVertices[0][1]
-		    
-		    // p1
-		    node.data.spriteData[offset+2] = triangleVertices[1][0]
-		    node.data.spriteData[offset+3] = triangleVertices[1][1]
-
-		    // p2
-		    node.data.spriteData[offset+4] = triangleVertices[2][0]
-		    node.data.spriteData[offset+5] = triangleVertices[2][1]
+            node.data.trianglesBuffer.setTriangle(triangleId, triangleVertices);
         },
     },
 }
@@ -228,11 +192,6 @@ async function init (cobalt, node) {
         ]
     }) 
 
-    const buffer = device.createBuffer({
-        size: MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    })
-
     const bufferLayout = {
         arrayStride: 8,
         stepMode: 'vertex',
@@ -287,6 +246,11 @@ async function init (cobalt, node) {
         layout: pipelineLayout
     })
 
+    const trianglesBuffer = new TrianglesBuffer({
+        device,
+        maxSpriteCount: MAX_SPRITE_COUNT,
+    });
+
     return {
         bindGroup,
         bindGroupLayout,
@@ -297,26 +261,18 @@ async function init (cobalt, node) {
         pipeline,
 
         params_buf,
-        buffer, // where the per-triangle vertex data is stored
-
-        // actual vertex data. this is used to update the buffer.
-        spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE), 
-        spriteCount: 0,
-
-        spriteIndices: new Map(), // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
+        trianglesBuffer,
     }
 }
 
 
-function draw (cobalt, node, commandEncoder) {
+function draw(cobalt, node, commandEncoder) {
+    const spriteCount = node.data.trianglesBuffer.spriteCount;
 
-	if (node.data.spriteCount === 0)
-		return
+    if (spriteCount === 0)
+        return
 
-    const { device } = cobalt
-
-    const len = FLOAT32S_PER_SPRITE * node.data.spriteCount * Float32Array.BYTES_PER_ELEMENT
-  	device.queue.writeBuffer(node.data.buffer, 0, node.data.spriteData.buffer, 0, len)
+    node.data.trianglesBuffer.update();
 
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
@@ -333,16 +289,10 @@ function draw (cobalt, node, commandEncoder) {
     renderpass.setPipeline(node.data.pipeline)
    	
     renderpass.setBindGroup(0, node.data.bindGroup)
-	
-    renderpass.setVertexBuffer(0, node.data.buffer)
 
-    // render each sprite type's instances
-    const vertexCount = node.data.spriteCount * 3 // 3 vertices per triangle
-    const instanceCount = 1
-    const baseInstanceIdx = 0
-    const baseVertexIdx = 0
+    renderpass.setVertexBuffer(0, node.data.trianglesBuffer.bufferGpu);
 
-    renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx)
+    renderpass.draw(3 * spriteCount)
 
     renderpass.end()
 }
@@ -351,15 +301,11 @@ function draw (cobalt, node, commandEncoder) {
 function destroy (node) { 
     node.data.bindGroup = null
 
-    node.data.buffer.destroy()
-    node.data.buffer = null
+    node.data.trianglesBuffer.destroy();
+    node.data.trianglesBuffer = null;
 
     node.data.uniformBuffer.destroy()
     node.data.uniformBuffer = null
-
-    node.data.spriteData = null
-    node.data.spriteIndices.clear()
-    node.data.spriteIndices = null
 
     node.data.params_buf.destroy()
     node.data.params_buf = null
