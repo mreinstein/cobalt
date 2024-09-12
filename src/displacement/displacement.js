@@ -1,7 +1,5 @@
-import createTextureFromUrl from '../create-texture-from-url.js'
 import displacementWGSL from './displacement.wgsl'
-import uuid from '../uuid.js'
-import { round, mat4, vec3 } from '../deps.js'
+import { mat4, vec3 } from '../deps.js'
 import { TrianglesBuffer } from './triangles-buffer.js'
 
 
