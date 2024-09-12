@@ -1,13 +1,10 @@
-import displacementWGSL from './displacement.wgsl'
-import { mat4, vec3 } from '../deps.js'
 import { TrianglesBuffer } from './triangles-buffer.js'
 import { DisplacementParametersBuffer } from './displacement-parameters-buffer.js'
+import { DisplacementComposition } from './displacement-composition.js'
+import { DisplacementTexture } from './displacement-texture.js'
 
 
 // adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
-
-// temporary variables, allocated once to avoid garbage collection
-const _tmpVec3 = vec3.create(0, 0, 0)
 
 export default {
     type: 'cobalt:displacement',
@@ -43,11 +40,15 @@ export default {
 
     onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        resize(cobalt, node)
+        node.data.displacementTexture.resize(cobalt.viewport.width, cobalt.viewport.height);
+
+        node.data.displacementComposition.setColorTextureView(node.refs.color.data.view);
+        node.data.displacementComposition.setNoiseMapTextureView(node.refs.map.view);
+        node.data.displacementComposition.setDisplacementTextureView(node.data.displacementTexture.getView());
     },
 
     onViewportPosition: function (cobalt, node) {
-    	_writeTransformBuffer(cobalt, node)
+    	node.data.displacementTexture.setViewport(cobalt.viewport);
     },
 
     // optional
@@ -83,173 +84,35 @@ async function init (cobalt, node) {
 
     const MAX_SPRITE_COUNT = 256  // max number of displacement sprites in this render pass
 
-    const numInstances = MAX_SPRITE_COUNT
-
-    const translateFloatCount = 2 // vec2
-    const translateSize = Float32Array.BYTES_PER_ELEMENT * translateFloatCount  // in bytes
-
-    const scaleFloatCount = 2 // vec2
-    const scaleSize = Float32Array.BYTES_PER_ELEMENT * scaleFloatCount  // in bytes
-
-
-    const rotationFloatCount = 2 // vec2 (rotation, opacity)
-    const rotationSize = Float32Array.BYTES_PER_ELEMENT * rotationFloatCount  // in bytes
-
-    const uniformBuffer = device.createBuffer({
-        size: 64, // 4x4 matrix with 4 bytes per float32
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-
-    const bindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            },
-            {
-                binding: 3,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 4,
-                visibility: GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                    //minBindingSize: 24 // sizeOf(BloomParam)
-                }
-            },
-        ],
-    })
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
-    })
-
-    const addressMode = 'repeat' // 'clamp-to-edge'
-    const filter = 'linear' // linear | nearest
-
-    const sampler = device.createSampler({
-        label: `displacement ampler`,
-        addressModeU: addressMode,
-        addressModeV: addressMode,
-        addressModeW: addressMode,
-        magFilter: filter,
-        minFilter: filter,
-        mipmapFilter: filter,
-    })
-
-
-    const bindGroup = device.createBindGroup({
-        layout: bindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: uniformBuffer
-                }
-            },
-            {
-                binding: 1,
-                resource: node.refs.color.data.view
-            },
-            {
-                binding: 2,
-                resource: sampler
-            },
-            {
-                binding: 3,
-                resource: node.refs.map.view
-            },
-            {
-                binding: 4,
-                resource: {
-                    buffer: displacementParameters.bufferGpu,
-                }
-            },
-        ]
-    }) 
-
-    const bufferLayout = {
-        arrayStride: 8,
-        stepMode: 'vertex',
-        attributes: [
-            // position
-            {
-                shaderLocation: 0,
-                format: 'float32x2',
-                offset: 0
-            },
-        ]
-    }
-
-
-    const pipeline = device.createRenderPipeline({
-        label: 'displacement',
-        vertex: {
-            module: device.createShaderModule({
-                code: displacementWGSL
-            }),
-            entryPoint: 'vs_main',
-            buffers: [ bufferLayout ]
-        },
-
-        fragment: {
-            module: device.createShaderModule({
-                code: displacementWGSL
-            }),
-            entryPoint: 'fs_main',
-            targets: [
-                // color
-                {
-                    format: 'bgra8unorm',
-                    blend: {
-                        color: {
-                            srcFactor: 'src-alpha',
-                            dstFactor: 'one-minus-src-alpha',
-                        },
-                        alpha: {
-                            srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                },
-            ]
-        },
-
-        primitive: {
-            topology: 'triangle-list'
-        },
-
-        layout: pipelineLayout
-    })
-
     const trianglesBuffer = new TrianglesBuffer({
         device,
         maxSpriteCount: MAX_SPRITE_COUNT,
     });
 
+    const displacementTexture = new DisplacementTexture({
+        device,
+
+        width: cobalt.viewport.width,
+        height: cobalt.viewport.height,
+
+        trianglesBuffer,
+    });
+
+    const displacementComposition = new DisplacementComposition({
+        device,
+        targetFormat: "bgra8unorm",
+
+        colorTextureView: node.refs.color.data.view,
+        noiseMapTextureView: node.refs.map.view,
+        displacementTextureView: displacementTexture.getView(),
+        
+        displacementParametersBuffer: displacementParameters,
+    });
+
     return {
-        bindGroup,
-        bindGroupLayout,
-        uniformBuffer,
-
-        sampler,
-
-        pipeline,
-
         displacementParameters,
+        displacementTexture,
+        displacementComposition,
         trianglesBuffer,
     }
 }
@@ -263,114 +126,33 @@ function draw(cobalt, node, commandEncoder) {
 
     node.data.trianglesBuffer.update();
 
+    node.data.displacementTexture.update(commandEncoder);
+
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
-            // color
             {
                 view: node.refs.out,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
                 storeOp: 'store'
-            },
-        ]
-    })
-
-    renderpass.setPipeline(node.data.pipeline)
-   	
-    renderpass.setBindGroup(0, node.data.bindGroup)
-
-    renderpass.setVertexBuffer(0, node.data.trianglesBuffer.bufferGpu);
-
-    renderpass.draw(3 * spriteCount)
-
+            }
+        ],
+    });
+    renderpass.executeBundles([node.data.displacementComposition.getRenderBundle()]);
     renderpass.end()
 }
 
 
-function destroy (node) { 
-    node.data.bindGroup = null
-
+function destroy (node) {
     node.data.trianglesBuffer.destroy();
     node.data.trianglesBuffer = null;
 
-    node.data.uniformBuffer.destroy()
-    node.data.uniformBuffer = null
+    node.data.displacementParameters.destroy();
+    node.data.displacementParameters = null;
 
-    node.data.displacementParameters.destroy()
-    node.data.displacementParameters = null
-}
+    node.data.displacementTexture.destroy();
+    node.data.displacementTexture = null;
 
-
-function resize (cobalt, node) {
-    const { device } = cobalt
-
-    // re-build the bind group
-    node.data.bindGroup = device.createBindGroup({
-        layout: node.data.bindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: node.data.uniformBuffer
-                }
-            },
-            {
-                binding: 1,
-                resource: node.refs.color.data.view
-            },
-            {
-                binding: 2,
-                resource: node.data.sampler
-            },
-            {
-                binding: 3,
-                resource: node.refs.map.view
-            },
-            {
-                binding: 4,
-                resource: {
-                    buffer: node.data.displacementParameters.bufferGpu,
-                }
-            },
-        ]
-    }) 
-}
-
-
-function _writeTransformBuffer (cobalt, node) {
-	const { device } = cobalt
-
-    const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom
-    const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom
-
-    //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
-
-    // TODO: if this doesn't introduce jitter into the crossroads render, remove this disabled code entirely.
-    //
-    // I'm disabling the rounding because I think it fails in cases where units are not expressed in pixels
-    // e.g., most physics engines operate on meters, not pixels, so we don't want to round to the nearest integer as that 
-    // probably isn't high enough resolution. That would mean the camera could be snapped by up to 0.5 meters
-    // in that case. I think the better solution for expressing camera position in pixels is to round before calling
-    // cobalt.setViewportPosition(...)
-    //
-    // set 3d camera position
-    //vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
-    
-    vec3.set(-cobalt.viewport.position[0], -cobalt.viewport.position[1], 0, _tmpVec3)
-
-    const view = mat4.translation(_tmpVec3)
-
-    const modelScaling = [1, 1, 1];
-    const modelRotation = 0;
-    const modelTranslation = [1, 1, 0];
-    const model = mat4.identity();
-    mat4.multiply(mat4.scaling(modelScaling), model, model);
-    mat4.multiply(mat4.rotationZ(modelRotation), model, model);
-    mat4.multiply(mat4.translation(modelTranslation), model, model);
-
-    const mvpMatrix = mat4.identity();
-    mat4.multiply(view, model, mvpMatrix);
-    mat4.multiply(projection, mvpMatrix, mvpMatrix);
-    device.queue.writeBuffer(node.data.uniformBuffer, 0, mvpMatrix.buffer);
+    node.data.displacementComposition.destroy();
+    node.data.displacementComposition = null;
 }
