@@ -3,9 +3,7 @@
 
 
 struct TransformData {
-    model: mat4x4<f32>,
-    view: mat4x4<f32>,
-    projection: mat4x4<f32>,
+    mvpMatrix: mat4x4<f32>,
 };
 
 struct displacement_param {
@@ -30,7 +28,7 @@ fn vs_main (@location(0) vertexPosition: vec2<f32>) -> Fragment  {
 
     var output: Fragment;
 
-    output.Position = transformUBO.projection * transformUBO.view * transformUBO.model * vec4<f32>(vertexPosition, 0.0, 1.0);
+    output.Position = transformUBO.mvpMatrix * vec4<f32>(vertexPosition, 0.0, 1.0);
 
     // convert screen space (-1 -> 1) to texture space (0 -> 1)
     output.TexCoord = vec2<f32>((output.Position.xy + 1.0) / 2.0);
