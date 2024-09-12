@@ -6,7 +6,7 @@ struct TransformData {
     mvpMatrix: mat4x4<f32>,
 };
 
-struct displacement_param {
+struct DisplacementParameters {
     offset: vec2<f32>,
     scale: f32,
     noop: f32,
@@ -16,7 +16,7 @@ struct displacement_param {
 @binding(1) @group(0) var myTexture: texture_2d<f32>;
 @binding(2) @group(0) var mySampler: sampler;
 @binding(3) @group(0) var mapTexture: texture_2d<f32>;
-@binding(4) @group(0) var<uniform> param: displacement_param;
+@binding(4) @group(0) var<uniform> param: DisplacementParameters;
 
 struct Fragment {
     @builtin(position) Position : vec4<f32>,

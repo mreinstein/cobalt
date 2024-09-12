@@ -261,33 +261,15 @@ async function main () {
     disp.open()
 
     disp.add(displacement.options, 'scale', 0, 100).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
+        displacement.data.displacementParameters.setParameters(displacement.options);
     })
 
     disp.add(displacement.options, 'offsetX', 0, 512).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
+        displacement.data.displacementParameters.setParameters(displacement.options);
     })
 
     disp.add(displacement.options, 'offsetY', 0, 512).onChange((v) => {
-        const { device } = Game.renderer
-        
-        device.queue.writeBuffer(
-            displacement.data.params_buf,
-            0,
-            new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-        )
+        displacement.data.displacementParameters.setParameters(displacement.options);
     })
 
 
@@ -303,11 +285,7 @@ async function main () {
             //displacement.options.offsetX = (displacement.options.offsetX + 1) % perlinTex.texture.width
             displacement.options.offsetY = (displacement.options.offsetY + 1) % perlinTex.texture.height
 
-            Game.renderer.device.queue.writeBuffer(
-                displacement.data.params_buf,
-                0,
-                new Float32Array([ displacement.options.offsetX, displacement.options.offsetY, displacement.options.scale ])
-            )
+            displacement.data.displacementParameters.setParameters(displacement.options);
         }
 
         return { onUpdate }

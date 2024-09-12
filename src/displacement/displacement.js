@@ -1,6 +1,7 @@
 import displacementWGSL from './displacement.wgsl'
 import { mat4, vec3 } from '../deps.js'
 import { TrianglesBuffer } from './triangles-buffer.js'
+import { DisplacementParametersBuffer } from './displacement-parameters-buffer.js'
 
 
 // adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
@@ -71,24 +72,14 @@ export default {
 async function init (cobalt, node) {
     const { device } = cobalt
 
-    // adjustable displacement settings
-    const dat = new Float32Array([ node.options.offseyX ?? 0,  // offsetX
-                                   node.options.offseyY ?? 0,  // offsetY
-                                   node.options.scale ?? 20, // scale
-                                   0   // unused, for byte alignment
-                                 ])
-
-    const params_buf = device.createBuffer({
-        label: 'displacement options buffer',
-        size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
-        mappedAtCreation: true,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    const displacementParameters = new DisplacementParametersBuffer({
+        device,
+        initialParameters: {
+            offsetX: node.options.offseyX ?? 0,
+            offsetY: node.options.offseyY ?? 0,
+            scale: node.options.scale ?? 20,
+        }
     })
-
-    new Float32Array(params_buf.getMappedRange()).set(dat)
-
-    params_buf.unmap()
-
 
     const MAX_SPRITE_COUNT = 256  // max number of displacement sprites in this render pass
 
@@ -184,7 +175,7 @@ async function init (cobalt, node) {
             {
                 binding: 4,
                 resource: {
-                    buffer: params_buf
+                    buffer: displacementParameters.bufferGpu,
                 }
             },
         ]
@@ -258,7 +249,7 @@ async function init (cobalt, node) {
 
         pipeline,
 
-        params_buf,
+        displacementParameters,
         trianglesBuffer,
     }
 }
@@ -305,8 +296,8 @@ function destroy (node) {
     node.data.uniformBuffer.destroy()
     node.data.uniformBuffer = null
 
-    node.data.params_buf.destroy()
-    node.data.params_buf = null
+    node.data.displacementParameters.destroy()
+    node.data.displacementParameters = null
 }
 
 
@@ -338,7 +329,7 @@ function resize (cobalt, node) {
             {
                 binding: 4,
                 resource: {
-                    buffer: node.data.params_buf
+                    buffer: node.data.displacementParameters.bufferGpu,
                 }
             },
         ]
