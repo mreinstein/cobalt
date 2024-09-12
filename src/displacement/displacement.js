@@ -95,6 +95,8 @@ async function init (cobalt, node) {
         width: cobalt.viewport.width,
         height: cobalt.viewport.height,
 
+        blurFactor: 8,
+
         trianglesBuffer,
     });
 

@@ -16,15 +16,24 @@ type Parameters = {
     readonly width: number;
     readonly height: number;
 
+    readonly blurFactor: number;
+
     readonly trianglesBuffer: TrianglesBuffer;
+};
+
+type TextureWithView = {
+    readonly texture: GPUTexture;
+    readonly view: GPUTextureView;
 };
 
 class DisplacementTexture {
     private readonly device: GPUDevice;
     private readonly format: GPUTextureFormat = "r8unorm";
+    private readonly downsizeFactor: number;
+    private readonly multisample: number;
 
-    private texture: GPUTexture;
-    private textureView: GPUTextureView | null = null;
+    private textureSimple: TextureWithView;
+    private textureMultisampled: TextureWithView | null = null;
 
     private readonly renderPipeline: GPURenderPipeline;
     private readonly bindgroup: GPUBindGroup;
@@ -34,7 +43,10 @@ class DisplacementTexture {
 
     public constructor(params: Parameters) {
         this.device = params.device;
-        this.texture = this.createTexture(params.width, params.height);
+        this.downsizeFactor = params.blurFactor;
+        this.multisample = this.downsizeFactor > 1 ? 4 : 1;
+
+        [this.textureSimple, this.textureMultisampled] = this.createTextures(params.width, params.height);
 
         this.trianglesBuffer = params.trianglesBuffer;
 
@@ -106,6 +118,9 @@ fn main_fragment () -> FragmentOut {
                 cullMode: "none",
                 topology: "triangle-list",
             },
+            multisample: {
+                count: this.multisample,
+            },
         });
 
         this.uniformsBuffer = this.device.createBuffer({
@@ -127,18 +142,24 @@ fn main_fragment () -> FragmentOut {
     }
 
     public update(commandEncoder: GPUCommandEncoder): void {
-        const renderpassEncoder = commandEncoder.beginRenderPass({
-            label: "lights-renderer render to texture renderpass",
-            colorAttachments: [{
-                view: this.getView(),
-                clearValue: [0, 0, 0, 1],
-                loadOp: "load",
-                storeOp: "store",
+        const targetTexture = this.textureMultisampled ?? this.textureSimple;
 
-            }],
+        const textureRenderpassColorAttachment: GPURenderPassColorAttachment = {
+            view: targetTexture.view,
+            clearValue: [0, 0, 0, 1],
+            loadOp: "load",
+            storeOp: "store",
+        };
+        if (this.textureMultisampled) {
+            textureRenderpassColorAttachment.resolveTarget = this.textureSimple.view;
+        }
+
+        const renderpassEncoder = commandEncoder.beginRenderPass({
+            label: "DisplacementTexture render to texture renderpass",
+            colorAttachments: [textureRenderpassColorAttachment],
         });
 
-        const [textureWidth, textureHeight] = [this.texture.width, this.texture.height];
+        const [textureWidth, textureHeight] = [targetTexture.texture.width, targetTexture.texture.height];
         renderpassEncoder.setViewport(0, 0, textureWidth, textureHeight, 0, 1);
         renderpassEncoder.setScissorRect(0, 0, textureWidth, textureHeight);
         renderpassEncoder.setPipeline(this.renderPipeline);
@@ -149,8 +170,10 @@ fn main_fragment () -> FragmentOut {
     };
 
     public resize(width: number, height: number): void {
-        this.texture.destroy();
-        this.texture = this.createTexture(width, height);
+        this.textureSimple.texture.destroy();
+        this.textureMultisampled?.texture.destroy();
+
+        [this.textureSimple, this.textureMultisampled] = this.createTextures(width, height);
     }
 
     public setViewport(viewport: Viewport): void {
@@ -178,28 +201,50 @@ fn main_fragment () -> FragmentOut {
     }
 
     public getView(): GPUTextureView {
-        if (!this.textureView) {
-            this.textureView = this.texture.createView({ label: "DisplacementTexture view" });
-        }
-        return this.textureView;
+        return this.textureSimple.view;
     }
 
     public destroy(): void {
-        this.texture.destroy();
+        this.textureSimple.texture.destroy();
+        this.textureMultisampled?.texture.destroy();
         this.uniformsBuffer.destroy();
     }
 
-    private createTexture(width: number, height: number): GPUTexture {
-        this.textureView = null;
-        return this.device.createTexture({
+    private createTextures(width: number, height: number): [TextureWithView, TextureWithView | null] {
+        const texture = this.device.createTexture({
             label: "DisplacementTexture texture",
-            size: [width, height],
+            size: [
+                Math.ceil(width / this.downsizeFactor),
+                Math.ceil(height / this.downsizeFactor),
+            ],
             format: this.format,
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
         });
+        const textureSimple = {
+            texture,
+            view: texture.createView({ label: "DisplacementTexture texture view" }),
+        };
+
+        let textureMultisampled: TextureWithView | null = null;
+        if (this.multisample > 1) {
+            const textureMulti = this.device.createTexture({
+                label: "DisplacementTexture texture multisampled",
+                size: [texture.width, texture.height],
+                format: texture.format,
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+                sampleCount: this.multisample,
+            });
+            textureMultisampled = {
+                texture: textureMulti,
+                view: textureMulti.createView({ label: "DisplacementTexture texture multisampled view" }),
+            };
+        }
+
+        return [textureSimple, textureMultisampled];
     }
 }
 
 export {
-    DisplacementTexture,
+    DisplacementTexture
 };
+
