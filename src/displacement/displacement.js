@@ -107,7 +107,7 @@ async function init (cobalt, node) {
     const rotationSize = Float32Array.BYTES_PER_ELEMENT * rotationFloatCount  // in bytes
 
     const uniformBuffer = device.createBuffer({
-        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+        size: 64 * 3, // 4x4 matrix with 4 bytes per float32, times 3 matrices (model, view, projection)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
@@ -372,6 +372,15 @@ function _writeTransformBuffer (cobalt, node) {
 
     const view = mat4.translation(_tmpVec3)
 
-    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
-    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
+    const modelScaling = [1, 1, 1];
+    const modelRotation = 0;
+    const modelTranslation = [1, 1, 0];
+    const model = mat4.identity();
+    mat4.multiply(mat4.scaling(modelScaling), model, model);
+    mat4.multiply(mat4.rotationZ(modelRotation), model, model);
+    mat4.multiply(mat4.translation(modelTranslation), model, model);
+
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, model.buffer);
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, view.buffer);
+    device.queue.writeBuffer(node.data.uniformBuffer, 128, projection.buffer);
 }

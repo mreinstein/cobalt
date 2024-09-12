@@ -3,14 +3,15 @@
 
 
 struct TransformData {
+    model: mat4x4<f32>,
     view: mat4x4<f32>,
-    projection: mat4x4<f32>
+    projection: mat4x4<f32>,
 };
 
 struct displacement_param {
     offset: vec2<f32>,
     scale: f32,
-    noop: f32
+    noop: f32,
 };
 
 @binding(0) @group(0) var<uniform> transformUBO: TransformData;
@@ -24,42 +25,12 @@ struct Fragment {
     @location(0) TexCoord : vec2<f32>
 };
 
-// scale x, y, x
-const sx: f32 = 1.0;
-const sy: f32 = 1.0;
-const sz: f32 = 1.0;
-
-// translate x, y, z
-const tx: f32 = 1.0;
-const ty: f32 = 1.0;
-const tz: f32 = 0;
-
-// rotation
-const rot: f32 = 0.0;
-const s = sin(rot);
-const c = cos(rot);
-
-// https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html
-
-const scaleM: mat4x4<f32> = mat4x4<f32>(sx, 0.0, 0.0, 0.0,
-                                       0.0,  sy, 0.0, 0.0,
-                                       0.0, 0.0, sz, 0.0,
-                                         0,   0,   0, 1.0);
-
-// rotation and translation
-const modelM: mat4x4<f32> = mat4x4<f32>(c,   s, 0.0, 0.0,
-                                       -s,   c, 0.0, 0.0,
-                                      0.0, 0.0, 1.0, 0.0,
-                                       tx,  ty,  tz, 1.0) * scaleM;
-
-
-
 @vertex
 fn vs_main (@location(0) vertexPosition: vec2<f32>) -> Fragment  {
 
     var output: Fragment;
 
-    output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 0.0, 1.0);
+    output.Position = transformUBO.projection * transformUBO.view * transformUBO.model * vec4<f32>(vertexPosition, 0.0, 1.0);
 
     // convert screen space (-1 -> 1) to texture space (0 -> 1)
     output.TexCoord = vec2<f32>((output.Position.xy + 1.0) / 2.0);
