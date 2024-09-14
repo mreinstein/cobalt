@@ -1,7 +1,7 @@
 ## Lighting system
 Cobalt uses a deferred lighting system, where the `Light` node receives as input the albedo texture and combines it with the computed illumination to build the output.
 
-![Screenshot](readme/lighting/01_illumination.webp)
+![Screenshot](readme/01_illumination.webp)
 
  _On the left, the input albedo texture. On the right the output composition result._
 
@@ -19,13 +19,13 @@ We use a lighting equation that is not physically accurate, but is flexible and 
 #### Lights texture
 The lights texture stores the computed illumination of each light. This illumination is a combination of the light intensity and the cast shadows. It is a one-dimensional value because the light color is applied at composition-time. Here is an example of what the lights texture looks like:
 
-![Screenshot](readme/lighting/02_lights_texture.webp)
+![Screenshot](readme/02_lights_texture.webp)
 
 For technical reasons, we store all lights into a  single texture:
 - each light is assigned a square area in the texture. The center of the area is the center of the light. In the example above, there are two areas. All lights have the same resolution, which means that there is a maximum light radius. If a light's radius is above this limit, it means that light is too big to be stored in its area, which will result in visual artifacts. If we stored lights with floating resolution (= the biggest lights are lower resolution than the small ones), we could remove this max radius limit.
 - each light is stored into a single texture channel. This is possible because the light intensity is a simple float. This allows us to store 4 lights in a single texel, one per channel (Red, Green, Blue, Alpha). The above texture has two areas and four channels, which means it can store up to 8 lights.
 
-![Screenshot](readme/lighting/03_lights_texture_decomposed.webp)
+![Screenshot](readme/03_lights_texture_decomposed.webp)
 
 _Illustration of a single area storing the data of 3 lights_
 
@@ -35,7 +35,7 @@ Here is how the lights texture is computed by the `LightsTexture` class (illustr
 - first we compute the base lights intensity (class `LightsTextureInitializer`)
 - then we add the cast shadows as a mask (class `LightsTextureMask`)
 
-![Screenshot](readme/lighting/04_lights_texture_mask.webp)
+![Screenshot](readme/04_lights_texture_mask.webp)
 
 _One the left, the base light intensity. On the right, the base light intensity with the cast shadows_
 
@@ -44,13 +44,13 @@ All lights in Cobalt are point-lights.
 
 The shadow-casting objects are decomposed as a series of segments.
 
-![Screenshot](readme/lighting/05_lights_obstacle_decomposition.webp)
+![Screenshot](readme/05_lights_obstacle_decomposition.webp)
 
 _On the left, the base obstacle. On the right, its decomposition into segments P0-P1, P1-P2, P2-P3, P3-P0._
 
 Then, the key is to observe that the cast shadow is a quad, where two points are the obstacle segments, and two points are their projection relatively to the point light.
 
-![Screenshot](readme/lighting/06_lights_hard_cast_shadows.webp)
+![Screenshot](readme/06_lights_hard_cast_shadows.webp)
 
 _P0' and P3' are the projection of P0 and P3 respectively_
 
