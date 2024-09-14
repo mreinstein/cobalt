@@ -1,7 +1,7 @@
-import { TrianglesBuffer } from './triangles-buffer.js'
+import { TrianglesBuffer }              from './triangles-buffer.js'
 import { DisplacementParametersBuffer } from './displacement-parameters-buffer.js'
-import { DisplacementComposition } from './displacement-composition.js'
-import { DisplacementTexture } from './displacement-texture.js'
+import { DisplacementComposition }      from './displacement-composition.js'
+import { DisplacementTexture }          from './displacement-texture.js'
 
 
 // adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
