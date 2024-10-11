@@ -118,7 +118,7 @@ class DisplacementTexture {
         const textureRenderpassColorAttachment: GPURenderPassColorAttachment = {
             view: targetTexture.view,
             clearValue: [0, 0, 0, 1],
-            loadOp: "load",
+            loadOp: "clear",
             storeOp: "store",
         };
         if (this.textureMultisampled) {
