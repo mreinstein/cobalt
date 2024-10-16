@@ -154,6 +154,7 @@ export function setSpriteRotation (cobalt, renderPass, spriteId, rotation) {
 
 
 export function setSpriteScale (cobalt, renderPass, spriteId, name, scale) {
+    const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
 
     const spriteIdx = renderPass.spriteIndices.get(spriteId)
