@@ -1,4 +1,4 @@
-import * as publicAPI          from '../sprite/api.js'
+import * as publicAPI          from '../sprite/public-api.js'
 import createSpriteQuads       from '../sprite/create-sprite-quads.js'
 import overlayWGSL             from './overlay.wgsl'
 import sortedBinaryInsert      from '../sprite/sorted-binary-insert.js'

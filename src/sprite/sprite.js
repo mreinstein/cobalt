@@ -1,4 +1,4 @@
-import * as publicAPI          from '../sprite/api.js'
+import * as publicAPI          from '../sprite/public-api.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
 
 

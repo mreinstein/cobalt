@@ -15,4 +15,4 @@ An opinionated 2D node graph based on WebGpu, minimizing CPU usage and maximizin
 * back-to-front z-indexing
 
 
-See the `examples/` folder for runnable demonstrations.
+Runnable demos are available in `examples/`.

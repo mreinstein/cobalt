@@ -153,6 +153,22 @@ export function setSpriteRotation (cobalt, renderPass, spriteId, rotation) {
 }
 
 
+export function setSpriteScale (cobalt, renderPass, spriteId, name, scale) {
+    renderPass = renderPass.data
+
+    const spriteIdx = renderPass.spriteIndices.get(spriteId)
+    const offset = spriteIdx * FLOAT32S_PER_SPRITE
+
+    const SPRITE_WIDTH = spritesheet.spriteMeta[name].w
+    const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h
+
+    renderPass.spriteData[offset+2] = SPRITE_WIDTH * scale[0]
+    renderPass.spriteData[offset+3] = SPRITE_HEIGHT * scale[1]
+
+    renderPass.dirty = true
+}
+
+
 export function setSprite (cobalt, renderPass, spriteId, name, position, scale, tint, opacity, rotation, zIndex) {
     const spritesheet = renderPass.refs.spritesheet.data.spritesheet
     renderPass = renderPass.data
