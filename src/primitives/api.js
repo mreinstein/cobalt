@@ -92,6 +92,29 @@ function perpendicularComponent (inp) {
 export default {
     line,
 
+    ellipse: function (cobalt, node, center, halfWidth, halfHeight, numSegments, color, lineWidth=1) {
+        
+        const [ x, y ] = center
+
+        // angle between each segment
+        const deltaAngle = 2 * Math.PI / numSegments
+
+        // Generate points for the ellipsoid
+        for (let i = 0; i < numSegments; i++) {
+            // Angle for this and the next segment
+            const angle = i * deltaAngle
+            const nextAngle = (i + 1) * deltaAngle
+
+            // Calculate x and y for the current and next points on the ellipse
+            const currX = x + halfWidth * Math.cos(angle)
+            const currY = y + halfHeight * Math.sin(angle)
+            const nextX = x + halfWidth * Math.cos(nextAngle)
+            const nextY = y + halfHeight * Math.sin(nextAngle)
+
+            line(cobalt, node, [ currX, currY ], [nextX, nextY ], color, lineWidth)
+        }
+    },
+
     filledEllipse: function (cobalt, node, center, halfWidth, halfHeight, numSegments, color) {
 
         const [ x, y ] = center
@@ -114,10 +137,8 @@ export default {
             // Add vertices for the triangles (first point is always the center)
             // First triangle vertex (center of ellipse)
 
-            const vi = (node.data.vertexCount * 6) + (i * 18)
-
-            //const vi = v * 6 // 2 floats position + 4 floats color per vertex * 3 vertices
-
+            const stride = 18 // 2 floats position + 4 floats color per vertex * 3 vertices
+            const vi = (node.data.vertexCount * 6) + (i * stride)
 
             // position
             node.data.vertices[vi + 0] = x
