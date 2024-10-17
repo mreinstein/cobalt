@@ -1,5 +1,5 @@
 import primitivesWGSL              from './primitives.wgsl'
-import publicAPI                   from './api.js'
+import publicAPI                   from './public-api.js'
 import { FLOAT32S_PER_SPRITE }     from './constants.js'
 import { round, mat4, vec2, vec3 } from '../deps.js'
 
@@ -56,7 +56,7 @@ async function init (cobalt, node) {
     // Define vertices and indices for your line represented as two triangles (a rectangle)
     // For example, this could represent a line segment from (10, 10) to (100, 10) with a thickness of 10 units
     // Updated vertices in normalized device coordinates (NDC)
-    const vertices = new Float32Array(100000) // up to 50,000 vertices
+    const vertices = new Float32Array(300000)
 
     const vertexBuffer = device.createBuffer({
         size: vertices.byteLength,
@@ -162,6 +162,8 @@ async function init (cobalt, node) {
 
         // triangle data used to render the primitives
         vertexCount: 0,
+
+        dirty: false, // when more stuff has been drawn and vertexBuffer needs updating
         vertices, // x, y, x, y, ...
     }
 }
@@ -173,6 +175,19 @@ function draw (cobalt, node, commandEncoder) {
         return
 
     const { device } = cobalt
+
+    if (node.data.dirty) {
+        node.data.dirty = false
+        const stride = 6 * Float32Array.BYTES_PER_ELEMENT // 2 floats per vertex position + 4 floats per vertex color
+
+        let byteCount = node.data.vertexCount * stride
+        if (byteCount > node.data.vertexBuffer.size) {
+            console.warn('too many primitives, bailing')
+            return
+        }
+        
+        cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer, 0, byteCount)
+    }
 
     const loadOp = node.options.loadOp || 'load'
 

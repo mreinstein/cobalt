@@ -78,7 +78,7 @@ function line (cobalt, node, start, end, color, lineWidth=1) {
 
     node.data.vertexCount += 6
 
-    cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+    node.data.dirty = true
 }
 
 
@@ -178,7 +178,7 @@ export default {
 
         node.data.vertexCount += (3 * numSegments)
 
-        cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+        node.data.dirty = true
     },
 
     // @param Number angle rotation (radians)
@@ -300,11 +300,12 @@ export default {
 
         node.data.vertexCount += 6 // 2 triangles in a box, baby
 
-        cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer)
+        node.data.dirty = true
     },
 
     clear: function (cobalt, node) {
         node.data.vertexCount = 0
+        node.data.dirty = true
     },
 }
 
