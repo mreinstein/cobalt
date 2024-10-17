@@ -56,7 +56,7 @@ async function init (cobalt, node) {
     // Define vertices and indices for your line represented as two triangles (a rectangle)
     // For example, this could represent a line segment from (10, 10) to (100, 10) with a thickness of 10 units
     // Updated vertices in normalized device coordinates (NDC)
-    const vertices = new Float32Array(10000) // up to 5,000 vertices
+    const vertices = new Float32Array(100000) // up to 50,000 vertices
 
     const vertexBuffer = device.createBuffer({
         size: vertices.byteLength,
