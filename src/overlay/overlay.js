@@ -223,7 +223,12 @@ function draw (cobalt, node, commandEncoder) {
         node.data.dirty = false
     }
 
-    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer)
+    // TODO: somehow spriteCount can be come negative?! for now just guard against this
+    if (node.data.spriteCount > 0) {
+        const writeLength = node.data.spriteCount * FLOAT32S_PER_SPRITE * Float32Array.BYTES_PER_ELEMENT
+        device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength)
+    }
+
 
     const renderpass = commandEncoder.beginRenderPass({
         colorAttachments: [
