@@ -1,8 +1,23 @@
 {
-  "name": "cobalt",
-  "private": true,
+  "name": "@footgun/cobalt",
+  "version": "0.1.0",
   "type": "module",
   "main": "bundle.js",
+  "description": "An opinionated 2D node graph based on WebGpu",
+  "homepage": "https://github.com/mreinstein/cobalt",
+  "keywords": [
+    "webgpu",
+    "game",
+    "renderer",
+    "2d",
+    "graphics"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mreinstein/cobalt.git"
+  },
+  "author": "Michael Reintein",
   "scripts": {
     "build": "node esbuild.js",
     "prepublishOnly": "npm run build"
