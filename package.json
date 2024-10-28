@@ -1,6 +1,6 @@
 {
   "name": "@footgun/cobalt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "bundle.js",
   "description": "An opinionated 2D node graph based on WebGpu",
