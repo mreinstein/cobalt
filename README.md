@@ -1,6 +1,6 @@
 # Cobalt
 
-![A chunk of cobalt](cobalt2.jpeg)
+![A chunk of cobalt](cobaltx1.png)
 
 An opinionated 2D node graph based on WebGpu, minimizing CPU usage and maximizing frame rate.
 
@@ -14,5 +14,11 @@ An opinionated 2D node graph based on WebGpu, minimizing CPU usage and maximizin
 * GC friendly: does not thrash the garbage collector. uses API design that won't allocate memory all over the place
 * back-to-front z-indexing
 
+
+## install
+
+```bash
+npm install @footgun/cobalt
+```
 
 Runnable demos are available in `examples/`.
