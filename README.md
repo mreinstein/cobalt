@@ -1,6 +1,6 @@
 # Cobalt
 
-![A chunk of cobalt](cobaltx1.png)
+![A chunk of cobalt](cobaltx2.png)
 
 An opinionated 2D node graph based on WebGpu, minimizing CPU usage and maximizing frame rate.
 
