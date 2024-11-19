@@ -60,14 +60,12 @@
         </div>
 
 <script type="module">
-import Game             from './Game.js'
+import Global           from './Global.js'
 import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
 import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
 import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
-//import animationSystem  from './system-animation.js'
 import rendererSystem   from './system-renderer.js'
-import spriteEntity     from './entity-sprite.js'
 import { ECS, vec2 }    from './deps.js'
 
 
@@ -77,11 +75,11 @@ async function main () {
 
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+    Global.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
     // instantiate all resource nodes
     
-    const pNode = await Cobalt.initNode(Game.renderer, {
+    const pNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:primitives',
         refs: {
             // key is the var name defined in this node
@@ -94,30 +92,30 @@ async function main () {
     })
 
     // use resizeViewport to init values on load:
-    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+    resizeViewport(Global.renderer, window.innerWidth, window.innerHeight)
 
     // window resize is *expensive* - best to debounce:
     const debouncedResize = debounce(function () {
-       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+       resizeViewport(Global.renderer, window.innerWidth, window.innerHeight) 
     }, 50)
 
     window.addEventListener('resize', debouncedResize, { passive: true })
 
     const world = ECS.createWorld()
-    ECS.addSystem(world, rendererSystem(Game.renderer))
+    ECS.addSystem(world, rendererSystem)
 
-    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
+    Cobalt.setViewportPosition(Global.renderer, [ 240, 135 ])
     
-    Game.world = world
+    Global.world = world
 
     const gameLoop = function () {
         const newTime = performance.now()
-        const frameTime = newTime - Game.lastFrameTime
-        Game.lastFrameTime = newTime
+        const frameTime = newTime - Global.lastFrameTime
+        Global.lastFrameTime = newTime
         ECS.update(world, frameTime)
         ECS.cleanup(world)
 
-        render(Game)
+        render(Global)
 
         requestAnimationFrame(gameLoop)
     }

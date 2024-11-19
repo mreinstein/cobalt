@@ -2,7 +2,7 @@
 
 ![A chunk of cobalt](cobaltx2.png)
 
-An opinionated 2D node graph based on WebGpu, minimizing CPU usage and maximizing frame rate.
+A 2D WebGpu renderer.
 
 
 ## Goals

@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "type": "module",
   "main": "bundle.js",
-  "description": "An opinionated 2D node graph based on WebGpu",
+  "description": "A 2D WebGpu renderer",
   "homepage": "https://github.com/mreinstein/cobalt",
   "keywords": [
     "webgpu",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@hyrious/esbuild-plugin-http": "^0.1.5",
-    "@webgpu/types": "^0.1.44",
+    "@webgpu/types": "^0.1.51",
     "esbuild": "^0.24.0",
     "esbuild-plugin-glsl": "^1.1.0"
   },
