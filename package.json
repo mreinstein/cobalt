@@ -29,6 +29,7 @@
     "esbuild-plugin-glsl": "^1.1.0"
   },
   "dependencies": {
+    "cdt2d": "^1.0.0",
     "remove-array-items": "^3.0.0",
     "round-half-up-symmetric": "^2.0.0",
     "wgpu-matrix": "^3.3.0"

@@ -1,3 +1,4 @@
+import cdt2d          from 'cdt2d'
 import { mat3, vec2 } from 'wgpu-matrix'
 
 
@@ -35,8 +36,64 @@ export default {
             line(cobalt, node, s[0], s[1], color, lineWidth)
     },
 
-    filledPath: function (cobalt, node, segments, color) {
-        // TODO: close the path and triangulate it
+    filledPath: function (cobalt, node, points, color) {
+
+        const edges = [ ]
+
+        for (let i=1; i < points.length; i++)
+            edges.push([ i-1, i ])
+
+
+        // The flag {exterior: false} tells  it to remove exterior faces
+        const triangles = cdt2d(points, edges, { exterior: true })
+
+        const m = node.data.transforms.at(-1)
+
+        let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
+
+        const pos = vec2.create()
+
+        for (const tri of triangles) {
+
+            // pt 1
+            vec2.transformMat3(points[tri[0]], m, pos)
+            node.data.vertices[i + 0] = pos[0]
+            node.data.vertices[i + 1] = pos[1]
+
+            // pt1 color
+            node.data.vertices[i + 2] = color[0]
+            node.data.vertices[i + 3] = color[1]
+            node.data.vertices[i + 4] = color[2]
+            node.data.vertices[i + 5] = color[3]
+
+            // pt 2
+            vec2.transformMat3(points[tri[1]], m, pos)
+            node.data.vertices[i + 6] = pos[0]
+            node.data.vertices[i + 7] = pos[1]
+
+            // pt2 color
+            node.data.vertices[i + 8] = color[0]
+            node.data.vertices[i + 9] = color[1]
+            node.data.vertices[i + 10] = color[2]
+            node.data.vertices[i + 11] = color[3]
+
+            // pt 3
+            vec2.transformMat3(points[tri[2]], m, pos)
+            node.data.vertices[i + 12] = pos[0]
+            node.data.vertices[i + 13] = pos[1]
+
+            // pt3 color
+            node.data.vertices[i + 14] = color[0]
+            node.data.vertices[i + 15] = color[1]
+            node.data.vertices[i + 16] = color[2]
+            node.data.vertices[i + 17] = color[3]
+
+            i += 18
+        }
+
+        node.data.vertexCount += (3 * triangles.length)
+
+        node.data.dirty = true
     },
 
 

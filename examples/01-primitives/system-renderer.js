@@ -61,6 +61,19 @@ export default function rendererSystem (world) {
         ]
         pNode.strokePath(segments, [ 0, 1, 0, 1 ], 1)
 
+
+        pNode.translate([ 330, 170 ])
+        pNode.rotate(-box2Angle)
+        pNode.translate([ -330, -170 ])
+
+        const points = [
+            [ 300, 200 ],
+            [ 310, 220 ],
+            [ 370, 150 ],
+            [ 315, 110 ],
+        ]
+        pNode.filledPath(points, [ 0, 1, 1, 1 ])
+
         box1Angle -= 0.05
         box2Angle += 0.05
         zoom += 0.05
