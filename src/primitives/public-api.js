@@ -1,4 +1,4 @@
-import { vec2 } from '../deps.js'
+import { vec2 } from 'wgpu-matrix'
 
 
 function line (cobalt, node, start, end, color, lineWidth=1) {

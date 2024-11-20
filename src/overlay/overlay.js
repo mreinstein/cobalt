@@ -4,7 +4,7 @@ import overlayWGSL             from './overlay.wgsl'
 import sortedBinaryInsert      from '../sprite/sorted-binary-insert.js'
 import uuid                    from '../uuid.js'
 import { FLOAT32S_PER_SPRITE } from './constants.js'
-import { mat4, vec3, vec4 }    from '../deps.js'
+import { mat4, vec3, vec4 }    from 'wgpu-matrix'
 
 
 // a sprite renderer with coordinates in screen space. useful for HUD/ui stuff

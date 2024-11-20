@@ -1,5 +1,5 @@
 import uuid     from '../uuid.js'
-import { vec2 } from '../deps.js'
+import { vec2 } from 'wgpu-matrix'
 
 
 // public API to interact with a lighting/shadows node.

@@ -3,7 +3,8 @@ import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
 import readSpriteSheet         from './read-spritesheet.js'
 import spriteWGSL              from './sprite.wgsl'
-import { round, mat4, vec3 }   from '../deps.js'
+import round                   from 'round-half-up-symmetric'
+import { mat4, vec3 }          from 'wgpu-matrix'
 
 
 // shared spritesheet resource, used by each sprite render node

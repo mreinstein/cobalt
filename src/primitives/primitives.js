@@ -1,7 +1,8 @@
-import primitivesWGSL              from './primitives.wgsl'
-import publicAPI                   from './public-api.js'
-import { FLOAT32S_PER_SPRITE }     from './constants.js'
-import { round, mat4, vec2, vec3 } from '../deps.js'
+import primitivesWGSL             from './primitives.wgsl'
+import publicAPI                  from './public-api.js'
+import { FLOAT32S_PER_SPRITE }    from './constants.js'
+import round                      from 'round-half-up-symmetric'
+import { mat4, mat3, vec2, vec3 } from 'wgpu-matrix'
 
 
 // a graphics primitives renderer (lines, boxes, etc.)
@@ -164,7 +165,7 @@ async function init (cobalt, node) {
         vertexCount: 0,
 
         dirty: false, // when more stuff has been drawn and vertexBuffer needs updating
-        vertices, // x, y, x, y, ...
+        vertices, // [ x, y, x, y, ... ]
     }
 }
 
