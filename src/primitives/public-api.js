@@ -40,18 +40,9 @@ export default {
 
     filledPath: function (cobalt, node, points, color) {
 
-        const edges = [ ]
-
-        for (let i=1; i < points.length; i++)
-            edges.push([ i-1, i ])
-
         const pslg = poly2pslg(points)
-        const triangles = cdt2d(pslg.points, pslg.edges, { exterior: true })
-
-        // The flag {exterior: false} tells  it to remove exterior faces
-        //const triangles = cdt2d(points, edges, { exterior: true })
-
-
+        // The flag { exterior: false } tells it to remove exterior faces
+        const triangles = cdt2d(pslg.points, pslg.edges, { exterior: false })
 
         const m = node.data.transforms.at(-1)
 
