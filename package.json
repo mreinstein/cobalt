@@ -1,6 +1,6 @@
 {
   "name": "@footgun/cobalt",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "main": "bundle.js",
   "description": "A 2D WebGpu renderer",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "cdt2d": "^1.0.0",
+    "poly-to-pslg": "^1.0.1",
     "remove-array-items": "^3.0.0",
     "round-half-up-symmetric": "^2.0.0",
     "wgpu-matrix": "^3.3.0"

@@ -1,4 +1,6 @@
 import cdt2d          from 'cdt2d'
+import poly2pslg      from 'https://cdn.skypack.dev/poly-to-pslg'
+//import cleanPSLG  from 'https://cdn.skypack.dev/pin/clean-pslg@v1.1.2-Vmc159bOYXS2a4zKtz3Q/mode=imports,min/optimized/clean-pslg.js'
 import { mat3, vec2 } from 'wgpu-matrix'
 
 
@@ -43,9 +45,13 @@ export default {
         for (let i=1; i < points.length; i++)
             edges.push([ i-1, i ])
 
+        const pslg = poly2pslg(points)
+        const triangles = cdt2d(pslg.points, pslg.edges, { exterior: true })
 
         // The flag {exterior: false} tells  it to remove exterior faces
-        const triangles = cdt2d(points, edges, { exterior: true })
+        //const triangles = cdt2d(points, edges, { exterior: true })
+
+
 
         const m = node.data.transforms.at(-1)
 

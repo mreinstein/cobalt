@@ -15,8 +15,6 @@ export default function rendererSystem (world) {
 
     const onUpdate = function (/*dt*/) {
         const renderer = Global.renderer
-        const device = renderer.device
-        const context = renderer.context
 
         const pNode = renderer.nodes.find((n) => n.type === 'cobalt:primitives')
 
