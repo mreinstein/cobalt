@@ -1,3 +1,7 @@
+# 0.3.2
+* tweak primitive positioning when setting viewport zoom to non 1.0 value
+
+
 # 0.3.1
 * remove exterior edges from filled paths
 

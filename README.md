@@ -2,7 +2,7 @@
 
 ![A chunk of cobalt](cobaltx2.png)
 
-A 2D WebGpu renderer.
+A 2D Web GPU renderer.
 
 
 ## Goals
