@@ -235,8 +235,10 @@ function _writeMatricesBuffer (cobalt, node) {
     //                         left          right    bottom        top     near     far
     const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
 
-    vec3.set(-cobalt.viewport.position[0], -cobalt.viewport.position[1], 0, _tmpVec3)
-
+    // TODO: 1.0 must be subtracted from both x and y values otherwise everything get shifted down and to the right
+    //       when rendered.  This is true for both sdl and browser backed rendering.  I don't understand why though!!
+    vec3.set(-cobalt.viewport.position[0] - 1.0, -cobalt.viewport.position[1] - 1.0 , 0, _tmpVec3)
+    
     const view = mat4.translation(_tmpVec3)
 
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
