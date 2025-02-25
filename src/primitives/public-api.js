@@ -1,6 +1,5 @@
 import cdt2d          from 'cdt2d'
-import poly2pslg      from 'https://cdn.skypack.dev/poly-to-pslg'
-//import cleanPSLG  from 'https://cdn.skypack.dev/pin/clean-pslg@v1.1.2-Vmc159bOYXS2a4zKtz3Q/mode=imports,min/optimized/clean-pslg.js'
+import poly2pslg      from 'poly-to-pslg'
 import { mat3, vec2 } from 'wgpu-matrix'
 
 

@@ -23,14 +23,13 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@hyrious/esbuild-plugin-http": "^0.1.5",
     "@webgpu/types": "^0.1.51",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "esbuild-plugin-glsl": "^1.1.0"
   },
   "dependencies": {
     "cdt2d": "^1.0.0",
-    "poly-to-pslg": "^1.0.1",
+    "poly-to-pslg": "github:mreinstein/poly-to-pslg",
     "remove-array-items": "^3.0.0",
     "round-half-up-symmetric": "^2.0.0",
     "wgpu-matrix": "^3.3.0"

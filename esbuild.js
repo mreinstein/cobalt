@@ -1,5 +1,4 @@
 import esbuild  from 'esbuild'
-import { http } from '@hyrious/esbuild-plugin-http'
 import { glsl } from 'esbuild-plugin-glsl'
 
 
@@ -10,8 +9,7 @@ esbuild.build({
     format: 'esm',
     target: 'es2022',
     plugins: [
-        glsl({ minify: true }),
-        http()
+        glsl({ minify: true })
     ],
     outfile: 'bundle.js',
     minify: true,
