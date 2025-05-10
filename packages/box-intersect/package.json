@@ -1,0 +1,24 @@
+{
+  "name": "box-intersect",
+  "version": "1.0.2",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "array-shuffle": "^1.0.0",
+    "dup": "^1.0.0",
+    "guarded-array": "^1.0.0",
+    "iota-array": "^1.0.0",
+    "tape": "^5.9.0",
+    "uniq": "^1.0.1"
+  },
+  "dependencies": {
+    "bit-twiddle": "^1.0.2"
+  }
+}

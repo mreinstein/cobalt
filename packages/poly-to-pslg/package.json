@@ -1,0 +1,15 @@
+{
+  "name": "poly-to-pslg",
+  "version": "1.0.1",
+  "type": "module",
+  "private": true,
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "poly-to-pslg.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+  }
+}

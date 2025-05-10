@@ -1,0 +1,17 @@
+{
+  "name": "typedarray-pool",
+  "version": "1.2.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "private": true,
+  "main": "pool.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bit-twiddle": "^1.0.2",
+    "dup": "^1.0.0"
+  }
+}

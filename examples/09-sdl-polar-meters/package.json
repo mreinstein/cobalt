@@ -1,5 +1,5 @@
 {
-  "name": "07-sdl",
+  "name": "09-sd-polar-meters",
   "private": true,
   "type": "module",
   "version": "1.0.0",
@@ -14,6 +14,6 @@
     "@kmamal/gpu": "^0.2.0",
     "@kmamal/sdl": "^0.11.7",
     "pngjs": "^7.0.0",
-    "wgpu-matrix": "^3.0.2"
+    "wgpu-matrix": "^3.4.0"
   }
 }

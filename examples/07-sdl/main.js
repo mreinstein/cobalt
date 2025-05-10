@@ -32,7 +32,6 @@ async function main () {
     const emissiveTexture = PNG.sync.read(pngData2)
 
     
-
     const pNode = await Cobalt.initNode(c, {
         type: 'cobalt:primitives',
         refs: {

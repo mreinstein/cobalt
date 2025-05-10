@@ -1,3 +1,7 @@
+# 0.4.0
+* use `embed `poly-to-pslg` and other deps via npm workspaces and stop using http imports in the bundle step
+
+
 # 0.3.2
 * tweak primitive positioning when setting viewport zoom to non 1.0 value
 

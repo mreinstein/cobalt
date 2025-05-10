@@ -1,6 +1,6 @@
 {
   "name": "@footgun/cobalt",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "type": "module",
   "main": "bundle.js",
   "description": "A 2D WebGpu renderer",
@@ -29,9 +29,14 @@
   },
   "dependencies": {
     "cdt2d": "^1.0.0",
-    "poly-to-pslg": "github:mreinstein/poly-to-pslg",
     "remove-array-items": "^3.0.0",
     "round-half-up-symmetric": "^2.0.0",
     "wgpu-matrix": "^3.3.0"
-  }
+  },
+  "workspaces": [
+    "packages/typedarray-pool",
+    "packages/box-intersect",
+    "packages/clean-pslg",
+    "packages/poly-to-pslg"
+  ]
 }
