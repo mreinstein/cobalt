@@ -47,6 +47,12 @@ export default {
 
         let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
 
+
+        const currentElementCount = node.data.vertexCount * 6
+        const floatsToAdd = triangles.length * 3 * 6
+        node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd)
+
+
         const pos = vec2.create()
 
         for (const tri of triangles) {
@@ -122,6 +128,11 @@ export default {
 
         // angle between each segment
         const deltaAngle = 2 * Math.PI / numSegments
+
+        const currentElementCount = node.data.vertexCount * 6
+        const floatsToAdd = numSegments * 3 * 6
+        node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd)
+
 
         const m = node.data.transforms.at(-1)
 
@@ -217,6 +228,12 @@ export default {
         const topRight = vec2.transformMat3([ x + halfWidth, y - halfHeight ], m)
         const bottomLeft = vec2.transformMat3([ x - halfWidth, y + halfHeight ], m)
         const bottomRight = vec2.transformMat3([ x + halfWidth, y + halfHeight ], m)
+
+
+        const currentElementCount = node.data.vertexCount * 6
+        const floatsToAdd = 6 * 6
+        node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd)
+
 
         let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
 
@@ -314,6 +331,11 @@ function line (cobalt, node, start, end, color, lineWidth=1) {
     
     let i = node.data.vertexCount * 6 // 2 floats position + 4 floats color per vertex
 
+
+    const currentElementCount = node.data.vertexCount * 6
+    const floatsToAdd = 6 * 6
+    node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd)
+
     // triangle 1
     // pt 1
     node.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth
@@ -380,6 +402,28 @@ function line (cobalt, node, start, end, color, lineWidth=1) {
 
     node.data.vertexCount += 6
     node.data.dirty = true
+}
+
+
+// if the new elements won't fit in the existing vertices array, resize it
+// @param ArrayType ArrayType  one of the TypedArray types (Float32Array, Uint8Array, etc.)
+// @param TypedArray arr
+function handleArrayResize (ArrayType, arr, currentElementCount, elementsToAdd) {
+    // if the new vertices fit in the existing vertices array bail
+    if ((currentElementCount + elementsToAdd) <= arr.length)
+        return arr
+
+    // attempt to double the existing array size when we need more capacity
+    const newSize = arr.length * 2
+
+    const MAX_LENGTH = 16 * 1024 * 1024 / arr.BYTES_PER_ELEMENT
+
+    if (newSize > MAX_LENGTH)
+        throw new Error('vertices exceed max array size')
+
+    const newArray = new ArrayType(newSize)
+    newArray.set(arr)
+    return newArray
 }
 
 

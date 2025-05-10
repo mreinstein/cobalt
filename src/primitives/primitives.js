@@ -57,7 +57,8 @@ async function init (cobalt, node) {
     // Define vertices and indices for your line represented as two triangles (a rectangle)
     // For example, this could represent a line segment from (10, 10) to (100, 10) with a thickness of 10 units
     // Updated vertices in normalized device coordinates (NDC)
-    const vertices = new Float32Array(300000)
+
+    const vertices = new Float32Array(1024)
 
     const vertexBuffer = device.createBuffer({
         size: vertices.byteLength,
@@ -65,9 +66,9 @@ async function init (cobalt, node) {
         //mappedAtCreation: true,
     })
 
-
     //new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
     //vertexBuffer.unmap()
+
 
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
@@ -186,9 +187,18 @@ function draw (cobalt, node, commandEncoder) {
         node.data.dirty = false
         const stride = 6 * Float32Array.BYTES_PER_ELEMENT // 2 floats per vertex position + 4 floats per vertex color
 
+        // if node.data.vertices has been re-sized, re-create the buffer
+        if (node.data.vertices.buffer.byteLength > node.data.vertexBuffer.size) {
+            node.data.vertexBuffer.destroy()
+            node.data.vertexBuffer = device.createBuffer({
+                size: node.data.vertices.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            })
+        }
+
         let byteCount = node.data.vertexCount * stride
         if (byteCount > node.data.vertexBuffer.size) {
-            console.warn('too many primitives, bailing')
+            console.error('too many primitives, bailing')
             return
         }
         
