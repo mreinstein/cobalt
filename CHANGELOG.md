@@ -1,3 +1,7 @@
+# 0.5.0
+* resize the primitives vertexBuffer to use memory more conservatively
+
+
 # 0.4.0
 * use `embed `poly-to-pslg` and other deps via npm workspaces and stop using http imports in the bundle step
 
