@@ -16,8 +16,8 @@ open http://localhost:3000
   * (get simplest render graph working)
   * support all builtin node types
   * support custom node types
-  * port type checking
-  * export/import
+* port type checking
+* export/import
 
 
 ## References/Inspration
