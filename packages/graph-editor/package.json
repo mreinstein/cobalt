@@ -1,0 +1,17 @@
+{
+  "name": "graph-editor",
+  "version": "1.0.0",
+  "description": "Visually compose a cobalt render node graph",
+  "license": "ISC",
+  "author": "Michael Reinstein",
+  "type": "esm",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}

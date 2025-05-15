@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Inter, Arial, Helvetica, sans-serif
+}
+
+#viewport {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background-color: black;
+}
+
+#content {
+    width: 10000px;
+    height: 10000px;
+    background: radial-gradient(rgb(67,68,55) 5%, rgb(28,30,42) 5%);
+    background-position: 0px 0px;
+    background-size: 30px 30px;
+    transform-origin: top left;
+    position: absolute;
+    font-size: 12px;
+}
+
+.connections {
+    cursor: grab;
+}
+
+.connections.dragging {
+    cursor: grabbing;
+}
+
+.node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    user-select: none;
+    z-index: 0;
+    border-radius: 12px;
+    transition: box-shadow 0.15s;
+
+    background-color: #242736;
+    box-shadow: rgba(0, 0, 0, 0.33) 0px 0px 20px;
+
+    color: #7b7e8c;
+
+    > .handle {
+        display: flex;
+        flex-direction: row;
+        -webkit-box-align: center;
+        align-items: center;
+        -webkit-box-pack: justify;
+        justify-content: space-between;
+        padding: 14px 12px 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+        /*background-color: #242736;*/
+        line-height: 1;
+        color: #fff;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        border-bottom: 2px solid #34384e;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        cursor: grab;
+    }
+
+    > .handle.dragging {
+        cursor: grabbing;
+    }
+
+    > .params {
+        color: #7b7e8c;
+        background-color: #242736;
+        border-bottom: 2px solid #34384e;
+        padding: 14px 12px 12px;
+    }
+
+    > .linkage {
+        display: flex;
+        flex-direction: row;
+        -webkit-box-pack: justify;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        /*background-color: var(--node-background);*/
+    }
+}
+
+.selected .handle {
+    border-bottom: 2px solid #1e62ff;
+}
+
+.port {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* override tweakpane background color style */
+.node > .params > .tp-rotv {
+    background-color: transparent;
+}
