@@ -10,13 +10,13 @@ open http://localhost:3000
 
 ## TODO
 
-* fix node selection
-* cleanup port rendering
 * integrate cobalt
   * (get simplest render graph working)
   * support all builtin node types
   * support custom node types
 * port type checking
+* fix node selection
+* cleanup port rendering
 * export/import
 
 
@@ -24,5 +24,5 @@ open http://localhost:3000
 
 * https://tsl-editor.vercel.app
 * https://github.com/bhushan6/tsl-editor
-* https://codesandbox.io/p/sandbox/baklavajs-v2-example-zpfkec
 * https://github.com/cocopon/tweakpane
+* https://codesandbox.io/p/sandbox/baklavajs-v2-example-zpfkec

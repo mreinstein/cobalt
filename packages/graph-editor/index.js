@@ -1,5 +1,6 @@
-import html     from 'https://cdn.skypack.dev/snabby'
-import { Pane } from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.js'
+import html      from 'https://cdn.skypack.dev/snabby'
+import { Pane }  from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.js'
+import { clamp } from 'https://cdn.skypack.dev/@footgun/math-gap'
 
 
 /**
@@ -90,7 +91,7 @@ const model = {
                 ],
             }
         },
-         {
+        {
             id: 'uuid3',
             type: 'test node 3',
             name: `wow this is fun!`,
@@ -115,6 +116,23 @@ const model = {
                     { name: 'value', type: 'any', isSelected: false, ref: null },
                     { name: 'valueTWO', type: 'any', isSelected: true, ref: null },
                 ],
+            }
+        },
+        {
+            id: 'uuid4',
+            type: 'cobalt-rendertarget',
+            name: 'displays the render output',
+            position: [5000, 4900],
+            isSelected: false,
+            ref: null, // the DOM element containing the node attributes
+            params: {
+                active: true,
+            },
+            ports: {
+                input: [
+                    { name: 'FRAME_TEXTURE_VIEW', type: 'any', isSelected: false, ref: null },
+                ],
+                output: [ ],
             }
         },
     ],
@@ -152,11 +170,6 @@ function updateTransform (viewport, model) {
 
     model.translateX = clamp(translateX, minTranslateX, maxTranslateX)
     model.translateY = clamp(translateY, minTranslateY, maxTranslateY)
-}
-
-
-function clamp(val, min, max) {
-	return Math.max(min, Math.min(max, val))
 }
 
 
@@ -429,46 +442,54 @@ function nodeView (model, node, update) {
         update()
     }
 
+    const canvasElm = node.type === 'cobalt-rendertarget' ?
+            html`<canvas style="width: 260px; height: 200px; background-color: #121212;"></canvas>`
+        :
+            ''
+
+
     return html`<div class="node"
                     key=${node.id}
                     @class:selected=${node.isSelected}
                     @style:transform="translate(${node.position[0]}px, ${node.position[1]}px)"
                     @style:width="${node.width}px">
 
-                    <div class="handle"
-                         @class:dragging=${model.nodeDragging.id === node.id}
-                         @on:mousedown=${_mouseDown}>
-                        <span style="line-height: 1.4">
-                            ${node.type}
-                            <br>
-                            <span style="color:#7b7e8c">${node.name}</span>
-                        </span>
+            <div class="handle"
+                 @class:dragging=${model.nodeDragging.id === node.id}
+                 @on:mousedown=${_mouseDown}>
+                <span style="line-height: 1.4">
+                    ${node.type}
+                    <br>
+                    <span style="color:#7b7e8c">${node.name}</span>
+                </span>
+            </div>
+
+            <div class="params" @hook:insert=${_insertHook}> </div>
+
+            ${canvasElm}
+
+            <div class="linkage">
+                <!-- input ports (left column) -->
+                <div style="min-width: 80px; display: flex; flex-direction: column;">
+                    <div class="css-8cmzyf">
+                        ${inputPorts}
                     </div>
+                </div>
 
-                    <div class="params"  @hook:insert=${_insertHook}> </div>
-
-                    <div class="linkage">
-                        <!-- input ports (left column) -->
-                        <div style="min-width: 80px; display: flex; flex-direction: column;">
-                            <div class="css-8cmzyf">
-                                ${inputPorts}
-                            </div>
-                        </div>
-
-                        <!-- output ports (right column) -->
-                        <div style="min-width: 80px; display: flex; flex-direction: row-reverse;">
-                            <div class="css-v6bg7t">
-                                ${outputPorts}
-                            </div>
-                        </div>
-
+                <!-- output ports (right column) -->
+                <div style="min-width: 80px; display: flex; flex-direction: row-reverse;">
+                    <div class="css-v6bg7t">
+                        ${outputPorts}
                     </div>
-                </div>`
+                </div>
+
+            </div>
+        </div>`
 }
 
 
 /**
- *  convert to absolute coordinate in the content area
+ *  convert mouse coordinate to absolute coordinate in the content area
  */
 function toWorldPosition (ev, model) {
     const viewport = ev.currentTarget
