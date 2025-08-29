@@ -113,7 +113,7 @@ async function init (cobalt, node) {
     })
 
     const pipeline = device.createRenderPipeline({
-        label: 'sprite',
+        label: 'spritesheet',
         vertex: {
             module: device.createShaderModule({
                 code: spriteWGSL

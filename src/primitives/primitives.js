@@ -108,6 +108,7 @@ async function init (cobalt, node) {
 
     // Create render pipeline
     const pipeline = device.createRenderPipeline({
+        label: "primitives",
         layout: pipelineLayout,
         vertex: {
             module: shaderModule,

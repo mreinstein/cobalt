@@ -111,7 +111,7 @@ async function init (cobalt, nodeData) {
     })
 
     const pipeline = device.createRenderPipeline({
-        label: 'tile',
+        label: 'tileatlas',
         vertex: {
             module: device.createShaderModule({
                 code: tileWGSL

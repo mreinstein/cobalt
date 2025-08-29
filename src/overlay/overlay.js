@@ -142,7 +142,7 @@ async function init (cobalt, nodeData) {
     })
 
     const pipeline = device.createRenderPipeline({
-        label: 'overlay',
+        label: 'overlaysprite',
         vertex: {
             module: device.createShaderModule({
                 code: overlayWGSL

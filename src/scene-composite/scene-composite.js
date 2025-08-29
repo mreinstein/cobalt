@@ -55,6 +55,7 @@ function init (cobalt, node) {
     params_buf.unmap()
 
     const pipeline = device.createRenderPipeline({
+        label: 'scenecomposite',
         layout: 'auto',
         vertex: {
           module: device.createShaderModule({
