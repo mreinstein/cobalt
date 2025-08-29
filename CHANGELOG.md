@@ -1,3 +1,6 @@
+# 0.5.1
+* add labels to all render pipelines
+
 # 0.5.0
 * resize the primitives vertexBuffer to use memory more conservatively
 
