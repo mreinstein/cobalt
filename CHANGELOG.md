@@ -1,3 +1,7 @@
+# 0.6.0
+* use preferred canvas format in various places instead of hardcoding to bgra8unorm, which doesn't seem to work on linux
+  because that defaults to bgra8unorm-srgb
+
 # 0.5.1
 * add labels to all render pipelines
 
