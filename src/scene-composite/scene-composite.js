@@ -1,4 +1,4 @@
-import * as Cobalt        from '../cobalt.js'
+import getPreferredFormat from '../get-preferred-format.js'
 import sceneCompositeWGSL from './scene-composite.wgsl'
 
 
@@ -7,7 +7,7 @@ export default {
     refs: [
         { name: 'hdr',      type: 'textureView', format: 'rgba16', access: 'read' },
         { name: 'bloom',    type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'combined', type: 'textureView', format: 'rgba8unorm', access: 'write' },
+        { name: 'combined', type: 'textureView', format: 'PREFERRED_TEXTURE_FORMAT', access: 'write' },
     ],
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
@@ -38,7 +38,7 @@ function init (cobalt, node) {
   const { options, refs } = node
 
     const { device } = cobalt
-    const format = Cobalt.getPreferredFormat(cobalt) // bgra8unorm
+    const format = getPreferredFormat(cobalt) // bgra8unorm or bgra8unorm-srgb usually
 
     const bloom_intensity = options.bloom_intensity ?? 40.0
     const bloom_combine_constant = options.bloom_combine_constant ?? 0.68

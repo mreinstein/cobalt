@@ -1,5 +1,6 @@
 import * as publicAPI          from '../sprite/public-api.js'
 import createSpriteQuads       from '../sprite/create-sprite-quads.js'
+import getPreferredFormat      from '../get-preferred-format.js'
 import overlayWGSL             from './overlay.wgsl'
 import sortedBinaryInsert      from '../sprite/sorted-binary-insert.js'
 import uuid                    from '../uuid.js'
@@ -159,7 +160,7 @@ async function init (cobalt, nodeData) {
             targets: [
                 // color
                 {
-                    format: 'bgra8unorm',
+                    format: getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',

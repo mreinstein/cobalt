@@ -213,14 +213,6 @@ export function setViewportPosition (c, pos) {
 }
 
 
-export function getPreferredFormat (cobalt) {
-    if (cobalt.canvas)
-        return navigator.gpu.getPreferredCanvasFormat()
-    else
-        return cobalt.context.getPreferredFormat()
-}
-
-
 export function getCurrentTextureView (cobalt) {
     if (cobalt.canvas)
         return cobalt.context.getCurrentTexture().createView()

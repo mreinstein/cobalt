@@ -1,4 +1,5 @@
-import blitWGSL from './fb-blit.wgsl'
+import blitWGSL           from './fb-blit.wgsl'
+import getPreferredFormat from '../get-preferred-format.js'
 
 
 // blit a source texture into a destination texture
@@ -6,8 +7,8 @@ import blitWGSL from './fb-blit.wgsl'
 export default {
     type: 'cobalt:fbBlit',
     refs: [
-        { name: 'in', type: 'cobaltTexture', format: 'bgra8unorm', access: 'read' },
-        { name: 'out', type: 'cobaltTexture', format: 'bgra8unorm', access: 'write' },
+        { name: 'in', type: 'cobaltTexture', format: 'PREFERRED_TEXTURE_FORMAT', access: 'read' },
+        { name: 'out', type: 'cobaltTexture', format: 'PREFERRED_TEXTURE_FORMAT', access: 'write' },
     ],
 
     // @params Object cobalt renderer world object
@@ -87,7 +88,7 @@ async function init (cobalt, node) {
             entryPoint: 'fs_main',
             targets: [
                 {
-                    format: 'bgra8unorm',
+                    format: getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',

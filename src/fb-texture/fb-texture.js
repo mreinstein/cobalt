@@ -1,4 +1,5 @@
-import createTexture from '../create-texture.js'
+import createTexture      from '../create-texture.js'
+import getPreferredFormat from '../get-preferred-format.js'
 
 
 // Frame buffer textures automatically resize to match the cobalt viewport.
@@ -34,7 +35,9 @@ export default {
 async function init (cobalt, node) {
     const { device } = cobalt
 
-    const { label, mip_count, format, usage, viewportScale } = node.options
+    node.options.format = node.options.format === 'PREFERRED_TEXTURE_FORMAT' ? getPreferredFormat(cobalt) : node.options.format
+
+    const { format, label, mip_count, usage, viewportScale } = node.options
 
     return createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage)
 }

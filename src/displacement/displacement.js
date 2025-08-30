@@ -1,3 +1,4 @@
+import getPreferredFormat               from '../get-preferred-format.js'
 import { TrianglesBuffer }              from './triangles-buffer.js'
 import { DisplacementParametersBuffer } from './displacement-parameters-buffer.js'
 import { DisplacementComposition }      from './displacement-composition.js'
@@ -102,7 +103,7 @@ async function init (cobalt, node) {
 
     const displacementComposition = new DisplacementComposition({
         device,
-        targetFormat: "bgra8unorm",
+        targetFormat: getPreferredFormat(cobalt),
 
         colorTextureView: node.refs.color.data.view,
         noiseMapTextureView: node.refs.map.view,

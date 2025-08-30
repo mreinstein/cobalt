@@ -160,7 +160,7 @@ async function main () {
         refs: { },
         options: {
             label: 'bloom + hdr compositing',
-            format: 'bgra8unorm',
+            format: 'PREFERRED_TEXTURE_FORMAT',
             mip_count: 1,
             viewportScale: 1.0,
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,

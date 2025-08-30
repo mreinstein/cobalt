@@ -1,3 +1,4 @@
+import getPreferredFormat         from '../get-preferred-format.js'
 import primitivesWGSL             from './primitives.wgsl'
 import publicAPI                  from './public-api.js'
 import { FLOAT32S_PER_SPRITE }    from './constants.js'
@@ -15,7 +16,7 @@ const _tmpVec3 = vec3.create(0, 0, 0)
 export default {
     type: 'cobalt:primitives',
     refs: [
-        { name: 'color', type: 'textView', format: 'rgba8unorm', access: 'write' },
+        { name: 'color', type: 'textView', format: 'PREFERRED_TEXTURE_VIEW', access: 'write' },
     ],
 
     // cobalt event handling functions
@@ -137,7 +138,7 @@ async function init (cobalt, node) {
             entryPoint: 'fs_main',
             targets: [
                 {
-                    format: 'bgra8unorm',
+                    format: getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',
