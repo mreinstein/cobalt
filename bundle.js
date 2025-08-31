@@ -7358,16 +7358,16 @@ var bloom_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw(cobalt, node2.data, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw(cobalt, node.data, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy(node2);
+  onDestroy: function(cobalt, node) {
+    destroy(node);
   },
-  onResize: function(cobalt, node2) {
-    resize(cobalt, node2);
+  onResize: function(cobalt, node) {
+    resize(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   }
 };
 function init(cobalt, nodeData) {
@@ -7468,12 +7468,12 @@ function init(cobalt, nodeData) {
   bloom_mat.compute_pipeline = compute_pipeline;
   return bloom_mat;
 }
-function set_all_bind_group(cobalt, bloom_mat, node2) {
-  const { refs } = node2;
+function set_all_bind_group(cobalt, bloom_mat, node) {
+  const { refs } = node;
   const { device } = cobalt;
-  const bloom_threshold = node2.options.bloom_threshold ?? 0.1;
-  const bloom_knee = node2.options.bloom_knee ?? 0.2;
-  const combine_constant = node2.options.bloom_combine_constant ?? 0.68;
+  const bloom_threshold = node.options.bloom_threshold ?? 0.1;
+  const bloom_knee = node.options.bloom_knee ?? 0.2;
+  const combine_constant = node.options.bloom_combine_constant ?? 0.68;
   const dat = new Float32Array([
     bloom_threshold,
     bloom_threshold - bloom_knee,
@@ -7713,19 +7713,19 @@ var scene_composite_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init2(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw2(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw2(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
+  onDestroy: function(cobalt, node) {
   },
-  onResize: function(cobalt, node2) {
-    resize2(cobalt, node2);
+  onResize: function(cobalt, node) {
+    resize2(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   }
 };
-function init2(cobalt, node2) {
-  const { options, refs } = node2;
+function init2(cobalt, node) {
+  const { options, refs } = node;
   const { device } = cobalt;
   const format = getPreferredFormat(cobalt);
   const bloom_intensity = options.bloom_intensity ?? 40;
@@ -7795,12 +7795,12 @@ function init2(cobalt, node2) {
     params_buf
   };
 }
-function draw2(cobalt, node2, commandEncoder) {
+function draw2(cobalt, node, commandEncoder) {
   const passEncoder = commandEncoder.beginRenderPass({
     label: "scene-composite",
     colorAttachments: [
       {
-        view: node2.refs.combined.data.view,
+        view: node.refs.combined.data.view,
         //getCurrentTextureView(cobalt)
         clearValue: { r: 0, g: 0, b: 0, a: 1 },
         loadOp: "clear",
@@ -7808,31 +7808,31 @@ function draw2(cobalt, node2, commandEncoder) {
       }
     ]
   });
-  const { pipeline, bindGroup } = node2.data;
+  const { pipeline, bindGroup } = node.data;
   passEncoder.setPipeline(pipeline);
   passEncoder.setBindGroup(0, bindGroup);
   passEncoder.draw(3);
   passEncoder.end();
 }
-function resize2(cobalt, node2) {
-  const { pipeline, params_buf } = node2.data;
+function resize2(cobalt, node) {
+  const { pipeline, params_buf } = node.data;
   const { device } = cobalt;
-  node2.data.bindGroup = device.createBindGroup({
+  node.data.bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
       {
         binding: 0,
-        resource: node2.refs.hdr.data.sampler
+        resource: node.refs.hdr.data.sampler
       },
       // color
       {
         binding: 1,
-        resource: node2.refs.hdr.data.view
+        resource: node.refs.hdr.data.view
       },
       // emissive
       {
         binding: 2,
-        resource: node2.refs.bloom.data.mip_view[0]
+        resource: node.refs.bloom.data.mip_view[0]
         //bloom_mat.bind_groups_textures[2].mip_view[0],
       },
       {
@@ -8037,15 +8037,15 @@ var sprite_default = {
   onInit: async function(cobalt, options = {}) {
     return init3(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw3(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw3(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy2(node2);
+  onDestroy: function(cobalt, node) {
+    destroy2(node);
   },
-  onResize: function(cobalt, node2) {
+  onResize: function(cobalt, node) {
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   },
   // optional
   customFunctions: {
@@ -8122,44 +8122,44 @@ async function init3(cobalt, nodeData) {
     dirty: false
   };
 }
-function draw3(cobalt, node2, commandEncoder) {
+function draw3(cobalt, node, commandEncoder) {
   const { device } = cobalt;
-  const loadOp = node2.options.loadOp || "load";
-  if (node2.data.dirty) {
-    _rebuildSpriteDrawCalls(node2.data);
-    node2.data.dirty = false;
+  const loadOp = node.options.loadOp || "load";
+  if (node.data.dirty) {
+    _rebuildSpriteDrawCalls(node.data);
+    node.data.dirty = false;
   }
-  if (node2.data.spriteCount > 0) {
-    const writeLength = node2.data.spriteCount * FLOAT32S_PER_SPRITE * Float32Array.BYTES_PER_ELEMENT;
-    device.queue.writeBuffer(node2.data.spriteBuffer, 0, node2.data.spriteData.buffer, 0, writeLength);
+  if (node.data.spriteCount > 0) {
+    const writeLength = node.data.spriteCount * FLOAT32S_PER_SPRITE * Float32Array.BYTES_PER_ELEMENT;
+    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
   }
   const renderpass = commandEncoder.beginRenderPass({
     label: "sprite",
     colorAttachments: [
       // color
       {
-        view: node2.refs.hdr.data.view,
+        view: node.refs.hdr.data.view,
         clearValue: cobalt.clearValue,
         loadOp,
         storeOp: "store"
       },
       // emissive
       {
-        view: node2.refs.emissive.data.view,
+        view: node.refs.emissive.data.view,
         clearValue: cobalt.clearValue,
         loadOp: "clear",
         storeOp: "store"
       }
     ]
   });
-  renderpass.setPipeline(node2.refs.spritesheet.data.pipeline);
-  renderpass.setBindGroup(0, node2.data.bindGroup);
-  renderpass.setVertexBuffer(0, node2.refs.spritesheet.data.quads.buffer);
+  renderpass.setPipeline(node.refs.spritesheet.data.pipeline);
+  renderpass.setBindGroup(0, node.data.bindGroup);
+  renderpass.setVertexBuffer(0, node.refs.spritesheet.data.quads.buffer);
   const vertexCount = 6;
   let baseInstanceIdx = 0;
-  for (let i = 0; i < node2.data.instancedDrawCallCount; i++) {
-    const baseVertexIdx = node2.data.instancedDrawCalls[i * 2] * vertexCount;
-    const instanceCount = node2.data.instancedDrawCalls[i * 2 + 1];
+  for (let i = 0; i < node.data.instancedDrawCallCount; i++) {
+    const baseVertexIdx = node.data.instancedDrawCalls[i * 2] * vertexCount;
+    const instanceCount = node.data.instancedDrawCalls[i * 2 + 1];
     renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx);
     baseInstanceIdx += instanceCount;
   }
@@ -8188,14 +8188,14 @@ function _rebuildSpriteDrawCalls(renderPass) {
     renderPass.instancedDrawCallCount++;
   }
 }
-function destroy2(node2) {
-  node2.data.instancedDrawCalls = null;
-  node2.data.bindGroup = null;
-  node2.data.spriteBuffer.destroy();
-  node2.data.spriteBuffer = null;
-  node2.data.spriteData = null;
-  node2.data.spriteIndices.clear();
-  node2.data.spriteIndices = null;
+function destroy2(node) {
+  node.data.instancedDrawCalls = null;
+  node.data.bindGroup = null;
+  node.data.spriteBuffer.destroy();
+  node.data.spriteBuffer = null;
+  node.data.spriteData = null;
+  node.data.spriteIndices.clear();
+  node.data.spriteIndices = null;
 }
 
 // src/tile/tile.js
@@ -8209,36 +8209,36 @@ var tile_default = {
   onInit: async function(cobalt, options = {}) {
     return init4(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw4(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw4(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy3(node2);
+  onDestroy: function(cobalt, node) {
+    destroy3(node);
   },
-  onResize: function(cobalt, node2) {
+  onResize: function(cobalt, node) {
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   },
   // optional
   customFunctions: {
-    setTexture: async function(cobalt, node2, textureUrl) {
+    setTexture: async function(cobalt, node, textureUrl) {
       const { canvas, device } = cobalt;
-      destroy3(node2);
+      destroy3(node);
       const format = getPreferredFormat(cobalt);
       let material;
       if (canvas) {
-        node2.options.textureUrl = textureUrl;
-        material = await createTextureFromUrl(cobalt, "tile map", node2.options.textureUrl, format);
+        node.options.textureUrl = textureUrl;
+        material = await createTextureFromUrl(cobalt, "tile map", node.options.textureUrl, format);
       } else {
-        material = await createTextureFromBuffer(cobalt, "tile map", node2.options.texture, format);
+        material = await createTextureFromBuffer(cobalt, "tile map", node.options.texture, format);
       }
       const bindGroup = device.createBindGroup({
-        layout: node2.refs.tileAtlas.data.tileBindGroupLayout,
+        layout: node.refs.tileAtlas.data.tileBindGroupLayout,
         entries: [
           {
             binding: 0,
             resource: {
-              buffer: node2.data.uniformBuffer
+              buffer: node.data.uniformBuffer
             }
           },
           {
@@ -8251,8 +8251,8 @@ var tile_default = {
           }
         ]
       });
-      node2.data.bindGroup = bindGroup;
-      node2.data.material = material;
+      node.data.bindGroup = bindGroup;
+      node.data.material = material;
     }
   }
 };
@@ -8263,7 +8263,7 @@ async function init4(cobalt, nodeData) {
   if (canvas) {
     material = await createTextureFromUrl(cobalt, "tile map", nodeData.options.textureUrl, format);
   } else {
-    material = await createTextureFromBuffer(cobalt, "tile map", node.options.texture, format);
+    material = await createTextureFromBuffer(cobalt, "tile map", nodeData.options.texture, format);
   }
   const dat = new Float32Array([nodeData.options.scrollScale, nodeData.options.scrollScale]);
   const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
@@ -12226,42 +12226,42 @@ var displacement_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init5(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw5(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw5(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy4(node2);
+  onDestroy: function(cobalt, node) {
+    destroy4(node);
   },
-  onResize: function(cobalt, node2) {
-    node2.data.displacementTexture.resize(cobalt.viewport.width, cobalt.viewport.height);
-    node2.data.displacementComposition.setColorTextureView(node2.refs.color.data.view);
-    node2.data.displacementComposition.setNoiseMapTextureView(node2.refs.map.view);
-    node2.data.displacementComposition.setDisplacementTextureView(node2.data.displacementTexture.getView());
+  onResize: function(cobalt, node) {
+    node.data.displacementTexture.resize(cobalt.viewport.width, cobalt.viewport.height);
+    node.data.displacementComposition.setColorTextureView(node.refs.color.data.view);
+    node.data.displacementComposition.setNoiseMapTextureView(node.refs.map.view);
+    node.data.displacementComposition.setDisplacementTextureView(node.data.displacementTexture.getView());
   },
-  onViewportPosition: function(cobalt, node2) {
-    node2.data.displacementTexture.setViewport(cobalt.viewport);
+  onViewportPosition: function(cobalt, node) {
+    node.data.displacementTexture.setViewport(cobalt.viewport);
   },
   // optional
   customFunctions: {
-    addTriangle: function(cobalt, node2, triangleVertices) {
-      return node2.data.trianglesBuffer.addTriangle(triangleVertices);
+    addTriangle: function(cobalt, node, triangleVertices) {
+      return node.data.trianglesBuffer.addTriangle(triangleVertices);
     },
-    removeTriangle: function(cobalt, node2, triangleId) {
-      node2.data.trianglesBuffer.removeTriangle(triangleId);
+    removeTriangle: function(cobalt, node, triangleId) {
+      node.data.trianglesBuffer.removeTriangle(triangleId);
     },
-    setPosition: function(cobalt, node2, triangleId, triangleVertices) {
-      node2.data.trianglesBuffer.setTriangle(triangleId, triangleVertices);
+    setPosition: function(cobalt, node, triangleId, triangleVertices) {
+      node.data.trianglesBuffer.setTriangle(triangleId, triangleVertices);
     }
   }
 };
-async function init5(cobalt, node2) {
+async function init5(cobalt, node) {
   const { device } = cobalt;
   const displacementParameters = new DisplacementParametersBuffer({
     device,
     initialParameters: {
-      offsetX: node2.options.offseyX ?? 0,
-      offsetY: node2.options.offseyY ?? 0,
-      scale: node2.options.scale ?? 20
+      offsetX: node.options.offseyX ?? 0,
+      offsetY: node.options.offseyY ?? 0,
+      scale: node.options.scale ?? 20
     }
   });
   const MAX_SPRITE_COUNT = 256;
@@ -12279,8 +12279,8 @@ async function init5(cobalt, node2) {
   const displacementComposition = new DisplacementComposition({
     device,
     targetFormat: getPreferredFormat(cobalt),
-    colorTextureView: node2.refs.color.data.view,
-    noiseMapTextureView: node2.refs.map.view,
+    colorTextureView: node.refs.color.data.view,
+    noiseMapTextureView: node.refs.map.view,
     displacementTextureView: displacementTexture.getView(),
     displacementParametersBuffer: displacementParameters
   });
@@ -12291,35 +12291,35 @@ async function init5(cobalt, node2) {
     trianglesBuffer
   };
 }
-function draw5(cobalt, node2, commandEncoder) {
-  const spriteCount = node2.data.trianglesBuffer.spriteCount;
+function draw5(cobalt, node, commandEncoder) {
+  const spriteCount = node.data.trianglesBuffer.spriteCount;
   if (spriteCount === 0)
     return;
-  node2.data.trianglesBuffer.update();
-  node2.data.displacementTexture.update(commandEncoder);
+  node.data.trianglesBuffer.update();
+  node.data.displacementTexture.update(commandEncoder);
   const renderpass = commandEncoder.beginRenderPass({
     label: "displacement",
     colorAttachments: [
       {
-        view: node2.refs.out,
+        view: node.refs.out,
         clearValue: cobalt.clearValue,
         loadOp: "load",
         storeOp: "store"
       }
     ]
   });
-  renderpass.executeBundles([node2.data.displacementComposition.getRenderBundle()]);
+  renderpass.executeBundles([node.data.displacementComposition.getRenderBundle()]);
   renderpass.end();
 }
-function destroy4(node2) {
-  node2.data.trianglesBuffer.destroy();
-  node2.data.trianglesBuffer = null;
-  node2.data.displacementParameters.destroy();
-  node2.data.displacementParameters = null;
-  node2.data.displacementTexture.destroy();
-  node2.data.displacementTexture = null;
-  node2.data.displacementComposition.destroy();
-  node2.data.displacementComposition = null;
+function destroy4(node) {
+  node.data.trianglesBuffer.destroy();
+  node.data.trianglesBuffer = null;
+  node.data.displacementParameters.destroy();
+  node.data.displacementParameters = null;
+  node.data.displacementTexture.destroy();
+  node.data.displacementTexture = null;
+  node.data.displacementComposition.destroy();
+  node.data.displacementComposition = null;
 }
 
 // src/sprite/create-sprite-quads.js
@@ -12380,17 +12380,17 @@ var overlay_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init6(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw6(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw6(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy5(node2);
+  onDestroy: function(cobalt, node) {
+    destroy5(node);
   },
-  onResize: function(cobalt, node2) {
-    _writeOverlayBuffer(cobalt, node2);
+  onResize: function(cobalt, node) {
+    _writeOverlayBuffer(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
-    _writeOverlayBuffer(cobalt, node2);
+  onViewportPosition: function(cobalt, node) {
+    _writeOverlayBuffer(cobalt, node);
   },
   // optional
   customFunctions: { ...public_api_exports }
@@ -12532,37 +12532,37 @@ async function init6(cobalt, nodeData) {
     dirty: false
   };
 }
-function draw6(cobalt, node2, commandEncoder) {
+function draw6(cobalt, node, commandEncoder) {
   const { device } = cobalt;
-  const loadOp = node2.options.loadOp || "load";
-  if (node2.data.dirty) {
-    _rebuildSpriteDrawCalls2(node2.data);
-    node2.data.dirty = false;
+  const loadOp = node.options.loadOp || "load";
+  if (node.data.dirty) {
+    _rebuildSpriteDrawCalls2(node.data);
+    node.data.dirty = false;
   }
-  if (node2.data.spriteCount > 0) {
-    const writeLength = node2.data.spriteCount * FLOAT32S_PER_SPRITE2 * Float32Array.BYTES_PER_ELEMENT;
-    device.queue.writeBuffer(node2.data.spriteBuffer, 0, node2.data.spriteData.buffer, 0, writeLength);
+  if (node.data.spriteCount > 0) {
+    const writeLength = node.data.spriteCount * FLOAT32S_PER_SPRITE2 * Float32Array.BYTES_PER_ELEMENT;
+    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
   }
   const renderpass = commandEncoder.beginRenderPass({
     label: "overlay",
     colorAttachments: [
       // color
       {
-        view: node2.refs.color,
+        view: node.refs.color,
         clearValue: cobalt.clearValue,
         loadOp,
         storeOp: "store"
       }
     ]
   });
-  renderpass.setPipeline(node2.data.pipeline);
-  renderpass.setBindGroup(0, node2.data.bindGroup);
-  renderpass.setVertexBuffer(0, node2.refs.spritesheet.data.quads.buffer);
+  renderpass.setPipeline(node.data.pipeline);
+  renderpass.setBindGroup(0, node.data.bindGroup);
+  renderpass.setVertexBuffer(0, node.refs.spritesheet.data.quads.buffer);
   const vertexCount = 6;
   let baseInstanceIdx = 0;
-  for (let i = 0; i < node2.data.instancedDrawCallCount; i++) {
-    const baseVertexIdx = node2.data.instancedDrawCalls[i * 2] * vertexCount;
-    const instanceCount = node2.data.instancedDrawCalls[i * 2 + 1];
+  for (let i = 0; i < node.data.instancedDrawCallCount; i++) {
+    const baseVertexIdx = node.data.instancedDrawCalls[i * 2] * vertexCount;
+    const instanceCount = node.data.instancedDrawCalls[i * 2 + 1];
     renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx);
     baseInstanceIdx += instanceCount;
   }
@@ -12628,18 +12628,18 @@ var fb_blit_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init7(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw7(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw7(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
+  onDestroy: function(cobalt, node) {
   },
-  onResize: function(cobalt, node2) {
-    resize3(cobalt, node2);
+  onResize: function(cobalt, node) {
+    resize3(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   }
 };
-async function init7(cobalt, node2) {
+async function init7(cobalt, node) {
   const { device } = cobalt;
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -12660,11 +12660,11 @@ async function init7(cobalt, node2) {
     entries: [
       {
         binding: 0,
-        resource: node2.refs.in.data.view
+        resource: node.refs.in.data.view
       },
       {
         binding: 1,
-        resource: node2.refs.in.data.sampler
+        resource: node.refs.in.data.sampler
       }
     ]
   });
@@ -12714,36 +12714,36 @@ async function init7(cobalt, node2) {
     pipeline
   };
 }
-function draw7(cobalt, node2, commandEncoder) {
+function draw7(cobalt, node, commandEncoder) {
   const { device } = cobalt;
   const renderpass = commandEncoder.beginRenderPass({
     label: "fb-blit",
     colorAttachments: [
       {
-        view: node2.refs.out,
+        view: node.refs.out,
         clearValue: cobalt.clearValue,
         loadOp: "load",
         storeOp: "store"
       }
     ]
   });
-  renderpass.setPipeline(node2.data.pipeline);
-  renderpass.setBindGroup(0, node2.data.bindGroup);
+  renderpass.setPipeline(node.data.pipeline);
+  renderpass.setBindGroup(0, node.data.bindGroup);
   renderpass.draw(3);
   renderpass.end();
 }
-function resize3(cobalt, node2) {
+function resize3(cobalt, node) {
   const { device } = cobalt;
-  node2.data.bindGroup = device.createBindGroup({
-    layout: node2.data.bindGroupLayout,
+  node.data.bindGroup = device.createBindGroup({
+    layout: node.data.bindGroupLayout,
     entries: [
       {
         binding: 0,
-        resource: node2.refs.in.data.view
+        resource: node.refs.in.data.view
       },
       {
         binding: 1,
-        resource: node2.refs.in.data.sampler
+        resource: node.refs.in.data.sampler
       }
     ]
   });
@@ -12800,66 +12800,66 @@ function polygonToPSLG(loops, options) {
 // src/primitives/public-api.js
 var public_api_default = {
   line,
-  save: function(cobalt, node2) {
-    node2.data.transforms.push(mat3.clone(node2.data.transforms.at(-1)));
+  save: function(cobalt, node) {
+    node.data.transforms.push(mat3.clone(node.data.transforms.at(-1)));
   },
-  restore: function(cobalt, node2) {
-    if (node2.data.transforms.length > 1)
-      node2.data.transforms.pop();
+  restore: function(cobalt, node) {
+    if (node.data.transforms.length > 1)
+      node.data.transforms.pop();
   },
-  translate: function(cobalt, node2, translation) {
-    const m = node2.data.transforms.at(-1);
+  translate: function(cobalt, node, translation) {
+    const m = node.data.transforms.at(-1);
     mat3.translate(m, translation, m);
   },
-  rotate: function(cobalt, node2, radians) {
-    const m = node2.data.transforms.at(-1);
+  rotate: function(cobalt, node, radians) {
+    const m = node.data.transforms.at(-1);
     mat3.rotate(m, radians, m);
   },
-  scale: function(cobalt, node2, scale) {
-    const m = node2.data.transforms.at(-1);
+  scale: function(cobalt, node, scale) {
+    const m = node.data.transforms.at(-1);
     mat3.scale(m, scale, m);
   },
-  strokePath: function(cobalt, node2, segments, color, lineWidth = 1) {
+  strokePath: function(cobalt, node, segments, color, lineWidth = 1) {
     for (const s of segments)
-      line(cobalt, node2, s[0], s[1], color, lineWidth);
+      line(cobalt, node, s[0], s[1], color, lineWidth);
   },
-  filledPath: function(cobalt, node2, points, color) {
+  filledPath: function(cobalt, node, points, color) {
     const pslg = polygonToPSLG(points);
     const triangles = (0, import_cdt2d.default)(pslg.points, pslg.edges, { exterior: false });
-    const m = node2.data.transforms.at(-1);
-    let i = node2.data.vertexCount * 6;
-    const currentElementCount = node2.data.vertexCount * 6;
+    const m = node.data.transforms.at(-1);
+    let i = node.data.vertexCount * 6;
+    const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = triangles.length * 3 * 6;
-    node2.data.vertices = handleArrayResize(Float32Array, node2.data.vertices, currentElementCount, floatsToAdd);
+    node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
     const pos = vec2.create();
     for (const tri of triangles) {
       vec2.transformMat3(points[tri[0]], m, pos);
-      node2.data.vertices[i + 0] = pos[0];
-      node2.data.vertices[i + 1] = pos[1];
-      node2.data.vertices[i + 2] = color[0];
-      node2.data.vertices[i + 3] = color[1];
-      node2.data.vertices[i + 4] = color[2];
-      node2.data.vertices[i + 5] = color[3];
+      node.data.vertices[i + 0] = pos[0];
+      node.data.vertices[i + 1] = pos[1];
+      node.data.vertices[i + 2] = color[0];
+      node.data.vertices[i + 3] = color[1];
+      node.data.vertices[i + 4] = color[2];
+      node.data.vertices[i + 5] = color[3];
       vec2.transformMat3(points[tri[1]], m, pos);
-      node2.data.vertices[i + 6] = pos[0];
-      node2.data.vertices[i + 7] = pos[1];
-      node2.data.vertices[i + 8] = color[0];
-      node2.data.vertices[i + 9] = color[1];
-      node2.data.vertices[i + 10] = color[2];
-      node2.data.vertices[i + 11] = color[3];
+      node.data.vertices[i + 6] = pos[0];
+      node.data.vertices[i + 7] = pos[1];
+      node.data.vertices[i + 8] = color[0];
+      node.data.vertices[i + 9] = color[1];
+      node.data.vertices[i + 10] = color[2];
+      node.data.vertices[i + 11] = color[3];
       vec2.transformMat3(points[tri[2]], m, pos);
-      node2.data.vertices[i + 12] = pos[0];
-      node2.data.vertices[i + 13] = pos[1];
-      node2.data.vertices[i + 14] = color[0];
-      node2.data.vertices[i + 15] = color[1];
-      node2.data.vertices[i + 16] = color[2];
-      node2.data.vertices[i + 17] = color[3];
+      node.data.vertices[i + 12] = pos[0];
+      node.data.vertices[i + 13] = pos[1];
+      node.data.vertices[i + 14] = color[0];
+      node.data.vertices[i + 15] = color[1];
+      node.data.vertices[i + 16] = color[2];
+      node.data.vertices[i + 17] = color[3];
       i += 18;
     }
-    node2.data.vertexCount += 3 * triangles.length;
-    node2.data.dirty = true;
+    node.data.vertexCount += 3 * triangles.length;
+    node.data.dirty = true;
   },
-  ellipse: function(cobalt, node2, center, halfWidth, halfHeight, numSegments, color, lineWidth = 1) {
+  ellipse: function(cobalt, node, center, halfWidth, halfHeight, numSegments, color, lineWidth = 1) {
     const [x, y] = center;
     const deltaAngle = 2 * Math.PI / numSegments;
     for (let i = 0; i < numSegments; i++) {
@@ -12869,16 +12869,16 @@ var public_api_default = {
       const currY = y + halfHeight * Math.sin(angle);
       const nextX = x + halfWidth * Math.cos(nextAngle);
       const nextY = y + halfHeight * Math.sin(nextAngle);
-      line(cobalt, node2, [currX, currY], [nextX, nextY], color, lineWidth);
+      line(cobalt, node, [currX, currY], [nextX, nextY], color, lineWidth);
     }
   },
-  filledEllipse: function(cobalt, node2, center, halfWidth, halfHeight, numSegments, color) {
+  filledEllipse: function(cobalt, node, center, halfWidth, halfHeight, numSegments, color) {
     const [x, y] = center;
     const deltaAngle = 2 * Math.PI / numSegments;
-    const currentElementCount = node2.data.vertexCount * 6;
+    const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = numSegments * 3 * 6;
-    node2.data.vertices = handleArrayResize(Float32Array, node2.data.vertices, currentElementCount, floatsToAdd);
-    const m = node2.data.transforms.at(-1);
+    node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
+    const m = node.data.transforms.at(-1);
     for (let i = 0; i < numSegments; i++) {
       const angle = i * deltaAngle;
       const nextAngle = (i + 1) * deltaAngle;
@@ -12887,33 +12887,33 @@ var public_api_default = {
       const nextX = x + halfWidth * Math.cos(nextAngle);
       const nextY = y + halfHeight * Math.sin(nextAngle);
       const stride = 18;
-      const vi = node2.data.vertexCount * 6 + i * stride;
+      const vi = node.data.vertexCount * 6 + i * stride;
       const pos = vec2.transformMat3([x, y], m);
-      node2.data.vertices[vi + 0] = pos[0];
-      node2.data.vertices[vi + 1] = pos[1];
-      node2.data.vertices[vi + 2] = color[0];
-      node2.data.vertices[vi + 3] = color[1];
-      node2.data.vertices[vi + 4] = color[2];
-      node2.data.vertices[vi + 5] = color[3];
+      node.data.vertices[vi + 0] = pos[0];
+      node.data.vertices[vi + 1] = pos[1];
+      node.data.vertices[vi + 2] = color[0];
+      node.data.vertices[vi + 3] = color[1];
+      node.data.vertices[vi + 4] = color[2];
+      node.data.vertices[vi + 5] = color[3];
       vec2.transformMat3([currX, currY], m, pos);
-      node2.data.vertices[vi + 6] = pos[0];
-      node2.data.vertices[vi + 7] = pos[1];
-      node2.data.vertices[vi + 8] = color[0];
-      node2.data.vertices[vi + 9] = color[1];
-      node2.data.vertices[vi + 10] = color[2];
-      node2.data.vertices[vi + 11] = color[3];
+      node.data.vertices[vi + 6] = pos[0];
+      node.data.vertices[vi + 7] = pos[1];
+      node.data.vertices[vi + 8] = color[0];
+      node.data.vertices[vi + 9] = color[1];
+      node.data.vertices[vi + 10] = color[2];
+      node.data.vertices[vi + 11] = color[3];
       vec2.transformMat3([nextX, nextY], m, pos);
-      node2.data.vertices[vi + 12] = pos[0];
-      node2.data.vertices[vi + 13] = pos[1];
-      node2.data.vertices[vi + 14] = color[0];
-      node2.data.vertices[vi + 15] = color[1];
-      node2.data.vertices[vi + 16] = color[2];
-      node2.data.vertices[vi + 17] = color[3];
+      node.data.vertices[vi + 12] = pos[0];
+      node.data.vertices[vi + 13] = pos[1];
+      node.data.vertices[vi + 14] = color[0];
+      node.data.vertices[vi + 15] = color[1];
+      node.data.vertices[vi + 16] = color[2];
+      node.data.vertices[vi + 17] = color[3];
     }
-    node2.data.vertexCount += 3 * numSegments;
-    node2.data.dirty = true;
+    node.data.vertexCount += 3 * numSegments;
+    node.data.dirty = true;
   },
-  box: function(cobalt, node2, center, width, height, color, lineWidth = 1) {
+  box: function(cobalt, node, center, width, height, color, lineWidth = 1) {
     const [x, y] = center;
     const halfWidth = width / 2;
     const halfHeight = height / 2;
@@ -12921,120 +12921,120 @@ var public_api_default = {
     const topRight = [x + halfWidth, y - halfHeight];
     const bottomLeft = [x - halfWidth, y + halfHeight];
     const bottomRight = [x + halfWidth, y + halfHeight];
-    line(cobalt, node2, topLeft, topRight, color, lineWidth);
-    line(cobalt, node2, bottomLeft, bottomRight, color, lineWidth);
-    line(cobalt, node2, topLeft, bottomLeft, color, lineWidth);
-    line(cobalt, node2, topRight, bottomRight, color, lineWidth);
+    line(cobalt, node, topLeft, topRight, color, lineWidth);
+    line(cobalt, node, bottomLeft, bottomRight, color, lineWidth);
+    line(cobalt, node, topLeft, bottomLeft, color, lineWidth);
+    line(cobalt, node, topRight, bottomRight, color, lineWidth);
   },
-  filledBox: function(cobalt, node2, center, width, height, color) {
+  filledBox: function(cobalt, node, center, width, height, color) {
     const [x, y] = center;
     const halfWidth = width / 2;
     const halfHeight = height / 2;
-    const m = node2.data.transforms.at(-1);
+    const m = node.data.transforms.at(-1);
     const topLeft = vec2.transformMat3([x - halfWidth, y - halfHeight], m);
     const topRight = vec2.transformMat3([x + halfWidth, y - halfHeight], m);
     const bottomLeft = vec2.transformMat3([x - halfWidth, y + halfHeight], m);
     const bottomRight = vec2.transformMat3([x + halfWidth, y + halfHeight], m);
-    const currentElementCount = node2.data.vertexCount * 6;
+    const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = 6 * 6;
-    node2.data.vertices = handleArrayResize(Float32Array, node2.data.vertices, currentElementCount, floatsToAdd);
-    let i = node2.data.vertexCount * 6;
-    node2.data.vertices[i + 0] = topLeft[0];
-    node2.data.vertices[i + 1] = topLeft[1];
-    node2.data.vertices[i + 2] = color[0];
-    node2.data.vertices[i + 3] = color[1];
-    node2.data.vertices[i + 4] = color[2];
-    node2.data.vertices[i + 5] = color[3];
-    node2.data.vertices[i + 6] = bottomLeft[0];
-    node2.data.vertices[i + 7] = bottomLeft[1];
-    node2.data.vertices[i + 8] = color[0];
-    node2.data.vertices[i + 9] = color[1];
-    node2.data.vertices[i + 10] = color[2];
-    node2.data.vertices[i + 11] = color[3];
-    node2.data.vertices[i + 12] = topRight[0];
-    node2.data.vertices[i + 13] = topRight[1];
-    node2.data.vertices[i + 14] = color[0];
-    node2.data.vertices[i + 15] = color[1];
-    node2.data.vertices[i + 16] = color[2];
-    node2.data.vertices[i + 17] = color[3];
-    node2.data.vertices[i + 18] = bottomLeft[0];
-    node2.data.vertices[i + 19] = bottomLeft[1];
-    node2.data.vertices[i + 20] = color[0];
-    node2.data.vertices[i + 21] = color[1];
-    node2.data.vertices[i + 22] = color[2];
-    node2.data.vertices[i + 23] = color[3];
-    node2.data.vertices[i + 24] = bottomRight[0];
-    node2.data.vertices[i + 25] = bottomRight[1];
-    node2.data.vertices[i + 26] = color[0];
-    node2.data.vertices[i + 27] = color[1];
-    node2.data.vertices[i + 28] = color[2];
-    node2.data.vertices[i + 29] = color[3];
-    node2.data.vertices[i + 30] = topRight[0];
-    node2.data.vertices[i + 31] = topRight[1];
-    node2.data.vertices[i + 32] = color[0];
-    node2.data.vertices[i + 33] = color[1];
-    node2.data.vertices[i + 34] = color[2];
-    node2.data.vertices[i + 35] = color[3];
-    node2.data.vertexCount += 6;
-    node2.data.dirty = true;
+    node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
+    let i = node.data.vertexCount * 6;
+    node.data.vertices[i + 0] = topLeft[0];
+    node.data.vertices[i + 1] = topLeft[1];
+    node.data.vertices[i + 2] = color[0];
+    node.data.vertices[i + 3] = color[1];
+    node.data.vertices[i + 4] = color[2];
+    node.data.vertices[i + 5] = color[3];
+    node.data.vertices[i + 6] = bottomLeft[0];
+    node.data.vertices[i + 7] = bottomLeft[1];
+    node.data.vertices[i + 8] = color[0];
+    node.data.vertices[i + 9] = color[1];
+    node.data.vertices[i + 10] = color[2];
+    node.data.vertices[i + 11] = color[3];
+    node.data.vertices[i + 12] = topRight[0];
+    node.data.vertices[i + 13] = topRight[1];
+    node.data.vertices[i + 14] = color[0];
+    node.data.vertices[i + 15] = color[1];
+    node.data.vertices[i + 16] = color[2];
+    node.data.vertices[i + 17] = color[3];
+    node.data.vertices[i + 18] = bottomLeft[0];
+    node.data.vertices[i + 19] = bottomLeft[1];
+    node.data.vertices[i + 20] = color[0];
+    node.data.vertices[i + 21] = color[1];
+    node.data.vertices[i + 22] = color[2];
+    node.data.vertices[i + 23] = color[3];
+    node.data.vertices[i + 24] = bottomRight[0];
+    node.data.vertices[i + 25] = bottomRight[1];
+    node.data.vertices[i + 26] = color[0];
+    node.data.vertices[i + 27] = color[1];
+    node.data.vertices[i + 28] = color[2];
+    node.data.vertices[i + 29] = color[3];
+    node.data.vertices[i + 30] = topRight[0];
+    node.data.vertices[i + 31] = topRight[1];
+    node.data.vertices[i + 32] = color[0];
+    node.data.vertices[i + 33] = color[1];
+    node.data.vertices[i + 34] = color[2];
+    node.data.vertices[i + 35] = color[3];
+    node.data.vertexCount += 6;
+    node.data.dirty = true;
   },
-  clear: function(cobalt, node2) {
-    node2.data.vertexCount = 0;
-    node2.data.transforms.length = 1;
-    mat3.identity(node2.data.transforms[0]);
-    node2.data.dirty = true;
+  clear: function(cobalt, node) {
+    node.data.vertexCount = 0;
+    node.data.transforms.length = 1;
+    mat3.identity(node.data.transforms[0]);
+    node.data.dirty = true;
   }
 };
-function line(cobalt, node2, start, end, color, lineWidth = 1) {
-  const m = node2.data.transforms.at(-1);
+function line(cobalt, node, start, end, color, lineWidth = 1) {
+  const m = node.data.transforms.at(-1);
   start = vec2.transformMat3(start, m);
   end = vec2.transformMat3(end, m);
   const delta = vec2.sub(end, start);
   const unitBasis = vec2.normalize(delta);
   const perp = perpendicularComponent(unitBasis);
   const halfLineWidth = lineWidth / 2;
-  let i = node2.data.vertexCount * 6;
-  const currentElementCount = node2.data.vertexCount * 6;
+  let i = node.data.vertexCount * 6;
+  const currentElementCount = node.data.vertexCount * 6;
   const floatsToAdd = 6 * 6;
-  node2.data.vertices = handleArrayResize(Float32Array, node2.data.vertices, currentElementCount, floatsToAdd);
-  node2.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth;
-  node2.data.vertices[i + 1] = start[1] + perp[1] * halfLineWidth;
-  node2.data.vertices[i + 2] = color[0];
-  node2.data.vertices[i + 3] = color[1];
-  node2.data.vertices[i + 4] = color[2];
-  node2.data.vertices[i + 5] = color[3];
-  node2.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth;
-  node2.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth;
-  node2.data.vertices[i + 8] = color[0];
-  node2.data.vertices[i + 9] = color[1];
-  node2.data.vertices[i + 10] = color[2];
-  node2.data.vertices[i + 11] = color[3];
-  node2.data.vertices[i + 12] = end[0] + perp[0] * halfLineWidth;
-  node2.data.vertices[i + 13] = end[1] + perp[1] * halfLineWidth;
-  node2.data.vertices[i + 14] = color[0];
-  node2.data.vertices[i + 15] = color[1];
-  node2.data.vertices[i + 16] = color[2];
-  node2.data.vertices[i + 17] = color[3];
-  node2.data.vertices[i + 18] = start[0] - perp[0] * halfLineWidth;
-  node2.data.vertices[i + 19] = start[1] - perp[1] * halfLineWidth;
-  node2.data.vertices[i + 20] = color[0];
-  node2.data.vertices[i + 21] = color[1];
-  node2.data.vertices[i + 22] = color[2];
-  node2.data.vertices[i + 23] = color[3];
-  node2.data.vertices[i + 24] = end[0] + perp[0] * halfLineWidth;
-  node2.data.vertices[i + 25] = end[1] + perp[1] * halfLineWidth;
-  node2.data.vertices[i + 26] = color[0];
-  node2.data.vertices[i + 27] = color[1];
-  node2.data.vertices[i + 28] = color[2];
-  node2.data.vertices[i + 29] = color[3];
-  node2.data.vertices[i + 30] = end[0] - perp[0] * halfLineWidth;
-  node2.data.vertices[i + 31] = end[1] - perp[1] * halfLineWidth;
-  node2.data.vertices[i + 32] = color[0];
-  node2.data.vertices[i + 33] = color[1];
-  node2.data.vertices[i + 34] = color[2];
-  node2.data.vertices[i + 35] = color[3];
-  node2.data.vertexCount += 6;
-  node2.data.dirty = true;
+  node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
+  node.data.vertices[i + 0] = start[0] + perp[0] * halfLineWidth;
+  node.data.vertices[i + 1] = start[1] + perp[1] * halfLineWidth;
+  node.data.vertices[i + 2] = color[0];
+  node.data.vertices[i + 3] = color[1];
+  node.data.vertices[i + 4] = color[2];
+  node.data.vertices[i + 5] = color[3];
+  node.data.vertices[i + 6] = start[0] - perp[0] * halfLineWidth;
+  node.data.vertices[i + 7] = start[1] - perp[1] * halfLineWidth;
+  node.data.vertices[i + 8] = color[0];
+  node.data.vertices[i + 9] = color[1];
+  node.data.vertices[i + 10] = color[2];
+  node.data.vertices[i + 11] = color[3];
+  node.data.vertices[i + 12] = end[0] + perp[0] * halfLineWidth;
+  node.data.vertices[i + 13] = end[1] + perp[1] * halfLineWidth;
+  node.data.vertices[i + 14] = color[0];
+  node.data.vertices[i + 15] = color[1];
+  node.data.vertices[i + 16] = color[2];
+  node.data.vertices[i + 17] = color[3];
+  node.data.vertices[i + 18] = start[0] - perp[0] * halfLineWidth;
+  node.data.vertices[i + 19] = start[1] - perp[1] * halfLineWidth;
+  node.data.vertices[i + 20] = color[0];
+  node.data.vertices[i + 21] = color[1];
+  node.data.vertices[i + 22] = color[2];
+  node.data.vertices[i + 23] = color[3];
+  node.data.vertices[i + 24] = end[0] + perp[0] * halfLineWidth;
+  node.data.vertices[i + 25] = end[1] + perp[1] * halfLineWidth;
+  node.data.vertices[i + 26] = color[0];
+  node.data.vertices[i + 27] = color[1];
+  node.data.vertices[i + 28] = color[2];
+  node.data.vertices[i + 29] = color[3];
+  node.data.vertices[i + 30] = end[0] - perp[0] * halfLineWidth;
+  node.data.vertices[i + 31] = end[1] - perp[1] * halfLineWidth;
+  node.data.vertices[i + 32] = color[0];
+  node.data.vertices[i + 33] = color[1];
+  node.data.vertices[i + 34] = color[2];
+  node.data.vertices[i + 35] = color[3];
+  node.data.vertexCount += 6;
+  node.data.dirty = true;
 }
 function handleArrayResize(ArrayType, arr, currentElementCount, elementsToAdd) {
   if (currentElementCount + elementsToAdd <= arr.length)
@@ -13064,22 +13064,22 @@ var primitives_default2 = {
   onInit: async function(cobalt, options = {}) {
     return init8(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw8(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw8(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy6(node2);
+  onDestroy: function(cobalt, node) {
+    destroy6(node);
   },
-  onResize: function(cobalt, node2) {
-    _writeMatricesBuffer(cobalt, node2);
+  onResize: function(cobalt, node) {
+    _writeMatricesBuffer(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
-    _writeMatricesBuffer(cobalt, node2);
+  onViewportPosition: function(cobalt, node) {
+    _writeMatricesBuffer(cobalt, node);
   },
   // optional
   customFunctions: public_api_default
 };
-async function init8(cobalt, node2) {
+async function init8(cobalt, node) {
   const { device } = cobalt;
   const vertices = new Float32Array(1024);
   const vertexBuffer = device.createBuffer({
@@ -13185,34 +13185,34 @@ async function init8(cobalt, node2) {
     transforms: [mat3.identity()]
   };
 }
-function draw8(cobalt, node2, commandEncoder) {
-  if (node2.data.vertexCount === 0)
+function draw8(cobalt, node, commandEncoder) {
+  if (node.data.vertexCount === 0)
     return;
   const { device } = cobalt;
-  if (node2.data.dirty) {
-    node2.data.dirty = false;
+  if (node.data.dirty) {
+    node.data.dirty = false;
     const stride = 6 * Float32Array.BYTES_PER_ELEMENT;
-    if (node2.data.vertices.buffer.byteLength > node2.data.vertexBuffer.size) {
-      node2.data.vertexBuffer.destroy();
-      node2.data.vertexBuffer = device.createBuffer({
-        size: node2.data.vertices.byteLength,
+    if (node.data.vertices.buffer.byteLength > node.data.vertexBuffer.size) {
+      node.data.vertexBuffer.destroy();
+      node.data.vertexBuffer = device.createBuffer({
+        size: node.data.vertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
       });
     }
-    let byteCount = node2.data.vertexCount * stride;
-    if (byteCount > node2.data.vertexBuffer.size) {
+    let byteCount = node.data.vertexCount * stride;
+    if (byteCount > node.data.vertexBuffer.size) {
       console.error("too many primitives, bailing");
       return;
     }
-    cobalt.device.queue.writeBuffer(node2.data.vertexBuffer, 0, node2.data.vertices.buffer, 0, byteCount);
+    cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer, 0, byteCount);
   }
-  const loadOp = node2.options.loadOp || "load";
+  const loadOp = node.options.loadOp || "load";
   const renderpass = commandEncoder.beginRenderPass({
     label: "primitives",
     colorAttachments: [
       // color
       {
-        view: node2.refs.color,
+        view: node.refs.color,
         //node.refs.color.data.view,
         clearValue: cobalt.clearValue,
         loadOp,
@@ -13220,28 +13220,28 @@ function draw8(cobalt, node2, commandEncoder) {
       }
     ]
   });
-  renderpass.setPipeline(node2.data.pipeline);
-  renderpass.setBindGroup(0, node2.data.bindGroup);
-  renderpass.setVertexBuffer(0, node2.data.vertexBuffer);
-  renderpass.draw(node2.data.vertexCount);
+  renderpass.setPipeline(node.data.pipeline);
+  renderpass.setBindGroup(0, node.data.bindGroup);
+  renderpass.setVertexBuffer(0, node.data.vertexBuffer);
+  renderpass.draw(node.data.vertexCount);
   renderpass.end();
 }
-function destroy6(node2) {
-  node2.data.vertexBuffer.destroy();
-  node2.data.vertexBuffer = null;
-  node2.data.uniformBuffer.destroy();
-  node2.data.uniformBuffer = null;
-  node2.data.transforms.length = 0;
+function destroy6(node) {
+  node.data.vertexBuffer.destroy();
+  node.data.vertexBuffer = null;
+  node.data.uniformBuffer.destroy();
+  node.data.uniformBuffer = null;
+  node.data.transforms.length = 0;
 }
-function _writeMatricesBuffer(cobalt, node2) {
+function _writeMatricesBuffer(cobalt, node) {
   const { device } = cobalt;
   const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom;
   const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom;
   const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
   vec3.set(-cobalt.viewport.position[0] - 1, -cobalt.viewport.position[1] - 1, 0, _tmpVec32);
   const view = mat4.translation(_tmpVec32);
-  device.queue.writeBuffer(node2.data.uniformBuffer, 0, view.buffer);
-  device.queue.writeBuffer(node2.data.uniformBuffer, 64, projection.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
 }
 
 // src/light/public-api.js
@@ -13251,16 +13251,16 @@ __export(public_api_exports2, {
   setLights: () => setLights,
   setOccluders: () => setOccluders
 });
-function setLights(cobalt, node2, lights) {
-  node2.data.lights = lights;
-  node2.data.lightsBufferNeedsUpdate = true;
+function setLights(cobalt, node, lights) {
+  node.data.lights = lights;
+  node.data.lightsBufferNeedsUpdate = true;
 }
-function setAmbientLight(cobalt, node2, color) {
-  node2.data.lightsRenderer.setAmbientLight(color);
+function setAmbientLight(cobalt, node, color) {
+  node.data.lightsRenderer.setAmbientLight(color);
 }
-function setOccluders(cobalt, node2, segmentsList) {
-  node2.data.lightsRenderer.setObstacles(segmentsList);
-  node2.data.lightsTextureNeedsUpdate = true;
+function setOccluders(cobalt, node, segmentsList) {
+  node.data.lightsRenderer.setObstacles(segmentsList);
+  node.data.lightsTextureNeedsUpdate = true;
 }
 
 // src/light/viewport.ts
@@ -14126,24 +14126,24 @@ var light_default = {
   onInit: async function(cobalt, options = {}) {
     return init9(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
-    draw9(cobalt, node2, webGpuCommandEncoder);
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw9(cobalt, node, webGpuCommandEncoder);
   },
-  onDestroy: function(cobalt, node2) {
-    destroy7(node2);
+  onDestroy: function(cobalt, node) {
+    destroy7(node);
   },
-  onResize: function(cobalt, node2) {
-    resize4(cobalt, node2);
+  onResize: function(cobalt, node) {
+    resize4(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
-    node2.data.viewport.setTopLeft(...cobalt.viewport.position);
+  onViewportPosition: function(cobalt, node) {
+    node.data.viewport.setTopLeft(...cobalt.viewport.position);
   },
   // optional
   customFunctions: {
     ...public_api_exports2
   }
 };
-async function init9(cobalt, node2) {
+async function init9(cobalt, node) {
   const { device } = cobalt;
   const MAX_LIGHT_COUNT = 256;
   const MAX_LIGHT_SIZE = 256;
@@ -14159,10 +14159,10 @@ async function init9(cobalt, node2) {
   const lightsRenderer = new LightsRenderer({
     device,
     albedo: {
-      view: node2.refs.in.data.view,
-      sampler: node2.refs.in.data.sampler
+      view: node.refs.in.data.view,
+      sampler: node.refs.in.data.sampler
     },
-    targetTexture: node2.refs.out.data.texture,
+    targetTexture: node.refs.out.data.texture,
     lightsBuffer,
     lightsTextureProperties: {
       resolutionPerLight: MAX_LIGHT_SIZE,
@@ -14181,44 +14181,44 @@ async function init9(cobalt, node2) {
     lights: []
   };
 }
-function draw9(cobalt, node2, commandEncoder) {
-  if (node2.data.lightsBufferNeedsUpdate) {
-    const lightsBuffer = node2.data.lightsBuffer;
-    lightsBuffer.setLights(node2.data.lights);
-    node2.data.lightsBufferNeedsUpdate = false;
-    node2.data.lightsTextureNeedsUpdate = true;
+function draw9(cobalt, node, commandEncoder) {
+  if (node.data.lightsBufferNeedsUpdate) {
+    const lightsBuffer = node.data.lightsBuffer;
+    lightsBuffer.setLights(node.data.lights);
+    node.data.lightsBufferNeedsUpdate = false;
+    node.data.lightsTextureNeedsUpdate = true;
   }
-  const lightsRenderer = node2.data.lightsRenderer;
-  if (node2.data.lightsTextureNeedsUpdate) {
+  const lightsRenderer = node.data.lightsRenderer;
+  if (node.data.lightsTextureNeedsUpdate) {
     lightsRenderer.computeLightsTexture(commandEncoder);
-    node2.data.lightsTextureNeedsUpdate = false;
+    node.data.lightsTextureNeedsUpdate = false;
   }
   const renderpass = commandEncoder.beginRenderPass({
     label: "light",
     colorAttachments: [
       {
-        view: node2.refs.out.data.view,
+        view: node.refs.out.data.view,
         clearValue: cobalt.clearValue,
         loadOp: "load",
         storeOp: "store"
       }
     ]
   });
-  node2.data.viewport.setZoom(cobalt.viewport.zoom);
-  const invertVpMatrix = node2.data.viewport.invertViewProjectionMatrix;
+  node.data.viewport.setZoom(cobalt.viewport.zoom);
+  const invertVpMatrix = node.data.viewport.invertViewProjectionMatrix;
   lightsRenderer.render(renderpass, invertVpMatrix);
   renderpass.end();
 }
-function destroy7(node2) {
-  node2.data.lightsBuffer.destroy();
-  node2.data.lightsRenderer.destroy();
+function destroy7(node) {
+  node.data.lightsBuffer.destroy();
+  node.data.lightsRenderer.destroy();
 }
-function resize4(cobalt, node2) {
-  node2.data.lightsRenderer.setAlbedo({
-    view: node2.refs.in.data.view,
-    sampler: node2.refs.in.data.sampler
+function resize4(cobalt, node) {
+  node.data.lightsRenderer.setAlbedo({
+    view: node.refs.in.data.view,
+    sampler: node.refs.in.data.sampler
   });
-  node2.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
+  node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
 }
 
 // src/tile/tile.wgsl
@@ -14234,16 +14234,16 @@ var atlas_default = {
   onInit: async function(cobalt, options = {}) {
     return init10(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
-  onDestroy: function(cobalt, node2) {
+  onDestroy: function(cobalt, node) {
     destroy8(data);
   },
-  onResize: function(cobalt, node2) {
-    _writeTileBuffer(cobalt, node2);
+  onResize: function(cobalt, node) {
+    _writeTileBuffer(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
-    _writeTileBuffer(cobalt, node2);
+  onViewportPosition: function(cobalt, node) {
+    _writeTileBuffer(cobalt, node);
   }
 };
 async function init10(cobalt, nodeData) {
@@ -14449,32 +14449,32 @@ var spritesheet_default = {
   onInit: async function(cobalt, options = {}) {
     return init11(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
-  onDestroy: function(cobalt, node2) {
-    destroy9(node2);
+  onDestroy: function(cobalt, node) {
+    destroy9(node);
   },
-  onResize: function(cobalt, node2) {
-    _writeSpriteBuffer(cobalt, node2);
+  onResize: function(cobalt, node) {
+    _writeSpriteBuffer(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
-    _writeSpriteBuffer(cobalt, node2);
+  onViewportPosition: function(cobalt, node) {
+    _writeSpriteBuffer(cobalt, node);
   }
 };
-async function init11(cobalt, node2) {
+async function init11(cobalt, node) {
   const { canvas, device } = cobalt;
   let spritesheet, colorTexture, emissiveTexture;
   const format = getPreferredFormat(cobalt);
   if (canvas) {
-    spritesheet = await fetchJson(node2.options.spriteSheetJsonUrl);
+    spritesheet = await fetchJson(node.options.spriteSheetJsonUrl);
     spritesheet = readSpriteSheet(spritesheet);
-    colorTexture = await createTextureFromUrl(cobalt, "sprite", node2.options.colorTextureUrl, format);
-    emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node2.options.emissiveTextureUrl, format);
+    colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, format);
+    emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, format);
     canvas.style.imageRendering = "pixelated";
   } else {
-    spritesheet = readSpriteSheet(node2.options.spriteSheetJson);
-    colorTexture = await createTextureFromBuffer(cobalt, "sprite", node2.options.colorTexture, format);
-    emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node2.options.emissiveTexture, format);
+    spritesheet = readSpriteSheet(node.options.spriteSheetJson);
+    colorTexture = await createTextureFromBuffer(cobalt, "sprite", node.options.colorTexture, format);
+    emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node.options.emissiveTexture, format);
   }
   const quads = createSpriteQuads(device, spritesheet);
   const uniformBuffer = device.createBuffer({
@@ -14567,25 +14567,25 @@ async function init11(cobalt, node2) {
     spritesheet
   };
 }
-function destroy9(node2) {
-  node2.data.quads.buffer.destroy();
-  node2.data.colorTexture.buffer.destroy();
-  node2.data.uniformBuffer.destroy();
-  node2.data.emissiveTexture.texture.destroy();
+function destroy9(node) {
+  node.data.quads.buffer.destroy();
+  node.data.colorTexture.buffer.destroy();
+  node.data.uniformBuffer.destroy();
+  node.data.emissiveTexture.texture.destroy();
 }
 async function fetchJson(url) {
   const raw = await fetch(url);
   return raw.json();
 }
-function _writeSpriteBuffer(cobalt, node2) {
+function _writeSpriteBuffer(cobalt, node) {
   const { device, viewport } = cobalt;
   const GAME_WIDTH = viewport.width / viewport.zoom;
   const GAME_HEIGHT = viewport.height / viewport.zoom;
   const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
   vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec33);
   const view = mat4.translation(_tmpVec33);
-  device.queue.writeBuffer(node2.data.uniformBuffer, 0, view.buffer);
-  device.queue.writeBuffer(node2.data.uniformBuffer, 64, projection.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
 }
 
 // src/fb-texture/fb-texture.js
@@ -14597,33 +14597,33 @@ var fb_texture_default = {
   onInit: async function(cobalt, options = {}) {
     return init12(cobalt, options);
   },
-  onRun: function(cobalt, node2, webGpuCommandEncoder) {
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
-  onDestroy: function(cobalt, node2) {
+  onDestroy: function(cobalt, node) {
     destroy10(data);
   },
-  onResize: function(cobalt, node2) {
-    resize5(cobalt, node2);
+  onResize: function(cobalt, node) {
+    resize5(cobalt, node);
   },
-  onViewportPosition: function(cobalt, node2) {
+  onViewportPosition: function(cobalt, node) {
   }
 };
-async function init12(cobalt, node2) {
+async function init12(cobalt, node) {
   const { device } = cobalt;
-  node2.options.format = node2.options.format === "PREFERRED_TEXTURE_FORMAT" ? getPreferredFormat(cobalt) : node2.options.format;
-  const { format, label, mip_count, usage, viewportScale } = node2.options;
+  node.options.format = node.options.format === "PREFERRED_TEXTURE_FORMAT" ? getPreferredFormat(cobalt) : node.options.format;
+  const { format, label, mip_count, usage, viewportScale } = node.options;
   return createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage);
 }
-function destroy10(node2) {
-  node2.data.texture.destroy();
+function destroy10(node) {
+  node.data.texture.destroy();
 }
-function resize5(cobalt, node2) {
+function resize5(cobalt, node) {
   const { device } = cobalt;
-  destroy10(node2);
+  destroy10(node);
   const { width, height } = cobalt.viewport;
-  const { options } = node2;
-  const scale = node2.options.viewportScale;
-  node2.data = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage);
+  const { options } = node;
+  const scale = node.options.viewportScale;
+  node.data = createTexture(device, options.label, width * scale, height * scale, options.mip_count, options.format, options.usage);
 }
 
 // src/cobalt.js
@@ -14700,7 +14700,7 @@ async function initNode(c, nodeData) {
   const nodeDef = c.nodeDefs[nodeData?.type];
   if (!nodeDef)
     throw new Error(`Can't initialize a new node missing a type.`);
-  const node2 = {
+  const node = {
     type: nodeData.type,
     refs: nodeData.refs || {},
     options: nodeData.options || {},
@@ -14708,21 +14708,21 @@ async function initNode(c, nodeData) {
     enabled: true
     // when disabled, the node won't be run
   };
-  for (const refName in node2.refs) {
-    if (node2.refs[refName] === "FRAME_TEXTURE_VIEW") {
-      c.defaultTextureViewRefs.push({ node: node2, refName });
-      node2.refs[refName] = getCurrentTextureView(c);
+  for (const refName in node.refs) {
+    if (node.refs[refName] === "FRAME_TEXTURE_VIEW") {
+      c.defaultTextureViewRefs.push({ node, refName });
+      node.refs[refName] = getCurrentTextureView(c);
     }
   }
-  node2.data = await nodeDef.onInit(c, node2);
+  node.data = await nodeDef.onInit(c, node);
   const customFunctions = nodeDef.customFunctions || {};
   for (const fnName in customFunctions) {
-    node2[fnName] = function(...args) {
-      return customFunctions[fnName](c, node2, ...args);
+    node[fnName] = function(...args) {
+      return customFunctions[fnName](c, node, ...args);
     };
   }
-  c.nodes.push(node2);
-  return node2;
+  c.nodes.push(node);
+  return node;
 }
 function draw10(c) {
   const { device, context } = c;
@@ -14730,11 +14730,11 @@ function draw10(c) {
   const v = getCurrentTextureView(c);
   for (const r of c.defaultTextureViewRefs)
     r.node.refs[r.refName] = v;
-  for (const node2 of c.nodes) {
-    if (!node2.enabled)
+  for (const node of c.nodes) {
+    if (!node.enabled)
       continue;
-    const nodeDef = c.nodeDefs[node2.type];
-    nodeDef.onRun(c, node2, commandEncoder);
+    const nodeDef = c.nodeDefs[node.type];
+    nodeDef.onRun(c, node, commandEncoder);
   }
   device.queue.submit([commandEncoder.finish()]);
   if (!c.canvas)

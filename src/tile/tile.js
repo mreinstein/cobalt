@@ -100,7 +100,7 @@ async function init (cobalt, nodeData) {
     let material
 
     const format = getPreferredFormat(cobalt)
-    
+
     // build the tile layer and add it to the cobalt data structure
     if (canvas) {
         // browser (canvas) path
@@ -108,7 +108,7 @@ async function init (cobalt, nodeData) {
     }
     else {
         // sdl + gpu path
-        material = await createTextureFromBuffer(cobalt, 'tile map', node.options.texture, format)
+        material = await createTextureFromBuffer(cobalt, 'tile map', nodeData.options.texture, format)
     }
 
     const dat = new Float32Array([ nodeData.options.scrollScale, nodeData.options.scrollScale ])
