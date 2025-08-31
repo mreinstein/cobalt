@@ -8222,10 +8222,16 @@ var tile_default = {
   // optional
   customFunctions: {
     setTexture: async function(cobalt, node, textureUrl) {
-      const { device } = cobalt;
+      const { canvas, device } = cobalt;
       destroy3(node);
-      node.options.textureUrl = textureUrl;
-      const material = await createTextureFromUrl(cobalt, "tile map", node.options.textureUrl);
+      const format = getPreferredFormat(cobalt);
+      let material;
+      if (canvas) {
+        node.options.textureUrl = textureUrl;
+        material = await createTextureFromUrl(cobalt, "tile map", node.options.textureUrl, format);
+      } else {
+        material = await createTextureFromBuffer(cobalt, "tile map", node.options.texture, format);
+      }
       const bindGroup = device.createBindGroup({
         layout: node.refs.tileAtlas.data.tileBindGroupLayout,
         entries: [
@@ -14235,8 +14241,14 @@ var atlas_default = {
   }
 };
 async function init10(cobalt, nodeData) {
-  const { device } = cobalt;
-  const atlasMaterial = await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl);
+  const { canvas, device } = cobalt;
+  const format = getPreferredFormat(cobalt);
+  let atlasMaterial;
+  if (canvas) {
+    atlasMaterial = await await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl, format);
+  } else {
+    atlasMaterial = await await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.texture, format);
+  }
   const uniformBuffer = device.createBuffer({
     size: 32,
     //32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)

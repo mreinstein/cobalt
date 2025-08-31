@@ -1,4 +1,6 @@
-import createTextureFromUrl from '../create-texture-from-url.js'
+import createTextureFromBuffer from '../create-texture-from-buffer.js'
+import createTextureFromUrl    from '../create-texture-from-url.js'
+import getPreferredFormat      from '../get-preferred-format.js'
 
 
 /*
@@ -47,11 +49,23 @@ export default {
     // optional
     customFunctions: {
         setTexture: async function (cobalt, node, textureUrl) {
-            const { device } = cobalt
+            const { canvas, device } = cobalt
 
             destroy(node)
-            node.options.textureUrl = textureUrl
-            const material = await createTextureFromUrl(cobalt, 'tile map', node.options.textureUrl)
+
+            const format = getPreferredFormat(cobalt)
+
+            let material
+
+            if (canvas) {
+                // browser (canvas) path
+                node.options.textureUrl = textureUrl
+                material = await createTextureFromUrl(cobalt, 'tile map', node.options.textureUrl, format)
+            }
+            else {
+                // sdl + gpu path
+                material = await createTextureFromBuffer(cobalt, 'tile map', node.options.texture, format)
+            }
 
             const bindGroup = device.createBindGroup({
                 layout: node.refs.tileAtlas.data.tileBindGroupLayout,

@@ -260,10 +260,3 @@ function destroy (node) {
     node.data.spriteIndices.clear()
     node.data.spriteIndices = null
 }
-
-
-async function fetchJson (url) {
-    const raw = await fetch(url)
-    return raw.json()
-}
-

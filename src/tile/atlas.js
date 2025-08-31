@@ -1,5 +1,7 @@
-import createTextureFromUrl from '../create-texture-from-url.js'
-import tileWGSL             from './tile.wgsl'
+import createTextureFromBuffer from '../create-texture-from-buffer.js'
+import createTextureFromUrl    from '../create-texture-from-url.js'
+import getPreferredFormat      from '../get-preferred-format.js'
+import tileWGSL                from './tile.wgsl'
 
 
 const _buf = new Float32Array(8) //(136)  // tile instance data stored in a UBO
@@ -37,9 +39,20 @@ export default {
 
 
 async function init (cobalt, nodeData) {
-    const { device } = cobalt
+    const { canvas, device } = cobalt
 
-    const atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl)
+    const format = getPreferredFormat(cobalt)
+
+    let atlasMaterial
+
+    if (canvas) {
+        // browser (canvas) path
+        atlasMaterial = await await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl, format)
+    }
+    else {
+        // sdl + gpu path
+        atlasMaterial = await await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.texture, format)
+    }
 
     const uniformBuffer = device.createBuffer({
         size: 32, //32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
