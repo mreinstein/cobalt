@@ -1,3 +1,6 @@
+# 0.6.2
+* use preferred canvas format in more places
+
 # 0.6.1
 * use preferred canvas format in more places
 

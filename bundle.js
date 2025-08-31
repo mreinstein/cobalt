@@ -14438,16 +14438,17 @@ var spritesheet_default = {
 async function init11(cobalt, node) {
   const { canvas, device } = cobalt;
   let spritesheet, colorTexture, emissiveTexture;
+  const format = getPreferredFormat(cobalt);
   if (canvas) {
     spritesheet = await fetchJson(node.options.spriteSheetJsonUrl);
     spritesheet = readSpriteSheet(spritesheet);
-    colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, "rgba8unorm");
-    emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, "rgba8unorm");
+    colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, format);
+    emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, format);
     canvas.style.imageRendering = "pixelated";
   } else {
     spritesheet = readSpriteSheet(node.options.spriteSheetJson);
-    colorTexture = await createTextureFromBuffer(cobalt, "sprite", node.options.colorTexture, "rgba8unorm");
-    emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node.options.emissiveTexture, "rgba8unorm");
+    colorTexture = await createTextureFromBuffer(cobalt, "sprite", node.options.colorTexture, format);
+    emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node.options.emissiveTexture, format);
   }
   const quads = createSpriteQuads(device, spritesheet);
   const uniformBuffer = device.createBuffer({

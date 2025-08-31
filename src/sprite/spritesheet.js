@@ -1,6 +1,7 @@
 import createSpriteQuads       from './create-sprite-quads.js'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
+import getPreferredFormat      from '../get-preferred-format.js'
 import readSpriteSheet         from './read-spritesheet.js'
 import spriteWGSL              from './sprite.wgsl'
 import round                   from 'round-half-up-symmetric'
@@ -50,13 +51,15 @@ async function init (cobalt, node) {
 
     let spritesheet, colorTexture, emissiveTexture
 
+    const format = getPreferredFormat(cobalt)
+
     if (canvas) {
         // browser (canvas) path
         spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
         spritesheet = readSpriteSheet(spritesheet)
 
-        colorTexture = await createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, 'rgba8unorm')
-        emissiveTexture = await createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, 'rgba8unorm')
+        colorTexture = await createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, format)
+        emissiveTexture = await createTextureFromUrl(cobalt, 'emissive sprite', node.options.emissiveTextureUrl, format)
         
         // for some reason this needs to be done _after_ creating the material, or the rendering will be blurry
         canvas.style.imageRendering = 'pixelated'
@@ -65,8 +68,8 @@ async function init (cobalt, node) {
         // sdl + gpu path
         spritesheet = readSpriteSheet(node.options.spriteSheetJson)
 
-        colorTexture = await createTextureFromBuffer(cobalt, 'sprite', node.options.colorTexture, 'rgba8unorm')
-        emissiveTexture = await createTextureFromBuffer(cobalt, 'emissive sprite', node.options.emissiveTexture, 'rgba8unorm')
+        colorTexture = await createTextureFromBuffer(cobalt, 'sprite', node.options.colorTexture, format)
+        emissiveTexture = await createTextureFromBuffer(cobalt, 'emissive sprite', node.options.emissiveTexture, format)
     }
     
     const quads = createSpriteQuads(device, spritesheet)
