@@ -117,6 +117,7 @@ function init (cobalt, node) {
 function draw (cobalt, node, commandEncoder) {
 
     const passEncoder = commandEncoder.beginRenderPass({
+      label: 'scene-composite',
       colorAttachments: [
         {
           view: node.refs.combined.data.view, //getCurrentTextureView(cobalt)

@@ -210,6 +210,7 @@ function draw (cobalt, node, commandEncoder) {
     const loadOp = node.options.loadOp || 'load'
 
     const renderpass = commandEncoder.beginRenderPass({
+        label: 'primitives',
         colorAttachments: [
             // color
             {

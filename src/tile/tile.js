@@ -139,6 +139,7 @@ function draw (cobalt, nodeData, commandEncoder) {
     const loadOp = nodeData.options.loadOp || 'load'
 
 	const renderpass = commandEncoder.beginRenderPass({
+        label: 'tile',
         colorAttachments: [
             {
                 view: nodeData.refs.hdr.data.view,

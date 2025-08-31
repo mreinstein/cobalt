@@ -7797,6 +7797,7 @@ function init2(cobalt, node) {
 }
 function draw2(cobalt, node, commandEncoder) {
   const passEncoder = commandEncoder.beginRenderPass({
+    label: "scene-composite",
     colorAttachments: [
       {
         view: node.refs.combined.data.view,
@@ -8133,6 +8134,7 @@ function draw3(cobalt, node, commandEncoder) {
     device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
   }
   const renderpass = commandEncoder.beginRenderPass({
+    label: "sprite",
     colorAttachments: [
       // color
       {
@@ -8292,6 +8294,7 @@ function draw4(cobalt, nodeData, commandEncoder) {
   const { device } = cobalt;
   const loadOp = nodeData.options.loadOp || "load";
   const renderpass = commandEncoder.beginRenderPass({
+    label: "tile",
     colorAttachments: [
       {
         view: nodeData.refs.hdr.data.view,
@@ -12283,6 +12286,7 @@ function draw5(cobalt, node, commandEncoder) {
   node.data.trianglesBuffer.update();
   node.data.displacementTexture.update(commandEncoder);
   const renderpass = commandEncoder.beginRenderPass({
+    label: "displacement",
     colorAttachments: [
       {
         view: node.refs.out,
@@ -12528,6 +12532,7 @@ function draw6(cobalt, node, commandEncoder) {
     device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
   }
   const renderpass = commandEncoder.beginRenderPass({
+    label: "overlay",
     colorAttachments: [
       // color
       {
@@ -12700,6 +12705,7 @@ async function init7(cobalt, node) {
 function draw7(cobalt, node, commandEncoder) {
   const { device } = cobalt;
   const renderpass = commandEncoder.beginRenderPass({
+    label: "fb-blit",
     colorAttachments: [
       {
         view: node.refs.out,
@@ -13190,6 +13196,7 @@ function draw8(cobalt, node, commandEncoder) {
   }
   const loadOp = node.options.loadOp || "load";
   const renderpass = commandEncoder.beginRenderPass({
+    label: "primitives",
     colorAttachments: [
       // color
       {
@@ -14175,6 +14182,7 @@ function draw9(cobalt, node, commandEncoder) {
     node.data.lightsTextureNeedsUpdate = false;
   }
   const renderpass = commandEncoder.beginRenderPass({
+    label: "light",
     colorAttachments: [
       {
         view: node.refs.out.data.view,

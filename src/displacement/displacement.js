@@ -132,6 +132,7 @@ function draw(cobalt, node, commandEncoder) {
     node.data.displacementTexture.update(commandEncoder);
 
     const renderpass = commandEncoder.beginRenderPass({
+        label: 'displacement',
         colorAttachments: [
             {
                 view: node.refs.out,

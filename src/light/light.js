@@ -118,6 +118,7 @@ function draw(cobalt, node, commandEncoder) {
     }
 
     const renderpass = commandEncoder.beginRenderPass({
+        label: 'light',
         colorAttachments: [
             {
                 view: node.refs.out.data.view,

@@ -122,6 +122,7 @@ function draw (cobalt, node, commandEncoder) {
     const { device } = cobalt
     
     const renderpass = commandEncoder.beginRenderPass({
+        label: 'fb-blit',
         colorAttachments: [
             {
                 view: node.refs.out,

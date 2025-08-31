@@ -166,6 +166,7 @@ function draw (cobalt, node, commandEncoder) {
     }
 
     const renderpass = commandEncoder.beginRenderPass({
+        label: 'sprite',
         colorAttachments: [
             // color
             {
