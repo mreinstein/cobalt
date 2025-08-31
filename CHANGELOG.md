@@ -1,6 +1,9 @@
+# 0.6.4
+* add parameters for @kmamal/gpu v0.2.1
+
 # 0.6.3
 * add labels to all renderpass nodes
-:
+
 # 0.6.2
 * use preferred canvas format in more places
 
