@@ -1,18 +1,27 @@
+# 0.6.5
+* add sdl + webgpu support for tile node
+
+
 # 0.6.4
 * add parameters for @kmamal/gpu v0.2.1
+
 
 # 0.6.3
 * add labels to all renderpass nodes
 
+
 # 0.6.2
 * use preferred canvas format in more places
+
 
 # 0.6.1
 * use preferred canvas format in more places
 
+
 # 0.6.0
 * use preferred canvas format in various places instead of hardcoding to bgra8unorm, which doesn't seem to work on linux
   because that defaults to bgra8unorm-srgb
+
 
 # 0.5.1
 * add labels to all render pipelines
