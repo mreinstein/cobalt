@@ -31,9 +31,11 @@ export async function init (ctx, viewportWidth, viewportHeight) {
         // this is an sdl/gpu context
         gpu = ctx.gpu
         
-        const instance = gpu.create([ 'verbose=1' ])
+        const instance = gpu.create([ 'verbose=1', 'enable-dawn-features=allow_unsafe_apis' ])
         const adapter = await instance.requestAdapter()
-        device = await adapter.requestDevice()
+        device = await adapter.requestDevice({
+            requiredFeatures: [ 'texture-component-swizzle' ],
+        })
         context = gpu.renderGPUDeviceToWindow({ device, window: ctx.sdlWindow })
 
         // gpu module doesn't expose these globals to node namespace so manually wire them up

@@ -14613,9 +14613,11 @@ async function init13(ctx, viewportWidth, viewportHeight) {
   let device, gpu, context, canvas;
   if (ctx.sdlWindow && ctx.gpu) {
     gpu = ctx.gpu;
-    const instance = gpu.create(["verbose=1"]);
+    const instance = gpu.create(["verbose=1", "enable-dawn-features=allow_unsafe_apis"]);
     const adapter = await instance.requestAdapter();
-    device = await adapter.requestDevice();
+    device = await adapter.requestDevice({
+      requiredFeatures: ["texture-component-swizzle"]
+    });
     context = gpu.renderGPUDeviceToWindow({ device, window: ctx.sdlWindow });
     global.GPUBufferUsage = gpu.GPUBufferUsage;
     global.GPUShaderStage = gpu.GPUShaderStage;
