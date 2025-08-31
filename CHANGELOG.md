@@ -1,3 +1,7 @@
+# 0.6.6
+* add sdl + webgpu support for tile node
+
+
 # 0.6.5
 * add sdl + webgpu support for tile node
 

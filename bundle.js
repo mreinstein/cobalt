@@ -14247,7 +14247,7 @@ async function init10(cobalt, nodeData) {
   if (canvas) {
     atlasMaterial = await await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl, format);
   } else {
-    atlasMaterial = await await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.texture, format);
+    atlasMaterial = await await createTextureFromBuffer(cobalt, "tile atlas", nodeData.options.texture, format);
   }
   const uniformBuffer = device.createBuffer({
     size: 32,
