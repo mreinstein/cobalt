@@ -1,3 +1,4 @@
+import getPreferredFormat from "../get-preferred-format.js";
 import * as publicAPI from './public-api.js'
 import { Viewport } from "./viewport";
 import { LightsRenderer } from './lights-renderer.js';
@@ -83,6 +84,7 @@ async function init(cobalt, node) {
             maxLightSize: MAX_LIGHT_SIZE,
             antialiased: false,
             filtering: "nearest",
+            textureFormat: getPreferredFormat(cobalt),
         },
     });
 

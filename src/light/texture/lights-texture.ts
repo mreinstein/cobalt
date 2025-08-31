@@ -45,7 +45,7 @@ class LightsTexture {
             height: gridSize.y * lightsTextureProperties.resolutionPerLight,
         };
 
-        const format = "rgba8unorm";
+        const format = lightsTextureProperties.textureFormat;
         this.texture = device.createTexture({
             label: "LightsTextureMask texture",
             size: [lightTextureSize.width, lightTextureSize.height],

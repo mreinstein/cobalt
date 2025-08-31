@@ -7269,10 +7269,19 @@ function createTexture(device, label, width, height, mip_count, format, usage) {
   };
 }
 
+// src/get-preferred-format.js
+function getPreferredFormat(cobalt) {
+  if (cobalt.canvas)
+    return navigator.gpu?.getPreferredCanvasFormat();
+  else
+    return cobalt.context.getPreferredFormat();
+}
+
 // src/create-texture-from-url.js
-async function createTextureFromUrl(c, label, url, format = "rgba8unorm") {
+async function createTextureFromUrl(c, label, url, format) {
   const response = await fetch(url);
   const blob = await response.blob();
+  format = format || getPreferredFormat(c);
   const imageData = await createImageBitmap(
     blob
     /*, { premultiplyAlpha: 'none', resizeQuality: 'pixelated' }*/
@@ -7303,7 +7312,8 @@ async function createTextureFromUrl(c, label, url, format = "rgba8unorm") {
 }
 
 // src/create-texture-from-buffer.js
-function createTextureFromBuffer(c, label, image, format = "rgba8unorm") {
+function createTextureFromBuffer(c, label, image, format) {
+  format = format || getPreferredFormat(c);
   const usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT;
   const mip_count = 1;
   const t = createTexture(c.device, label, image.width, image.height, mip_count, format, usage);
@@ -7685,14 +7695,6 @@ function destroy(bloom_mat) {
   for (const t of bloom_mat.bind_groups_textures)
     t.texture.destroy();
   bloom_mat.bind_groups_textures.length = 0;
-}
-
-// src/get-preferred-format.js
-function getPreferredFormat(cobalt) {
-  if (cobalt.canvas)
-    return navigator.gpu?.getPreferredCanvasFormat();
-  else
-    return cobalt.context.getPreferredFormat();
 }
 
 // src/scene-composite/scene-composite.wgsl
@@ -13802,7 +13804,7 @@ var LightsTexture = class {
       width: gridSize.x * lightsTextureProperties.resolutionPerLight,
       height: gridSize.y * lightsTextureProperties.resolutionPerLight
     };
-    const format = "rgba8unorm";
+    const format = lightsTextureProperties.textureFormat;
     this.texture = device.createTexture({
       label: "LightsTextureMask texture",
       size: [lightTextureSize.width, lightTextureSize.height],
@@ -14147,7 +14149,8 @@ async function init9(cobalt, node) {
       resolutionPerLight: MAX_LIGHT_SIZE,
       maxLightSize: MAX_LIGHT_SIZE,
       antialiased: false,
-      filtering: "nearest"
+      filtering: "nearest",
+      textureFormat: getPreferredFormat(cobalt)
     }
   });
   return {

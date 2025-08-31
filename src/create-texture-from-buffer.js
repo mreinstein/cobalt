@@ -1,7 +1,10 @@
-import createTexture from './create-texture.js'
+import createTexture      from './create-texture.js'
+import getPreferredFormat from './get-preferred-format.js'
 
 
-export default function createTextureFromBuffer (c, label, image, format='rgba8unorm') {
+export default function createTextureFromBuffer (c, label, image, format) {
+
+    format = format || getPreferredFormat(c)
 
     const usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
     const mip_count = 1
