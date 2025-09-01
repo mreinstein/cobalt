@@ -8221,16 +8221,16 @@ var tile_default = {
   },
   // optional
   customFunctions: {
-    setTexture: async function(cobalt, node, textureUrl) {
+    setTexture: async function(cobalt, node, texture) {
       const { canvas, device } = cobalt;
       destroy3(node);
       const format = getPreferredFormat(cobalt);
       let material;
       if (canvas) {
         node.options.textureUrl = textureUrl;
-        material = await createTextureFromUrl(cobalt, "tile map", node.options.textureUrl, format);
+        material = await createTextureFromUrl(cobalt, "tile map", texture, format);
       } else {
-        material = await createTextureFromBuffer(cobalt, "tile map", node.options.texture, format);
+        material = await createTextureFromBuffer(cobalt, "tile map", texture, format);
       }
       const bindGroup = device.createBindGroup({
         layout: node.refs.tileAtlas.data.tileBindGroupLayout,
@@ -14251,9 +14251,9 @@ async function init10(cobalt, nodeData) {
   const format = getPreferredFormat(cobalt);
   let atlasMaterial;
   if (canvas) {
-    atlasMaterial = await await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl, format);
+    atlasMaterial = await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl, format);
   } else {
-    atlasMaterial = await await createTextureFromBuffer(cobalt, "tile atlas", nodeData.options.texture, format);
+    atlasMaterial = await createTextureFromBuffer(cobalt, "tile atlas", nodeData.options.texture, format);
   }
   const uniformBuffer = device.createBuffer({
     size: 32,

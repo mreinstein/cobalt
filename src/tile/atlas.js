@@ -47,11 +47,11 @@ async function init (cobalt, nodeData) {
 
     if (canvas) {
         // browser (canvas) path
-        atlasMaterial = await await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl, format)
+        atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl, format)
     }
     else {
         // sdl + gpu path
-        atlasMaterial = await await createTextureFromBuffer(cobalt, 'tile atlas', nodeData.options.texture, format)
+        atlasMaterial = await createTextureFromBuffer(cobalt, 'tile atlas', nodeData.options.texture, format)
     }
 
     const uniformBuffer = device.createBuffer({

@@ -1,3 +1,7 @@
+# 0.6.9
+* bugfix in tile atlas setTexture function
+
+:
 # 0.6.8 - 0.6.5
 * add sdl + webgpu support for tile node
 

@@ -48,7 +48,7 @@ export default {
 
     // optional
     customFunctions: {
-        setTexture: async function (cobalt, node, textureUrl) {
+        setTexture: async function (cobalt, node, texture) {
             const { canvas, device } = cobalt
 
             destroy(node)
@@ -60,11 +60,11 @@ export default {
             if (canvas) {
                 // browser (canvas) path
                 node.options.textureUrl = textureUrl
-                material = await createTextureFromUrl(cobalt, 'tile map', node.options.textureUrl, format)
+                material = await createTextureFromUrl(cobalt, 'tile map', texture, format)
             }
             else {
                 // sdl + gpu path
-                material = await createTextureFromBuffer(cobalt, 'tile map', node.options.texture, format)
+                material = await createTextureFromBuffer(cobalt, 'tile map', texture, format)
             }
 
             const bindGroup = device.createBindGroup({
