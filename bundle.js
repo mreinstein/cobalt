@@ -8227,7 +8227,7 @@ var tile_default = {
       const format = getPreferredFormat(cobalt);
       let material;
       if (canvas) {
-        node.options.textureUrl = textureUrl;
+        node.options.textureUrl = texture;
         material = await createTextureFromUrl(cobalt, "tile map", texture, format);
       } else {
         material = await createTextureFromBuffer(cobalt, "tile map", texture, format);

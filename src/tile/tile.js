@@ -59,7 +59,7 @@ export default {
 
             if (canvas) {
                 // browser (canvas) path
-                node.options.textureUrl = textureUrl
+                node.options.textureUrl = texture
                 material = await createTextureFromUrl(cobalt, 'tile map', texture, format)
             }
             else {
