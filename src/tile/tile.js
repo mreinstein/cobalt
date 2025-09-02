@@ -1,6 +1,5 @@
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
-import getPreferredFormat      from '../get-preferred-format.js'
 
 
 /*
@@ -53,7 +52,7 @@ export default {
 
             destroy(node)
 
-            const format = getPreferredFormat(cobalt)
+            const format = nodeData.options.format || 'rgba8unorm'
 
             let material
 
@@ -99,7 +98,7 @@ async function init (cobalt, nodeData) {
 
     let material
 
-    const format = getPreferredFormat(cobalt)
+    const format = nodeData.options.format || 'rgba8unorm'
 
     // build the tile layer and add it to the cobalt data structure
     if (canvas) {

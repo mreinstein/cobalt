@@ -1,6 +1,5 @@
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
-import getPreferredFormat      from '../get-preferred-format.js'
 import tileWGSL                from './tile.wgsl'
 
 
@@ -41,7 +40,7 @@ export default {
 async function init (cobalt, nodeData) {
     const { canvas, device } = cobalt
 
-    const format = getPreferredFormat(cobalt)
+    const format = nodeData.options.format || 'rgba8unorm'
 
     let atlasMaterial
 

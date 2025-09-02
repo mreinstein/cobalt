@@ -1,3 +1,6 @@
+# 0.6.11
+* make tile, tileAtlas, spriteSheet nodes default to input textures with rgba8unorm
+
 # 0.6.10
 * bugfix in tile node setTexture function
 

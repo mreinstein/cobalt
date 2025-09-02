@@ -1,7 +1,6 @@
 import createSpriteQuads       from './create-sprite-quads.js'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
-import getPreferredFormat      from '../get-preferred-format.js'
 import readSpriteSheet         from './read-spritesheet.js'
 import spriteWGSL              from './sprite.wgsl'
 import round                   from 'round-half-up-symmetric'
@@ -51,7 +50,7 @@ async function init (cobalt, node) {
 
     let spritesheet, colorTexture, emissiveTexture
 
-    const format = getPreferredFormat(cobalt)
+    const format = node.options.format || 'rgba8unorm'
 
     if (canvas) {
         // browser (canvas) path

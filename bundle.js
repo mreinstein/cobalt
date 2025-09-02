@@ -7370,7 +7370,7 @@ var bloom_default2 = {
   onViewportPosition: function(cobalt, node) {
   }
 };
-function init(cobalt, nodeData) {
+function init(cobalt, nodeData2) {
   const { device } = cobalt;
   const viewportWidth = cobalt.viewport.width;
   const viewportHeight = cobalt.viewport.height;
@@ -7451,7 +7451,7 @@ function init(cobalt, nodeData) {
     "rgba16float",
     GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
   ));
-  bloom_mat.bind_groups_textures.push(nodeData.refs.bloom.data);
+  bloom_mat.bind_groups_textures.push(nodeData2.refs.bloom.data);
   const compute_pipeline_layout = device.createPipelineLayout({
     bindGroupLayouts: bloom_mat.bind_group_layout
   });
@@ -7464,7 +7464,7 @@ function init(cobalt, nodeData) {
       entryPoint: "cs_main"
     }
   });
-  set_all_bind_group(cobalt, bloom_mat, nodeData);
+  set_all_bind_group(cobalt, bloom_mat, nodeData2);
   bloom_mat.compute_pipeline = compute_pipeline;
   return bloom_mat;
 }
@@ -7666,9 +7666,9 @@ function get_mip_size(current_mip, texture) {
   }
   return { width, height, depthOrArrayLayers: 1 };
 }
-function resize(cobalt, nodeData) {
+function resize(cobalt, nodeData2) {
   const { device } = cobalt;
-  const bloom_mat = nodeData.data;
+  const bloom_mat = nodeData2.data;
   destroy(bloom_mat);
   bloom_mat.bind_groups_textures.push(createTexture(
     device,
@@ -7688,8 +7688,8 @@ function resize(cobalt, nodeData) {
     "rgba16float",
     GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING
   ));
-  bloom_mat.bind_groups_textures.push(nodeData.refs.bloom.data);
-  set_all_bind_group(cobalt, bloom_mat, nodeData);
+  bloom_mat.bind_groups_textures.push(nodeData2.refs.bloom.data);
+  set_all_bind_group(cobalt, bloom_mat, nodeData2);
 }
 function destroy(bloom_mat) {
   for (const t of bloom_mat.bind_groups_textures)
@@ -8052,7 +8052,7 @@ var sprite_default = {
     ...public_api_exports
   }
 };
-async function init3(cobalt, nodeData) {
+async function init3(cobalt, nodeData2) {
   const { device } = cobalt;
   const MAX_SPRITE_COUNT = 16192;
   const numInstances = MAX_SPRITE_COUNT;
@@ -8070,9 +8070,9 @@ async function init3(cobalt, nodeData) {
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
     //mappedAtCreation: true,
   });
-  const spritesheet = nodeData.refs.spritesheet.data;
+  const spritesheet = nodeData2.refs.spritesheet.data;
   const bindGroup = device.createBindGroup({
-    layout: nodeData.refs.spritesheet.data.bindGroupLayout,
+    layout: nodeData2.refs.spritesheet.data.bindGroupLayout,
     entries: [
       {
         binding: 0,
@@ -8224,7 +8224,7 @@ var tile_default = {
     setTexture: async function(cobalt, node, texture) {
       const { canvas, device } = cobalt;
       destroy3(node);
-      const format = getPreferredFormat(cobalt);
+      const format = nodeData.options.format || "rgba8unorm";
       let material;
       if (canvas) {
         node.options.textureUrl = texture;
@@ -8256,16 +8256,16 @@ var tile_default = {
     }
   }
 };
-async function init4(cobalt, nodeData) {
+async function init4(cobalt, nodeData2) {
   const { canvas, device } = cobalt;
   let material;
-  const format = getPreferredFormat(cobalt);
+  const format = nodeData2.options.format || "rgba8unorm";
   if (canvas) {
-    material = await createTextureFromUrl(cobalt, "tile map", nodeData.options.textureUrl, format);
+    material = await createTextureFromUrl(cobalt, "tile map", nodeData2.options.textureUrl, format);
   } else {
-    material = await createTextureFromBuffer(cobalt, "tile map", nodeData.options.texture, format);
+    material = await createTextureFromBuffer(cobalt, "tile map", nodeData2.options.texture, format);
   }
-  const dat = new Float32Array([nodeData.options.scrollScale, nodeData.options.scrollScale]);
+  const dat = new Float32Array([nodeData2.options.scrollScale, nodeData2.options.scrollScale]);
   const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
   const descriptor = {
     size: dat.byteLength,
@@ -8277,7 +8277,7 @@ async function init4(cobalt, nodeData) {
   new Float32Array(uniformBuffer.getMappedRange()).set(dat);
   uniformBuffer.unmap();
   const bindGroup = device.createBindGroup({
-    layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
+    layout: nodeData2.refs.tileAtlas.data.tileBindGroupLayout,
     entries: [
       {
         binding: 0,
@@ -8299,33 +8299,33 @@ async function init4(cobalt, nodeData) {
     bindGroup,
     material,
     uniformBuffer,
-    scrollScale: nodeData.options.scrollScale
+    scrollScale: nodeData2.options.scrollScale
   };
 }
-function draw4(cobalt, nodeData, commandEncoder) {
+function draw4(cobalt, nodeData2, commandEncoder) {
   const { device } = cobalt;
-  const loadOp = nodeData.options.loadOp || "load";
+  const loadOp = nodeData2.options.loadOp || "load";
   const renderpass = commandEncoder.beginRenderPass({
     label: "tile",
     colorAttachments: [
       {
-        view: nodeData.refs.hdr.data.view,
+        view: nodeData2.refs.hdr.data.view,
         clearValue: cobalt.clearValue,
         loadOp,
         storeOp: "store"
       }
     ]
   });
-  const tileAtlas = nodeData.refs.tileAtlas.data;
+  const tileAtlas = nodeData2.refs.tileAtlas.data;
   renderpass.setPipeline(tileAtlas.pipeline);
-  renderpass.setBindGroup(0, nodeData.data.bindGroup);
+  renderpass.setBindGroup(0, nodeData2.data.bindGroup);
   renderpass.setBindGroup(1, tileAtlas.atlasBindGroup);
   renderpass.draw(3);
   renderpass.end();
 }
-function destroy3(nodeData) {
-  nodeData.data.material.texture.destroy();
-  nodeData.data.material.texture = void 0;
+function destroy3(nodeData2) {
+  nodeData2.data.material.texture.destroy();
+  nodeData2.data.material.texture = void 0;
 }
 
 // src/displacement/triangles-buffer.ts
@@ -12395,7 +12395,7 @@ var overlay_default2 = {
   // optional
   customFunctions: { ...public_api_exports }
 };
-async function init6(cobalt, nodeData) {
+async function init6(cobalt, nodeData2) {
   const { device } = cobalt;
   const MAX_SPRITE_COUNT = 16192;
   const numInstances = MAX_SPRITE_COUNT;
@@ -12454,11 +12454,11 @@ async function init6(cobalt, nodeData) {
       },
       {
         binding: 1,
-        resource: nodeData.refs.spritesheet.data.colorTexture.view
+        resource: nodeData2.refs.spritesheet.data.colorTexture.view
       },
       {
         binding: 2,
-        resource: nodeData.refs.spritesheet.data.colorTexture.sampler
+        resource: nodeData2.refs.spritesheet.data.colorTexture.sampler
       },
       {
         binding: 3,
@@ -12478,7 +12478,7 @@ async function init6(cobalt, nodeData) {
         code: overlay_default
       }),
       entryPoint: "vs_main",
-      buffers: [nodeData.refs.spritesheet.data.quads.bufferLayout]
+      buffers: [nodeData2.refs.spritesheet.data.quads.bufferLayout]
     },
     fragment: {
       module: device.createShaderModule({
@@ -12591,26 +12591,26 @@ function _rebuildSpriteDrawCalls2(renderPass) {
     renderPass.instancedDrawCallCount++;
   }
 }
-function _writeOverlayBuffer(cobalt, nodeData) {
+function _writeOverlayBuffer(cobalt, nodeData2) {
   const zoom = 1;
   const GAME_WIDTH = Math.round(cobalt.viewport.width / zoom);
   const GAME_HEIGHT = Math.round(cobalt.viewport.height / zoom);
   const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
   vec3.set(0, 0, 0, _tmpVec3);
   const view = mat4.translation(_tmpVec3);
-  cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 0, view.buffer);
-  cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 64, projection.buffer);
+  cobalt.device.queue.writeBuffer(nodeData2.data.uniformBuffer, 0, view.buffer);
+  cobalt.device.queue.writeBuffer(nodeData2.data.uniformBuffer, 64, projection.buffer);
 }
-function destroy5(nodeData) {
-  nodeData.data.instancedDrawCalls = null;
-  nodeData.data.bindGroup = null;
-  nodeData.data.spriteBuffer.destroy();
-  nodeData.data.spriteBuffer = null;
-  nodeData.data.uniformBuffer.destroy();
-  nodeData.data.uniformBuffer = null;
-  nodeData.data.spriteData = null;
-  nodeData.data.spriteIndices.clear();
-  nodeData.data.spriteIndices = null;
+function destroy5(nodeData2) {
+  nodeData2.data.instancedDrawCalls = null;
+  nodeData2.data.bindGroup = null;
+  nodeData2.data.spriteBuffer.destroy();
+  nodeData2.data.spriteBuffer = null;
+  nodeData2.data.uniformBuffer.destroy();
+  nodeData2.data.uniformBuffer = null;
+  nodeData2.data.spriteData = null;
+  nodeData2.data.spriteIndices.clear();
+  nodeData2.data.spriteIndices = null;
 }
 
 // src/fb-blit/fb-blit.wgsl
@@ -14246,14 +14246,14 @@ var atlas_default = {
     _writeTileBuffer(cobalt, node);
   }
 };
-async function init10(cobalt, nodeData) {
+async function init10(cobalt, nodeData2) {
   const { canvas, device } = cobalt;
-  const format = getPreferredFormat(cobalt);
+  const format = nodeData2.options.format || "rgba8unorm";
   let atlasMaterial;
   if (canvas) {
-    atlasMaterial = await createTextureFromUrl(cobalt, "tile atlas", nodeData.options.textureUrl, format);
+    atlasMaterial = await createTextureFromUrl(cobalt, "tile atlas", nodeData2.options.textureUrl, format);
   } else {
-    atlasMaterial = await createTextureFromBuffer(cobalt, "tile atlas", nodeData.options.texture, format);
+    atlasMaterial = await createTextureFromBuffer(cobalt, "tile atlas", nodeData2.options.texture, format);
   }
   const uniformBuffer = device.createBuffer({
     size: 32,
@@ -14362,18 +14362,18 @@ async function init10(cobalt, nodeData) {
     // tile atlas texture, transform UBO
     atlasMaterial,
     tileBindGroupLayout,
-    tileSize: nodeData.options.tileSize,
-    tileScale: nodeData.options.tileScale
+    tileSize: nodeData2.options.tileSize,
+    tileScale: nodeData2.options.tileScale
   };
 }
 function destroy8(data2) {
   data2.atlasMaterial.texture.destroy();
   data2.atlasMaterial.texture = void 0;
 }
-function _writeTileBuffer(c, nodeData) {
+function _writeTileBuffer(c, nodeData2) {
   _buf[0] = c.viewport.position[0];
   _buf[1] = c.viewport.position[1];
-  const tile = nodeData.data;
+  const tile = nodeData2.data;
   const { tileScale, tileSize } = tile;
   const GAME_WIDTH = c.viewport.width / c.viewport.zoom;
   const GAME_HEIGHT = c.viewport.height / c.viewport.zoom;
@@ -14464,7 +14464,7 @@ var spritesheet_default = {
 async function init11(cobalt, node) {
   const { canvas, device } = cobalt;
   let spritesheet, colorTexture, emissiveTexture;
-  const format = getPreferredFormat(cobalt);
+  const format = node.options.format || "rgba8unorm";
   if (canvas) {
     spritesheet = await fetchJson(node.options.spriteSheetJsonUrl);
     spritesheet = readSpriteSheet(spritesheet);
@@ -14696,14 +14696,14 @@ function defineNode(c, nodeDefinition) {
     throw new Error(`Can't define a new node missing a type.`);
   c.nodeDefs[nodeDefinition.type] = nodeDefinition;
 }
-async function initNode(c, nodeData) {
-  const nodeDef = c.nodeDefs[nodeData?.type];
+async function initNode(c, nodeData2) {
+  const nodeDef = c.nodeDefs[nodeData2?.type];
   if (!nodeDef)
     throw new Error(`Can't initialize a new node missing a type.`);
   const node = {
-    type: nodeData.type,
-    refs: nodeData.refs || {},
-    options: nodeData.options || {},
+    type: nodeData2.type,
+    refs: nodeData2.refs || {},
+    options: nodeData2.options || {},
     data: {},
     enabled: true
     // when disabled, the node won't be run
