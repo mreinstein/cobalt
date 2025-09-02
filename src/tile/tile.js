@@ -52,7 +52,7 @@ export default {
 
             destroy(node)
 
-            const format = nodeData.options.format || 'rgba8unorm'
+            const format = node.options.format || 'rgba8unorm'
 
             let material
 
