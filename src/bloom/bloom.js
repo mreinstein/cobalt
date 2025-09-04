@@ -58,6 +58,7 @@ function init (cobalt, nodeData) {
         bind_group: [ ],
         bind_group_layout: [ ],
         bind_groups_textures: [ ],
+        buffers: [ ],  // buffers that we should destroy when cleaning up
     }
 
     const layout = device.createBindGroupLayout({
@@ -200,6 +201,8 @@ function set_all_bind_group (cobalt, bloom_mat, node) {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
+    bloom_mat.buffers.push(params_buf)
+
     new Float32Array(params_buf.getMappedRange()).set(dat)
 
     params_buf.unmap()
@@ -301,6 +304,8 @@ function create_bloom_bind_group (device, bloom_mat, output_image, input_image, 
         mappedAtCreation: true,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
+
+    bloom_mat.buffers.push(lod_buf)
 
     new Uint32Array(lod_buf.getMappedRange()).set(dat2)
 
@@ -463,5 +468,10 @@ function destroy (bloom_mat) {
     for (const t of bloom_mat.bind_groups_textures)
         t.texture.destroy()
     
+    for (const b of bloom_mat.buffers)
+        b.destroy()
+
+    bloom_mat.buffers.length = 0
+
     bloom_mat.bind_groups_textures.length = 0
 }

@@ -1,3 +1,7 @@
+# 0.6.13
+* cleanup device buffers in bloom 
+
+
 # 0.6.12
 * fix mistype in tile node
 
