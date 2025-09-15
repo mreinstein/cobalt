@@ -1,3 +1,6 @@
+# 0.6.14
+* re-enable viewport position rounding 
+
 # 0.6.13
 * cleanup device buffers in bloom 
 
