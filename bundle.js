@@ -13058,6 +13058,13 @@ function perpendicularComponent(inp) {
   return [-inp[1], inp[0]];
 }
 
+// node_modules/round-half-up-symmetric/index.js
+function round(value) {
+  if (value >= 0)
+    return Math.round(value);
+  return value % 0.5 === 0 ? Math.floor(value) : Math.round(value);
+}
+
 // src/primitives/primitives.js
 var _tmpVec32 = vec3.create(0, 0, 0);
 var primitives_default2 = {
@@ -14589,7 +14596,7 @@ function _writeSpriteBuffer(cobalt, node) {
   const GAME_WIDTH = viewport.width / viewport.zoom;
   const GAME_HEIGHT = viewport.height / viewport.zoom;
   const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
-  vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec33);
+  vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec33);
   const view = mat4.translation(_tmpVec33);
   device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
   device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);

@@ -205,8 +205,8 @@ function _writeSpriteBuffer (cobalt, node) {
     // cobalt.setViewportPosition(...)
     //
     // set 3d camera position
-    //vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
-    vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
+    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
+    //vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
     const view = mat4.translation(_tmpVec3)
 
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
