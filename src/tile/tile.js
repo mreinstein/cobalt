@@ -47,6 +47,7 @@ export default {
 
     // optional
     customFunctions: {
+
         setTexture: async function (cobalt, node, texture) {
             const { canvas, device } = cobalt
 
@@ -155,6 +156,11 @@ async function init (cobalt, nodeData) {
 
 
 function draw (cobalt, nodeData, commandEncoder) {
+
+    // calling setTexture can cause the texture to be destroyed followed by this draw command
+    // so check for the undefined texture first and bail for a frame.
+    if (!nodeData.data.material.texture)
+        return
 
     const { device } = cobalt
 

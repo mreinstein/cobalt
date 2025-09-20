@@ -8310,6 +8310,8 @@ async function init4(cobalt, nodeData) {
   };
 }
 function draw4(cobalt, nodeData, commandEncoder) {
+  if (!nodeData.data.material.texture)
+    return;
   const { device } = cobalt;
   const loadOp = nodeData.options.loadOp || "load";
   const renderpass = commandEncoder.beginRenderPass({

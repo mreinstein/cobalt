@@ -51,6 +51,14 @@
                 display: none;
             }
 
+            button {
+                position: fixed;
+                left: 20px;
+                top: 20px;
+                user-select: none;
+                cursor: pointer;
+            }
+
         </style>
     </head>
     <body>
@@ -58,6 +66,10 @@
         <div class="viewport-container">
             <canvas id="viewport" width="480" height="270"></canvas>
         </div>
+
+        <button type="button">disable fg sprite texture</button>
+        <button type="button" style="left: 180px">disable bg sprite texture</button>
+        
 
 <script type="module">
 import Game             from './Game.js'
@@ -167,8 +179,23 @@ async function main () {
         }
     })
 
+     const tileNodeBG = await Cobalt.initNode(Game.renderer, {
+        type: 'cobalt:tile',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            tileAtlas: tileAtlasNode,
+            hdr: hdrTex,
+        },
+        options: {
+            textureUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP4DwQACfsD/Wj6HMwAAAAASUVORK5CYII=',
+            scrollScale: 1.0,
+            loadOp: 'clear',
+        }
+    })
+
     // instantiate all runnable nodes
-    const tileNode = await Cobalt.initNode(Game.renderer, {
+    const tileNodeBg = await Cobalt.initNode(Game.renderer, {
         type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
@@ -179,11 +206,10 @@ async function main () {
         options: {
             textureUrl: 'assets/spelunky1.png',
             scrollScale: 0.6,
-            //zIndex: 0,
         }
     })
 
-    const tileNode2 = await Cobalt.initNode(Game.renderer, {
+    const tileNodeFg = await Cobalt.initNode(Game.renderer, {
         type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
@@ -194,7 +220,6 @@ async function main () {
         options: {
             textureUrl: 'assets/spelunky0.png',
             scrollScale: 1.0,
-            //zIndex: 5,
         }
     })
 
@@ -230,6 +255,38 @@ async function main () {
 
     window.addEventListener('resize', debouncedResize, { passive: true })
 
+    const [ button, button2 ] = document.querySelectorAll('button')
+    button.addEventListener('click', function (ev) {
+        let textureUrl = ''
+        if (ev.target.textContent === 'disable fg sprite texture') {
+
+            tileNodeFg.enabled = false
+
+            // 1x1 pixel with rg channels set to 255 to indicate discard
+            // this effectively clears the tilemap.
+            //tileNodeFg.setTexture('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP4DwQACfsD/')
+            ev.target.textContent = 'enable fg sprite texture'
+        } else {
+            tileNodeFg.enabled = true
+            //tileNodeFg.setTexture('assets/spelunky0.png')
+            ev.target.textContent = 'disable fg sprite texture'
+        }
+    })
+
+    button2.addEventListener('click', function (ev) {
+        let textureUrl = ''
+        if (ev.target.textContent === 'disable bg sprite texture') {
+            tileNodeBg.enabled = false
+            // 1x1 pixel with rg channels set to 255 to indicate discard
+            // this effectively clears the tilemap.
+            //tileNodeBg.setTexture('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP4DwQACfsD/')
+            ev.target.textContent = 'enable bg sprite texture'
+        } else {
+            tileNodeBg.enabled = true
+            //tileNode.setTexture('assets/spelunky1.png')
+            ev.target.textContent = 'disable bg sprite texture'
+        }
+    })
 
     
     const world = ECS.createWorld()
