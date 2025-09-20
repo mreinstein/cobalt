@@ -1,3 +1,6 @@
+# 0.6.15
+* handle destroyed texture case in tile nodes
+
 # 0.6.14
 * re-enable viewport position rounding 
 
