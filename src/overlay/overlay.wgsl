@@ -33,7 +33,7 @@ struct Fragment {
 
 @vertex
 fn vs_main (@builtin(instance_index) i_id : u32, 
-            @location(0) vertexPosition: vec3<f32>,
+            @location(0) vertexPosition: vec2<f32>,
             @location(1) vertexTexCoord: vec2<f32>) -> Fragment  {
 
     var output : Fragment;
@@ -66,7 +66,7 @@ fn vs_main (@builtin(instance_index) i_id : u32,
                                         0.0, 0.0, 1.0, 0.0,
                                          tx,  ty,  tz, 1.0) * scaleM;
 
-    output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 1.0);
+    output.Position = transformUBO.projection * transformUBO.view * modelM * vec4<f32>(vertexPosition, 0.0, 1.0);
     
     output.TexCoord = vertexTexCoord;
     output.Tint = sprites.models[i_id].tint;

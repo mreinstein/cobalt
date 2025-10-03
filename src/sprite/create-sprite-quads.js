@@ -5,15 +5,15 @@ export default function createSpriteQuads (device, spritesheet) {
     /*
     const vertices = new Float32Array([
     //      position         tex     
-    //    x     y    z     u     v 
-        -0.5, -0.5, 0.0,  0.0, 0.0,
-        -0.5,  0.5, 0.0,  0.0, 1.0,
-         0.5,  0.5, 0.0,  1.0, 1.0,
-
+    //    x     y     u     v 
+        -0.5, -0.5,  0.0, 0.0,
+        -0.5,  0.5,  0.0, 1.0,
+         0.5,  0.5,  1.0,
+         
         // triangle 2 (2nd half of quad)
-        -0.5, -0.5, 0.0,  0.0, 0.0,
-         0.5,  0.5, 0.0,  1.0, 1.0,
-         0.5, -0.5, 0.0,  1.0, 0.0,
+        -0.5, -0.5,  0.0, 0.0,
+         0.5,  0.5,  1.0, 1.0,
+         0.5, -0.5,  1.0, 0.0,
     ])
     */
 
@@ -35,20 +35,20 @@ export default function createSpriteQuads (device, spritesheet) {
     buffer.unmap()
 
     const bufferLayout = {
-        arrayStride: 20,
+        arrayStride: 16,
         stepMode: 'vertex',
         attributes: [
             // position
             {
                 shaderLocation: 0,
-                format: 'float32x3',
+                format: 'float32x2',
                 offset: 0
             },
             // uv
             {
                 shaderLocation: 1,
                 format: 'float32x2',
-                offset: 12
+                offset: 8
             }
         ]
     }

@@ -5,8 +5,8 @@
 export default function readSpriteSheet (spritesheetJson) {
 
     // a sprite is a quad (2 triangles) so it has 6 vertices
-    // each vertex has 5 float32 (interleaved vec3 position, vec2 uv)
-    const spriteFloatCount = 5 * 6
+    // each vertex has 4 float32 (interleaved vec2 position, vec2 uv)
+    const spriteFloatCount = 4 * 6
 
     // each key in the spritesheet is a unique sprite type
     const spriteCount = Object.keys(spritesheetJson.frames).length
@@ -44,10 +44,10 @@ export default function readSpriteSheet (spritesheetJson) {
         const maxX = -0.5 + ((frame.spriteSourceSize.x + frame.spriteSourceSize.w) / frame.sourceSize.w)
         const maxY = -0.5 + ((frame.spriteSourceSize.y + frame.spriteSourceSize.h) / frame.sourceSize.h)
 
-        const p0 = [ minX, minY, 0 ]
-        const p1 = [ minX, maxY, 0 ]
-        const p2 = [ maxX, maxY, 0 ]
-        const p3 = [ maxX, minY, 0 ]
+        const p0 = [ minX, minY ]
+        const p1 = [ minX, maxY ]
+        const p2 = [ maxX, maxY ]
+        const p3 = [ maxX, minY ]
 
 
         // calculate uvs
@@ -64,24 +64,24 @@ export default function readSpriteSheet (spritesheetJson) {
 
 
         // quad triangles are  [ p0, p1, p2 ]  ,  [ p0, p2, p3 ]
-        // vertex data is interleaved; a single vertex has a vec3 position followed immediately by vec2 uv
+        // vertex data is interleaved; a single vertex has a vec2 position followed immediately by vec2 uv
         vertices.set(p0, i)
-        vertices.set(uv0, i + 3)
+        vertices.set(uv0, i + 2)
 
-        vertices.set(p1, i + 5)
-        vertices.set(uv1, i + 8)
+        vertices.set(p1, i + 4)
+        vertices.set(uv1, i + 6)
 
-        vertices.set(p2, i + 10)
-        vertices.set(uv2, i + 13)
+        vertices.set(p2, i + 8)
+        vertices.set(uv2, i + 10)
 
-        vertices.set(p0, i + 15)
-        vertices.set(uv0, i + 18)
+        vertices.set(p0, i + 12)
+        vertices.set(uv0, i + 14)
 
-        vertices.set(p2, i + 20)
-        vertices.set(uv2, i + 23)
+        vertices.set(p2, i + 16)
+        vertices.set(uv2, i + 18)
 
-        vertices.set(p3, i + 25)
-        vertices.set(uv3, i + 28)        
+        vertices.set(p3, i + 20)
+        vertices.set(uv3, i + 22)        
 
         i += spriteFloatCount
     }
