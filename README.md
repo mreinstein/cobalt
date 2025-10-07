@@ -7,8 +7,8 @@ A 2D Web GPU renderer.
 
 TODO:
 
-* cleanup resources in destroy function
-* reduce garbage collection in draw
+* move idByName, spriteDescs to spritesheet node
+* reduce garbage collection in sprite draw
 * improve 02-sprites example to support real time property editing (rotation scale, etc.)
 * fix scaling
 * copy cobalt:sprite2 -> cobalt:HDRsprite

@@ -45,8 +45,22 @@ export default {
         draw(cobalt, node, webGpuCommandEncoder);
     },
 
+    // Clean up GPU resources. Most WebGPU objects are GC-managed and don't
+    // expose destroy(); buffers/textures/query-sets do.
     onDestroy: function (cobalt, node) {
-        // TODO
+        // Explicitly destroy GPU resources that have a destroy() method
+        try { node.data.instanceBuf?.destroy(); } catch {}
+        try { node.data.spriteBuf?.destroy(); } catch {}
+
+        // These do not have destroy(); drop references to let GC reclaim
+        node.data.pipeline = null; // GPURenderPipeline
+        node.data.bindGroup = null; // GPUBindGroup
+        node.data.bindGroupLayout = null;// GPUBindGroupLayout
+
+        // CPU-side allocations
+        node.data.instanceStaging = null;
+        node.data.instanceView = null;
+        node.data.sprites.length = 0;
     },
 
     onResize: function (cobalt, node) {},
