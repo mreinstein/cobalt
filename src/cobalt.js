@@ -13,6 +13,7 @@ import overlayNode      from './overlay/overlay.js'
 import fbBlitNode       from './fb-blit/fb-blit.js'  
 import primitivesNode   from './primitives/primitives.js'
 import lightNode        from './light/light.js'
+import sprite2Node      from './sprite2/sprite.js'
 
 // built-in resource nodes
 import tileAtlasNode    from './tile/atlas.js'
@@ -79,6 +80,8 @@ export async function init (ctx, viewportWidth, viewportHeight) {
         'cobalt:fbBlit': fbBlitNode,
         'cobalt:primitives': primitivesNode,
         'cobalt:light': lightNode,
+
+        'cobalt:sprite2': sprite2Node,
     }
 
     return {

@@ -3606,7 +3606,7 @@ var require_bn = __commonJS({
         if (left.cmp(right) < 0) return left;
         return right;
       };
-      BN.prototype._init = function init14(number, base, endian) {
+      BN.prototype._init = function init15(number, base, endian) {
         if (typeof number === "number") {
           return this._initNumber(number, base, endian);
         }
@@ -9338,7 +9338,7 @@ function getAPI$4(Ctor) {
   return api;
 }
 function getAPIImpl$3(Ctor) {
-  const vec22 = getAPI$5(Ctor);
+  const vec23 = getAPI$5(Ctor);
   const vec32 = getAPI$4(Ctor);
   function create(v0, v1, v2, v3, v4, v5, v6, v7, v8) {
     const newDst = new Ctor(12);
@@ -9633,13 +9633,13 @@ function getAPIImpl$3(Ctor) {
     return newDst;
   }
   function getTranslation(m, dst) {
-    const newDst = dst ?? vec22.create();
+    const newDst = dst ?? vec23.create();
     newDst[0] = m[8];
     newDst[1] = m[9];
     return newDst;
   }
   function getAxis(m, axis, dst) {
-    const newDst = dst ?? vec22.create();
+    const newDst = dst ?? vec23.create();
     const off = axis * 4;
     newDst[0] = m[off + 0];
     newDst[1] = m[off + 1];
@@ -9653,7 +9653,7 @@ function getAPIImpl$3(Ctor) {
     return newDst;
   }
   function getScaling(m, dst) {
-    const newDst = dst ?? vec22.create();
+    const newDst = dst ?? vec23.create();
     const xx = m[0];
     const xy = m[1];
     const yx = m[4];
@@ -11982,7 +11982,7 @@ var {
    * Vec2 functions that default to returning `Float32Array`
    * @namespace
    */
-  vec2,
+  vec2: vec22,
   /**
    * Vec3 functions that default to returning `Float32Array`
    * @namespace
@@ -12840,23 +12840,23 @@ var public_api_default = {
     const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = triangles.length * 3 * 6;
     node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
-    const pos = vec2.create();
+    const pos = vec22.create();
     for (const tri of triangles) {
-      vec2.transformMat3(points[tri[0]], m, pos);
+      vec22.transformMat3(points[tri[0]], m, pos);
       node.data.vertices[i + 0] = pos[0];
       node.data.vertices[i + 1] = pos[1];
       node.data.vertices[i + 2] = color[0];
       node.data.vertices[i + 3] = color[1];
       node.data.vertices[i + 4] = color[2];
       node.data.vertices[i + 5] = color[3];
-      vec2.transformMat3(points[tri[1]], m, pos);
+      vec22.transformMat3(points[tri[1]], m, pos);
       node.data.vertices[i + 6] = pos[0];
       node.data.vertices[i + 7] = pos[1];
       node.data.vertices[i + 8] = color[0];
       node.data.vertices[i + 9] = color[1];
       node.data.vertices[i + 10] = color[2];
       node.data.vertices[i + 11] = color[3];
-      vec2.transformMat3(points[tri[2]], m, pos);
+      vec22.transformMat3(points[tri[2]], m, pos);
       node.data.vertices[i + 12] = pos[0];
       node.data.vertices[i + 13] = pos[1];
       node.data.vertices[i + 14] = color[0];
@@ -12897,21 +12897,21 @@ var public_api_default = {
       const nextY = y + halfHeight * Math.sin(nextAngle);
       const stride = 18;
       const vi = node.data.vertexCount * 6 + i * stride;
-      const pos = vec2.transformMat3([x, y], m);
+      const pos = vec22.transformMat3([x, y], m);
       node.data.vertices[vi + 0] = pos[0];
       node.data.vertices[vi + 1] = pos[1];
       node.data.vertices[vi + 2] = color[0];
       node.data.vertices[vi + 3] = color[1];
       node.data.vertices[vi + 4] = color[2];
       node.data.vertices[vi + 5] = color[3];
-      vec2.transformMat3([currX, currY], m, pos);
+      vec22.transformMat3([currX, currY], m, pos);
       node.data.vertices[vi + 6] = pos[0];
       node.data.vertices[vi + 7] = pos[1];
       node.data.vertices[vi + 8] = color[0];
       node.data.vertices[vi + 9] = color[1];
       node.data.vertices[vi + 10] = color[2];
       node.data.vertices[vi + 11] = color[3];
-      vec2.transformMat3([nextX, nextY], m, pos);
+      vec22.transformMat3([nextX, nextY], m, pos);
       node.data.vertices[vi + 12] = pos[0];
       node.data.vertices[vi + 13] = pos[1];
       node.data.vertices[vi + 14] = color[0];
@@ -12940,10 +12940,10 @@ var public_api_default = {
     const halfWidth = width / 2;
     const halfHeight = height / 2;
     const m = node.data.transforms.at(-1);
-    const topLeft = vec2.transformMat3([x - halfWidth, y - halfHeight], m);
-    const topRight = vec2.transformMat3([x + halfWidth, y - halfHeight], m);
-    const bottomLeft = vec2.transformMat3([x - halfWidth, y + halfHeight], m);
-    const bottomRight = vec2.transformMat3([x + halfWidth, y + halfHeight], m);
+    const topLeft = vec22.transformMat3([x - halfWidth, y - halfHeight], m);
+    const topRight = vec22.transformMat3([x + halfWidth, y - halfHeight], m);
+    const bottomLeft = vec22.transformMat3([x - halfWidth, y + halfHeight], m);
+    const bottomRight = vec22.transformMat3([x + halfWidth, y + halfHeight], m);
     const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = 6 * 6;
     node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
@@ -12996,10 +12996,10 @@ var public_api_default = {
 };
 function line(cobalt, node, start, end, color, lineWidth = 1) {
   const m = node.data.transforms.at(-1);
-  start = vec2.transformMat3(start, m);
-  end = vec2.transformMat3(end, m);
-  const delta = vec2.sub(end, start);
-  const unitBasis = vec2.normalize(delta);
+  start = vec22.transformMat3(start, m);
+  end = vec22.transformMat3(end, m);
+  const delta = vec22.sub(end, start);
+  const unitBasis = vec22.normalize(delta);
   const perp = perpendicularComponent(unitBasis);
   const halfLineWidth = lineWidth / 2;
   let i = node.data.vertexCount * 6;
@@ -14237,6 +14237,380 @@ function resize4(cobalt, node) {
   node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
 }
 
+// src/sprite2/public-api.js
+var public_api_exports3 = {};
+__export(public_api_exports3, {
+  addSprite: () => addSprite2,
+  clear: () => clear2,
+  removeSprite: () => removeSprite2,
+  setSpriteName: () => setSpriteName2,
+  setSpriteOpacity: () => setSpriteOpacity2,
+  setSpritePosition: () => setSpritePosition2,
+  setSpriteRotation: () => setSpriteRotation2,
+  setSpriteScale: () => setSpriteScale2,
+  setSpriteTint: () => setSpriteTint2
+});
+function addSprite2(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
+  renderPass.data.sprites.push({
+    position,
+    sizeX: 1,
+    sizeY: 1,
+    scale: scale[0],
+    rotation,
+    opacity,
+    tint,
+    spriteID: renderPass.data.idByName.get(name),
+    id: _uuid()
+  });
+  return renderPass.data.sprites.at(-1).id;
+}
+function removeSprite2(cobalt, renderPass, id) {
+  for (let i = 0; i < renderPass.data.sprites.length; i++) {
+    if (renderPass.data.sprites[i].id === id) {
+      renderPass.data.sprites.splice(i, 1);
+      return;
+    }
+  }
+}
+function clear2(cobalt, renderPass) {
+  renderPass.data.sprites.length = 0;
+}
+function setSpriteName2(cobalt, renderPass, id, name) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.spriteId = renderPass.data.idByName.get(name);
+}
+function setSpritePosition2(cobalt, renderPass, id, position) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(position, sprite.position);
+}
+function setSpriteTint2(cobalt, renderPass, id, tint) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.tint = tint;
+}
+function setSpriteOpacity2(cobalt, renderPass, id, opacity) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.opacity = opacity;
+}
+function setSpriteRotation2(cobalt, renderPass, id, rotation) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.rotation = rotation;
+}
+function setSpriteScale2(cobalt, renderPass, id, scale) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.scale = scale;
+}
+
+// src/sprite2/sprite.wgsl
+var sprite_default2 = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;@group(0)@binding(4)var emissiveTexture:texture_2d<f32>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale_rot:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,)->VSOut{let sc=i_scale_rot.x;let rot=i_scale_rot.y;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size;var local=corner*sizePx*sc;local+=d.centerOffset*sc;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->GBufferOutput{var output:GBufferOutput;let texel=textureSample(uTex,uSampler,in.uv);output.color=vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);let emissive=textureSample(emissiveTexture,uSampler,in.uv);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
+
+// src/sprite2/sprite.js
+var INSTANCE_STRIDE = 48;
+var OFF_POS = 0;
+var OFF_SIZE = 8;
+var OFF_SCALEROT = 16;
+var OFF_SPRITEID = 24;
+var OFF_OPACITY = 28;
+var OFF_TINT = 32;
+var sprite_default3 = {
+  type: "cobalt:sprite2",
+  refs: [
+    { name: "spritesheet", type: "customResource", access: "read" },
+    {
+      name: "hdr",
+      type: "textureView",
+      format: "rgba16float",
+      access: "write"
+    },
+    {
+      name: "emissive",
+      type: "textureView",
+      format: "rgba16float",
+      access: "write"
+    }
+  ],
+  // cobalt event handling functions
+  // @params Object cobalt renderer world object
+  // @params Object options optional data passed when initing this node
+  onInit: async function(cobalt, options = {}) {
+    return init10(cobalt, options);
+  },
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw10(cobalt, node, webGpuCommandEncoder);
+  },
+  onDestroy: function(cobalt, node) {
+  },
+  onResize: function(cobalt, node) {
+  },
+  onViewportPosition: function(cobalt, node) {
+  },
+  // optional
+  customFunctions: {
+    ...public_api_exports3
+  }
+};
+async function init10(cobalt, nodeData) {
+  const { device } = cobalt;
+  const { descs, names } = buildSpriteTableFromTP(nodeData.refs.spritesheet.data.spritesheet.rawJson);
+  const BYTES_PER_DESC = 8 * 4;
+  const buf = new ArrayBuffer(BYTES_PER_DESC * descs.length);
+  const f32 = new Float32Array(buf);
+  for (let i = 0; i < descs.length; i++) {
+    const d = descs[i];
+    const base = i * 8;
+    f32[base + 0] = d.UvOrigin[0];
+    f32[base + 1] = d.UvOrigin[1];
+    f32[base + 2] = d.UvSpan[0];
+    f32[base + 3] = d.UvSpan[1];
+    f32[base + 4] = d.FrameSize[0];
+    f32[base + 5] = d.FrameSize[1];
+    f32[base + 6] = d.CenterOffset[0];
+    f32[base + 7] = d.CenterOffset[1];
+  }
+  const spriteBuf = device.createBuffer({
+    label: "sprite2 desc table",
+    size: Math.max(16, buf.byteLength),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(spriteBuf, 0, buf);
+  const idByName = new Map(names.map((n, i) => [n, i]));
+  const uniformBuf = nodeData.refs.spritesheet.data.uniformBuffer;
+  const instanceCap = 1024;
+  const instanceBuf = device.createBuffer({
+    label: "sprite2 instances",
+    size: INSTANCE_STRIDE * instanceCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  const instanceStaging = new ArrayBuffer(INSTANCE_STRIDE * instanceCap);
+  const instanceView = new DataView(instanceStaging);
+  const shader = device.createShaderModule({ code: sprite_default2 });
+  const bgl = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "uniform" }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: { type: "filtering" }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "read-only-storage" }
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      }
+    ]
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgl]
+  });
+  const instLayout = {
+    arrayStride: INSTANCE_STRIDE,
+    stepMode: "instance",
+    attributes: [
+      { shaderLocation: 0, offset: OFF_POS, format: "float32x2" },
+      { shaderLocation: 1, offset: OFF_SIZE, format: "float32x2" },
+      { shaderLocation: 2, offset: OFF_SCALEROT, format: "float32x2" },
+      { shaderLocation: 3, offset: OFF_TINT, format: "float32x4" },
+      { shaderLocation: 4, offset: OFF_SPRITEID, format: "uint32" },
+      { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" }
+    ]
+  };
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: {
+      module: shader,
+      entryPoint: "vs_main",
+      buffers: [instLayout]
+    },
+    fragment: {
+      module: shader,
+      entryPoint: "fs_main",
+      targets: [
+        // color
+        {
+          format: "rgba16float",
+          blend: {
+            color: {
+              srcFactor: "src-alpha",
+              dstFactor: "one-minus-src-alpha"
+            },
+            alpha: {
+              srcFactor: "zero",
+              dstFactor: "one"
+            }
+          }
+        },
+        // emissive
+        {
+          format: "rgba16float"
+        }
+      ]
+    },
+    primitive: { topology: "triangle-strip", cullMode: "none" },
+    multisample: { count: 1 }
+  });
+  const bindGroupLayout = bgl;
+  const bindGroup = device.createBindGroup({
+    layout: bgl,
+    entries: [
+      { binding: 0, resource: { buffer: uniformBuf } },
+      { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
+      { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
+      { binding: 3, resource: { buffer: spriteBuf } },
+      { binding: 4, resource: nodeData.refs.spritesheet.data.emissiveTexture.view }
+    ]
+  });
+  return {
+    sprites: [],
+    spriteBuf,
+    spriteDescs: descs,
+    instanceCap,
+    instanceView,
+    instanceBuf,
+    instanceStaging,
+    pipeline,
+    bindGroup,
+    idByName
+  };
+}
+function ensureCapacity(cobalt, node, nInstances) {
+  const { instanceCap } = node.data;
+  if (nInstances <= instanceCap)
+    return;
+  let newCap = instanceCap;
+  if (newCap === 0)
+    newCap = 1024;
+  while (newCap < nInstances)
+    newCap *= 2;
+  node.data.instanceBuf.destroy();
+  node.data.instanceBuf = cobalt.device.createBuffer({
+    size: INSTANCE_STRIDE * newCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  node.data.instanceStaging = new ArrayBuffer(INSTANCE_STRIDE * newCap);
+  node.data.instanceView = new DataView(node.data.instanceStaging);
+  node.data.instanceCap = newCap;
+}
+function draw10(cobalt, node, commandEncoder) {
+  const { device, context } = cobalt;
+  const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data;
+  const viewRect = {
+    x: cobalt.viewport.position[0],
+    y: cobalt.viewport.position[1],
+    w: cobalt.viewport.width,
+    h: cobalt.viewport.height
+  };
+  const visible = [];
+  for (const s of node.data.sprites) {
+    const d = node.data.spriteDescs[s.spriteID];
+    if (!d)
+      continue;
+    const sc = s.scale ?? 1;
+    const sx = d.FrameSize[0] * (s.sizeX ?? 1) * sc * 0.5;
+    const sy = d.FrameSize[1] * (s.sizeY ?? 1) * sc * 0.5;
+    const rad = Math.hypot(sx, sy);
+    const x = s.position[0], y = s.position[1];
+    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h) {
+      console.log("wooo nice off screen!", s.id);
+      continue;
+    }
+    visible.push(s);
+  }
+  ensureCapacity(cobalt, node, visible.length);
+  for (let i = 0; i < visible.length; i++) {
+    const base = i * INSTANCE_STRIDE;
+    const s = visible[i];
+    const tint = s.tint || [1, 1, 1, 1];
+    const sizeX = s.sizeX, sizeY = s.sizeY;
+    const scale = s.scale, rot = s.rotation;
+    instanceView.setFloat32(base + OFF_POS + 0, s.position[0], true);
+    instanceView.setFloat32(base + OFF_POS + 4, s.position[1], true);
+    instanceView.setFloat32(base + OFF_SIZE + 0, sizeX, true);
+    instanceView.setFloat32(base + OFF_SIZE + 4, sizeY, true);
+    instanceView.setFloat32(base + OFF_SCALEROT + 0, scale, true);
+    instanceView.setFloat32(base + OFF_SCALEROT + 4, rot, true);
+    instanceView.setFloat32(base + OFF_TINT + 0, tint[0], true);
+    instanceView.setFloat32(base + OFF_TINT + 4, tint[1], true);
+    instanceView.setFloat32(base + OFF_TINT + 8, tint[2], true);
+    instanceView.setFloat32(base + OFF_TINT + 12, tint[3], true);
+    instanceView.setUint32(base + OFF_SPRITEID, s.spriteID >>> 0, true);
+    instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
+  }
+  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, visible.length * INSTANCE_STRIDE);
+  const loadOp = node.options.loadOp || "load";
+  const pass = commandEncoder.beginRenderPass({
+    label: "sprite2 renderpass",
+    colorAttachments: [
+      // color
+      {
+        view: node.refs.hdr.data.view,
+        clearValue: cobalt.clearValue,
+        loadOp,
+        storeOp: "store"
+      },
+      // emissive
+      {
+        view: node.refs.emissive.data.view,
+        clearValue: cobalt.clearValue,
+        loadOp: "clear",
+        storeOp: "store"
+      }
+    ]
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.setVertexBuffer(0, instanceBuf);
+  pass.draw(4, visible.length, 0, 0);
+  pass.end();
+}
+function buildSpriteTableFromTP(doc) {
+  const atlasW = doc.meta.size.w;
+  const atlasH = doc.meta.size.h;
+  const names = Object.keys(doc.frames).sort();
+  const descs = new Array(names.length);
+  for (let i = 0; i < names.length; i++) {
+    const fr = doc.frames[names[i]];
+    const fx = fr.frame.x, fy = fr.frame.y, fw = fr.frame.w, fh = fr.frame.h;
+    const offX = fx / atlasW, offY = fy / atlasH;
+    const spanX = fw / atlasW, spanY = fh / atlasH;
+    const sw = fr.sourceSize.w, sh = fr.sourceSize.h;
+    const ox = fr.spriteSourceSize.x, oy = fr.spriteSourceSize.y;
+    const cx = ox + fw * 0.5 - sw * 0.5;
+    const cy = oy + fh * 0.5 - sh * 0.5;
+    descs[i] = {
+      UvOrigin: [offX, offY],
+      UvSpan: [spanX, spanY],
+      FrameSize: [fw, fh],
+      CenterOffset: [cx, cy]
+    };
+  }
+  return { descs, names };
+}
+
 // src/tile/tile.wgsl
 var tile_default2 = `struct TransformData{viewOffset:vec2<f32>,viewportSize:vec2<f32>,inverseAtlasTextureSize:vec2<f32>,tileSize:f32,inverseTileSize:f32,};struct TileScroll{scrollScale:vec2<f32>};const positions=array<vec2<f32>,3>(vec2<f32>(-1.0,-3.0),vec2<f32>(3.0,1.0),vec2<f32>(-1.0,1.0));const uvs=array<vec2<f32>,3>(vec2<f32>(0.0,2.0),vec2<f32>(2.0,0.0),vec2<f32>(0.0,0.0));@binding(0)@group(0)var<uniform> myScroll:TileScroll;@binding(1)@group(0)var tileTexture:texture_2d<f32>;@binding(2)@group(0)var tileSampler:sampler;@binding(0)@group(1)var<uniform> transformUBO:TransformData;@binding(1)@group(1)var atlasTexture:texture_2d<f32>;@binding(2)@group(1)var atlasSampler:sampler;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>};@vertex fn vs_main(@builtin(instance_index)i_id:u32,@builtin(vertex_index)VertexIndex:u32)->Fragment{var vertexPosition=vec2<f32>(positions[VertexIndex]);var vertexTexCoord=vec2<f32>(uvs[VertexIndex]);var output:Fragment;let inverseTileTextureSize=1/vec2<f32>(textureDimensions(tileTexture,0));var scrollScale=myScroll.scrollScale;var viewOffset:vec2<f32>=transformUBO.viewOffset*scrollScale;let PixelCoord=(vertexTexCoord*transformUBO.viewportSize)+viewOffset;output.TexCoord=PixelCoord/transformUBO.tileSize;output.Position=vec4<f32>(vertexPosition,0.0,1.0);return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>)->@location(0)vec4<f32>{var tilemapCoord=floor(TexCoord);var u_tilemapSize=vec2<f32>(textureDimensions(tileTexture,0));var tileFoo=fract((tilemapCoord+vec2<f32>(0.5,0.5))/u_tilemapSize);var tile=floor(textureSample(tileTexture,tileSampler,tileFoo)*255.0);if(tile.x==255&&tile.y==255){discard;}var u_tilesetSize=vec2<f32>(textureDimensions(atlasTexture,0))/transformUBO.tileSize;let u_tileUVMinBounds=vec2<f32>(0.5/transformUBO.tileSize,0.5/transformUBO.tileSize);let u_tileUVMaxBounds=vec2<f32>((transformUBO.tileSize-0.5)/transformUBO.tileSize,(transformUBO.tileSize-0.5)/transformUBO.tileSize);var texcoord=clamp(fract(TexCoord),u_tileUVMinBounds,u_tileUVMaxBounds);var tileCoord=(tile.xy+texcoord)/u_tilesetSize;var color=textureSample(atlasTexture,atlasSampler,tileCoord);if(color.a<=0.1){discard;}return color;}`;
 
@@ -14248,7 +14622,7 @@ var atlas_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init10(cobalt, options);
+    return init11(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14262,7 +14636,7 @@ var atlas_default = {
     _writeTileBuffer(cobalt, node);
   }
 };
-async function init10(cobalt, nodeData) {
+async function init11(cobalt, nodeData) {
   const { canvas, device } = cobalt;
   const format = nodeData.options.format || "rgba8unorm";
   let atlasMaterial;
@@ -14448,12 +14822,13 @@ function readSpriteSheet(spritesheetJson) {
     /*spriteCount, */
     spriteMeta,
     locations,
-    vertices
+    vertices,
+    rawJson: spritesheetJson
   };
 }
 
 // src/sprite/sprite.wgsl
-var sprite_default2 = `struct TransformData{view:mat4x4<f32>,projection:mat4x4<f32>};struct Sprite{translate:vec2<f32>,scale:vec2<f32>,tint:vec4<f32>,opacity:f32,rotation:f32,emissiveIntensity:f32,sortValue:f32,};struct SpritesBuffer{models:array<Sprite>,};@binding(0)@group(0)var<uniform> transformUBO:TransformData;@binding(1)@group(0)var myTexture:texture_2d<f32>;@binding(2)@group(0)var mySampler:sampler;@binding(3)@group(0)var<storage,read>sprites:SpritesBuffer;@binding(4)@group(0)var emissiveTexture:texture_2d<f32>;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32,};struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(instance_index)i_id:u32,@location(0)vertexPosition:vec2<f32>,@location(1)vertexTexCoord:vec2<f32>)->Fragment{var output:Fragment;var sx:f32=sprites.models[i_id].scale.x;var sy:f32=sprites.models[i_id].scale.y;var sz:f32=1.0;var rot:f32=sprites.models[i_id].rotation;var tx:f32=sprites.models[i_id].translate.x;var ty:f32=sprites.models[i_id].translate.y;var tz:f32=0;var s=sin(rot);var c=cos(rot);var scaleM:mat4x4<f32>=mat4x4<f32>(sx,0.0,0.0,0.0,0.0,sy,0.0,0.0,0.0,0.0,sz,0.0,0,0,0,1.0);var modelM:mat4x4<f32>=mat4x4<f32>(c,s,0.0,0.0,-s,c,0.0,0.0,0.0,0.0,1.0,0.0,tx,ty,tz,1.0)*scaleM;output.Position=transformUBO.projection*transformUBO.view*modelM*vec4<f32>(vertexPosition,0.0,1.0);output.TexCoord=vertexTexCoord;output.Tint=sprites.models[i_id].tint;output.Opacity=sprites.models[i_id].opacity;return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32)->GBufferOutput{var output:GBufferOutput;var outColor:vec4<f32>=textureSample(myTexture,mySampler,TexCoord);output.color=vec4<f32>(outColor.rgb*(1.0-Tint.a)+(Tint.rgb*Tint.a),outColor.a*Opacity);let emissive=textureSample(emissiveTexture,mySampler,TexCoord);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
+var sprite_default4 = `struct TransformData{view:mat4x4<f32>,projection:mat4x4<f32>};struct Sprite{translate:vec2<f32>,scale:vec2<f32>,tint:vec4<f32>,opacity:f32,rotation:f32,emissiveIntensity:f32,sortValue:f32,};struct SpritesBuffer{models:array<Sprite>,};@binding(0)@group(0)var<uniform> transformUBO:TransformData;@binding(1)@group(0)var myTexture:texture_2d<f32>;@binding(2)@group(0)var mySampler:sampler;@binding(3)@group(0)var<storage,read>sprites:SpritesBuffer;@binding(4)@group(0)var emissiveTexture:texture_2d<f32>;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32,};struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(instance_index)i_id:u32,@location(0)vertexPosition:vec2<f32>,@location(1)vertexTexCoord:vec2<f32>)->Fragment{var output:Fragment;var sx:f32=sprites.models[i_id].scale.x;var sy:f32=sprites.models[i_id].scale.y;var sz:f32=1.0;var rot:f32=sprites.models[i_id].rotation;var tx:f32=sprites.models[i_id].translate.x;var ty:f32=sprites.models[i_id].translate.y;var tz:f32=0;var s=sin(rot);var c=cos(rot);var scaleM:mat4x4<f32>=mat4x4<f32>(sx,0.0,0.0,0.0,0.0,sy,0.0,0.0,0.0,0.0,sz,0.0,0,0,0,1.0);var modelM:mat4x4<f32>=mat4x4<f32>(c,s,0.0,0.0,-s,c,0.0,0.0,0.0,0.0,1.0,0.0,tx,ty,tz,1.0)*scaleM;output.Position=transformUBO.projection*transformUBO.view*modelM*vec4<f32>(vertexPosition,0.0,1.0);output.TexCoord=vertexTexCoord;output.Tint=sprites.models[i_id].tint;output.Opacity=sprites.models[i_id].opacity;return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32)->GBufferOutput{var output:GBufferOutput;var outColor:vec4<f32>=textureSample(myTexture,mySampler,TexCoord);output.color=vec4<f32>(outColor.rgb*(1.0-Tint.a)+(Tint.rgb*Tint.a),outColor.a*Opacity);let emissive=textureSample(emissiveTexture,mySampler,TexCoord);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
 
 // src/sprite/spritesheet.js
 var _tmpVec33 = vec3.create(0, 0, 0);
@@ -14463,7 +14838,7 @@ var spritesheet_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init11(cobalt, options);
+    return init12(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14477,7 +14852,7 @@ var spritesheet_default = {
     _writeSpriteBuffer(cobalt, node);
   }
 };
-async function init11(cobalt, node) {
+async function init12(cobalt, node) {
   const { canvas, device } = cobalt;
   let spritesheet, colorTexture, emissiveTexture;
   const format = node.options.format || "rgba8unorm";
@@ -14536,14 +14911,14 @@ async function init11(cobalt, node) {
     label: "spritesheet",
     vertex: {
       module: device.createShaderModule({
-        code: sprite_default2
+        code: sprite_default4
       }),
       entryPoint: "vs_main",
       buffers: [quads.bufferLayout]
     },
     fragment: {
       module: device.createShaderModule({
-        code: sprite_default2
+        code: sprite_default4
       }),
       entryPoint: "fs_main",
       targets: [
@@ -14611,7 +14986,7 @@ var fb_texture_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init12(cobalt, options);
+    return init13(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14624,7 +14999,7 @@ var fb_texture_default = {
   onViewportPosition: function(cobalt, node) {
   }
 };
-async function init12(cobalt, node) {
+async function init13(cobalt, node) {
   const { device } = cobalt;
   node.options.format = node.options.format === "PREFERRED_TEXTURE_FORMAT" ? getPreferredFormat(cobalt) : node.options.format;
   const { format, label, mip_count, usage, viewportScale } = node.options;
@@ -14643,7 +15018,7 @@ function resize5(cobalt, node) {
 }
 
 // src/cobalt.js
-async function init13(ctx, viewportWidth, viewportHeight) {
+async function init14(ctx, viewportWidth, viewportHeight) {
   let device, gpu, context, canvas;
   if (ctx.sdlWindow && ctx.gpu) {
     gpu = ctx.gpu;
@@ -14683,7 +15058,8 @@ async function init13(ctx, viewportWidth, viewportHeight) {
     "cobalt:overlay": overlay_default2,
     "cobalt:fbBlit": fb_blit_default2,
     "cobalt:primitives": primitives_default2,
-    "cobalt:light": light_default
+    "cobalt:light": light_default,
+    "cobalt:sprite2": sprite_default3
   };
   return {
     nodeDefs,
@@ -14740,7 +15116,7 @@ async function initNode(c, nodeData) {
   c.nodes.push(node);
   return node;
 }
-function draw10(c) {
+function draw11(c) {
   const { device, context } = c;
   const commandEncoder = device.createCommandEncoder();
   const v = getCurrentTextureView(c);
@@ -14792,9 +15168,9 @@ export {
   createTextureFromBuffer,
   createTextureFromUrl,
   defineNode,
-  draw10 as draw,
+  draw11 as draw,
   getCurrentTextureView,
-  init13 as init,
+  init14 as init,
   initNode,
   reset,
   setViewportDimensions,

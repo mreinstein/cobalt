@@ -86,7 +86,7 @@ export default function readSpriteSheet (spritesheetJson) {
         i += spriteFloatCount
     }
 
-    return { /*spriteCount, */ spriteMeta, locations, vertices }
+    return { /*spriteCount, */ spriteMeta, locations, vertices, rawJson: spritesheetJson }
 }
 
 

@@ -168,7 +168,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const spriteNode = await Cobalt.initNode(Game.renderer, {
-        type: 'cobalt:sprite',
+        type: 'cobalt:sprite2',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -239,17 +239,21 @@ async function main () {
     // test sprites
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
-        position: [ 50, 50 ],
-        zIndex: 4,
-        emissiveIntensity: 0.5,
+        position: [ 50, 20 ],
         spriteNode,
     })
 
     const s = spriteEntity(world, {
         name: 'health-0.png',
-        position: [ 240, 135 ],
-        zIndex: 4,
-        emissiveIntensity: 0.5,
+        position: [ 260, 135 ],
+        spriteNode,
+    })
+
+    const s3 = spriteEntity(world, {
+        name: 'health-0.png',
+        position: [ 128, 90 ],
+        tint: [ 0, 0, 0, 0 ],
+        opacity: 1,
         spriteNode,
     })
 
@@ -257,7 +261,6 @@ async function main () {
         tick(Game)
         requestAnimationFrame(gameLoop)
     }
-
 
     requestAnimationFrame(gameLoop)
 }

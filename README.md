@@ -5,6 +5,20 @@
 A 2D Web GPU renderer.
 
 
+TODO:
+
+* cleanup resources in destroy function
+* reduce garbage collection in draw
+* improve 02-sprites example to support real time property editing (rotation scale, etc.)
+* fix scaling
+* copy cobalt:sprite2 -> cobalt:HDRsprite
+* rename cobalt:sprite2 -> cobalt:sprite
+* remove unneeded spritesheet node stuff
+* cleanup/simplify overlay node
+* update usage docs, changelog
+* publish new version 0.7.0
+
+
 ## Goals
 
 * pure WebGpu: no fallbacks to WebGl or canvas

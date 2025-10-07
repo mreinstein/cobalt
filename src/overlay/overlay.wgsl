@@ -9,18 +9,12 @@ struct Sprite {
     tint: vec4<f32>,
     opacity: f32,
     rotation: f32,
-    //emissiveIntensity: f32,
-    //sortValue: f32,
-};
-
-struct SpritesBuffer {
-  models: array<Sprite>,
 };
 
 @binding(0) @group(0) var<uniform> transformUBO: TransformData;
 @binding(1) @group(0) var myTexture: texture_2d<f32>;
 @binding(2) @group(0) var mySampler: sampler;
-@binding(3) @group(0) var<storage, read> sprites : SpritesBuffer;
+@binding(3) @group(0) var<storage, read> sprites : array<Sprite>;
 
 
 struct Fragment {
@@ -84,5 +78,4 @@ fn fs_main (@location(0) TexCoord: vec2<f32>,
     var output = vec4<f32>(outColor.rgb * (1.0 - Tint.a) + (Tint.rgb * Tint.a), outColor.a * Opacity);
 
     return output;
-    //return vec4<f32>(1.0, 0.0, 1.0, 1.0);
 }
