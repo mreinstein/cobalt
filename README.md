@@ -7,17 +7,14 @@ A 2D Web GPU renderer.
 
 TODO:
 
-* move idByName, spriteDescs to spritesheet node
-
-* reduce garbage collection in sprite draw
-* improve 02-sprites example to support real time property editing (rotation scale, etc.)
-* fix scaling
+* sprite2: move idByName, spriteDescs to spritesheet node
+* sprite2: reduce garbage collection in draw function
+* overlay: cleanup/simplify
 * copy cobalt:sprite2 -> cobalt:HDRsprite
 * rename cobalt:sprite2 -> cobalt:sprite
-* remove unneeded spritesheet node stuff
-* cleanup/simplify overlay node
+* spritesheet: remove unneeded variables/state
 * update usage docs, changelog
-* publish new version 0.7.0
+* publish 0.7.0
 
 
 ## Goals

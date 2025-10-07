@@ -2,16 +2,17 @@ import * as publicAPI from "./public-api.js";
 import spriteWGSL     from "./sprite.wgsl";
 
 
-// --- Instance buffer (growable) ---
-const INSTANCE_STRIDE = 48;
+// Packed instance layout: 48 bytes (aligned for vec4 fetch)
+const INSTANCE_STRIDE = 64;
 
 // Offsets inside one instance (bytes)
 const OFF_POS = 0; // float32x2 (8B)
 const OFF_SIZE = 8; // float32x2 (8B)
-const OFF_SCALEROT = 16; // float32x2 (8B)
-const OFF_SPRITEID = 24; // uint32 (4B)
+const OFF_SCALE = 16;    // float32x2 (8B)
+const OFF_ROT = 24; // float32 (4B)
 const OFF_OPACITY = 28; // float32 (4B)
 const OFF_TINT = 32; // float32x4 (16B)
+const OFF_SPRITEID = 48; // uint32 (4B)
 
 
 export default {
@@ -76,7 +77,7 @@ export default {
 async function init(cobalt, nodeData) {
     const { device } = cobalt;
 
-    const { descs, names } = buildSpriteTableFromTP(nodeData.refs.spritesheet.data.spritesheet.rawJson);
+    const { descs, names } = buildSpriteTableFromTexturePacker(nodeData.refs.spritesheet.data.spritesheet.rawJson);
 
     // Pack into std430-like struct (4*float*? + vec2 + vec2 → 32 bytes). We'll just write tightly as 8 floats.
     const BYTES_PER_DESC = 8 * 4; // 8 float32s
@@ -159,13 +160,14 @@ async function init(cobalt, nodeData) {
         attributes: [
             { shaderLocation: 0, offset: OFF_POS, format: "float32x2" },
             { shaderLocation: 1, offset: OFF_SIZE, format: "float32x2" },
-            { shaderLocation: 2, offset: OFF_SCALEROT, format: "float32x2" },
+            { shaderLocation: 2, offset: OFF_SCALE, format: "float32x2" },
             { shaderLocation: 3, offset: OFF_TINT, format: "float32x4" },
+
             { shaderLocation: 4, offset: OFF_SPRITEID, format: "uint32" },
             { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" },
+            { shaderLocation: 6, offset: OFF_ROT, format: "float32" },
         ],
     };
-
 
     const pipeline = device.createRenderPipeline({
         layout: pipelineLayout,
@@ -283,18 +285,17 @@ function draw (cobalt, node, commandEncoder) {
         const d = node.data.spriteDescs[s.spriteID];
         if (!d)
             continue;
+
         const sc = s.scale ?? 1;
         const sx = (d.FrameSize[0] * (s.sizeX ?? 1) * sc) * 0.5;
         const sy = (d.FrameSize[1] * (s.sizeY ?? 1) * sc) * 0.5;
         const rad = Math.hypot(sx, sy);
         const x = s.position[0], y = s.position[1];
-        if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h) {
+        if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
             continue
-        }
 
         visible.push(s)
     }
-    
 
     ensureCapacity(cobalt, node, visible.length)
 
@@ -302,18 +303,19 @@ function draw (cobalt, node, commandEncoder) {
     for (let i=0;i<visible.length;i++){
         const base = i * INSTANCE_STRIDE;
         const s = visible[i];
-        const tint = s.tint || [1,1,1,1];
-        const sizeX = s.sizeX, sizeY = s.sizeY;
-        const scale = s.scale, rot = s.rotation;
-        // pos
+        const tint = s.tint;
+
         instanceView.setFloat32(base + OFF_POS + 0, s.position[0], true);
         instanceView.setFloat32(base + OFF_POS + 4, s.position[1], true);
         
-        instanceView.setFloat32(base + OFF_SIZE + 0, sizeX, true);
-        instanceView.setFloat32(base + OFF_SIZE + 4, sizeY, true);
-        // scale+rot
-        instanceView.setFloat32(base + OFF_SCALEROT + 0, scale, true);
-        instanceView.setFloat32(base + OFF_SCALEROT + 4, rot, true);
+        instanceView.setFloat32(base + OFF_SIZE + 0, s.sizeX, true);
+        instanceView.setFloat32(base + OFF_SIZE + 4, s.sizeY, true);
+
+        instanceView.setFloat32(base + OFF_SCALE + 0, s.scale[0], true);
+        instanceView.setFloat32(base + OFF_SCALE + 4, s.scale[1], true);
+
+        instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
+        instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
         
         instanceView.setFloat32(base + OFF_TINT + 0, tint[0], true);
         instanceView.setFloat32(base + OFF_TINT + 4, tint[1], true);
@@ -354,7 +356,8 @@ function draw (cobalt, node, commandEncoder) {
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup);
     pass.setVertexBuffer(0, instanceBuf);
-    pass.draw(4, visible.length, 0, 0); // triangle strip, 4 verts per instance
+    if (visible.length)
+        pass.draw(4, visible.length, 0, 0); // triangle strip, 4 verts per instance
     pass.end();
 }
 
@@ -373,7 +376,7 @@ function draw (cobalt, node, commandEncoder) {
         "sourceSize": {"w":32,"h":32}
     },
 */
-function buildSpriteTableFromTP (doc) {
+function buildSpriteTableFromTexturePacker (doc) {
     const atlasW = doc.meta.size.w;
     const atlasH = doc.meta.size.h;
     const names = Object.keys(doc.frames).sort();

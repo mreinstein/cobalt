@@ -9338,7 +9338,7 @@ function getAPI$4(Ctor) {
   return api;
 }
 function getAPIImpl$3(Ctor) {
-  const vec23 = getAPI$5(Ctor);
+  const vec22 = getAPI$5(Ctor);
   const vec32 = getAPI$4(Ctor);
   function create(v0, v1, v2, v3, v4, v5, v6, v7, v8) {
     const newDst = new Ctor(12);
@@ -9633,13 +9633,13 @@ function getAPIImpl$3(Ctor) {
     return newDst;
   }
   function getTranslation(m, dst) {
-    const newDst = dst ?? vec23.create();
+    const newDst = dst ?? vec22.create();
     newDst[0] = m[8];
     newDst[1] = m[9];
     return newDst;
   }
   function getAxis(m, axis, dst) {
-    const newDst = dst ?? vec23.create();
+    const newDst = dst ?? vec22.create();
     const off = axis * 4;
     newDst[0] = m[off + 0];
     newDst[1] = m[off + 1];
@@ -9653,7 +9653,7 @@ function getAPIImpl$3(Ctor) {
     return newDst;
   }
   function getScaling(m, dst) {
-    const newDst = dst ?? vec23.create();
+    const newDst = dst ?? vec22.create();
     const xx = m[0];
     const xy = m[1];
     const yx = m[4];
@@ -11982,7 +11982,7 @@ var {
    * Vec2 functions that default to returning `Float32Array`
    * @namespace
    */
-  vec2: vec22,
+  vec2,
   /**
    * Vec3 functions that default to returning `Float32Array`
    * @namespace
@@ -12840,23 +12840,23 @@ var public_api_default = {
     const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = triangles.length * 3 * 6;
     node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
-    const pos = vec22.create();
+    const pos = vec2.create();
     for (const tri of triangles) {
-      vec22.transformMat3(points[tri[0]], m, pos);
+      vec2.transformMat3(points[tri[0]], m, pos);
       node.data.vertices[i + 0] = pos[0];
       node.data.vertices[i + 1] = pos[1];
       node.data.vertices[i + 2] = color[0];
       node.data.vertices[i + 3] = color[1];
       node.data.vertices[i + 4] = color[2];
       node.data.vertices[i + 5] = color[3];
-      vec22.transformMat3(points[tri[1]], m, pos);
+      vec2.transformMat3(points[tri[1]], m, pos);
       node.data.vertices[i + 6] = pos[0];
       node.data.vertices[i + 7] = pos[1];
       node.data.vertices[i + 8] = color[0];
       node.data.vertices[i + 9] = color[1];
       node.data.vertices[i + 10] = color[2];
       node.data.vertices[i + 11] = color[3];
-      vec22.transformMat3(points[tri[2]], m, pos);
+      vec2.transformMat3(points[tri[2]], m, pos);
       node.data.vertices[i + 12] = pos[0];
       node.data.vertices[i + 13] = pos[1];
       node.data.vertices[i + 14] = color[0];
@@ -12897,21 +12897,21 @@ var public_api_default = {
       const nextY = y + halfHeight * Math.sin(nextAngle);
       const stride = 18;
       const vi = node.data.vertexCount * 6 + i * stride;
-      const pos = vec22.transformMat3([x, y], m);
+      const pos = vec2.transformMat3([x, y], m);
       node.data.vertices[vi + 0] = pos[0];
       node.data.vertices[vi + 1] = pos[1];
       node.data.vertices[vi + 2] = color[0];
       node.data.vertices[vi + 3] = color[1];
       node.data.vertices[vi + 4] = color[2];
       node.data.vertices[vi + 5] = color[3];
-      vec22.transformMat3([currX, currY], m, pos);
+      vec2.transformMat3([currX, currY], m, pos);
       node.data.vertices[vi + 6] = pos[0];
       node.data.vertices[vi + 7] = pos[1];
       node.data.vertices[vi + 8] = color[0];
       node.data.vertices[vi + 9] = color[1];
       node.data.vertices[vi + 10] = color[2];
       node.data.vertices[vi + 11] = color[3];
-      vec22.transformMat3([nextX, nextY], m, pos);
+      vec2.transformMat3([nextX, nextY], m, pos);
       node.data.vertices[vi + 12] = pos[0];
       node.data.vertices[vi + 13] = pos[1];
       node.data.vertices[vi + 14] = color[0];
@@ -12940,10 +12940,10 @@ var public_api_default = {
     const halfWidth = width / 2;
     const halfHeight = height / 2;
     const m = node.data.transforms.at(-1);
-    const topLeft = vec22.transformMat3([x - halfWidth, y - halfHeight], m);
-    const topRight = vec22.transformMat3([x + halfWidth, y - halfHeight], m);
-    const bottomLeft = vec22.transformMat3([x - halfWidth, y + halfHeight], m);
-    const bottomRight = vec22.transformMat3([x + halfWidth, y + halfHeight], m);
+    const topLeft = vec2.transformMat3([x - halfWidth, y - halfHeight], m);
+    const topRight = vec2.transformMat3([x + halfWidth, y - halfHeight], m);
+    const bottomLeft = vec2.transformMat3([x - halfWidth, y + halfHeight], m);
+    const bottomRight = vec2.transformMat3([x + halfWidth, y + halfHeight], m);
     const currentElementCount = node.data.vertexCount * 6;
     const floatsToAdd = 6 * 6;
     node.data.vertices = handleArrayResize(Float32Array, node.data.vertices, currentElementCount, floatsToAdd);
@@ -12996,10 +12996,10 @@ var public_api_default = {
 };
 function line(cobalt, node, start, end, color, lineWidth = 1) {
   const m = node.data.transforms.at(-1);
-  start = vec22.transformMat3(start, m);
-  end = vec22.transformMat3(end, m);
-  const delta = vec22.sub(end, start);
-  const unitBasis = vec22.normalize(delta);
+  start = vec2.transformMat3(start, m);
+  end = vec2.transformMat3(end, m);
+  const delta = vec2.sub(end, start);
+  const unitBasis = vec2.normalize(delta);
   const perp = perpendicularComponent(unitBasis);
   const halfLineWidth = lineWidth / 2;
   let i = node.data.vertexCount * 6;
@@ -14255,7 +14255,7 @@ function addSprite2(cobalt, renderPass, name, position, scale, tint, opacity, ro
     position,
     sizeX: 1,
     sizeY: 1,
-    scale: scale[0],
+    scale,
     rotation,
     opacity,
     tint,
@@ -14279,7 +14279,7 @@ function setSpriteName2(cobalt, renderPass, id, name) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
   if (!sprite)
     return;
-  sprite.spriteId = renderPass.data.idByName.get(name);
+  sprite.spriteID = renderPass.data.idByName.get(name);
 }
 function setSpritePosition2(cobalt, renderPass, id, position) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
@@ -14309,20 +14309,21 @@ function setSpriteScale2(cobalt, renderPass, id, scale) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
   if (!sprite)
     return;
-  sprite.scale = scale;
+  vec2.copy(scale, sprite.scale);
 }
 
 // src/sprite2/sprite.wgsl
-var sprite_default2 = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;@group(0)@binding(4)var emissiveTexture:texture_2d<f32>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale_rot:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,)->VSOut{let sc=i_scale_rot.x;let rot=i_scale_rot.y;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size;var local=corner*sizePx*sc;local+=d.centerOffset*sc;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->GBufferOutput{var output:GBufferOutput;let texel=textureSample(uTex,uSampler,in.uv);output.color=vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);let emissive=textureSample(emissiveTexture,uSampler,in.uv);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
+var sprite_default2 = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;@group(0)@binding(4)var emissiveTexture:texture_2d<f32>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,@location(6)i_rotation:f32)->VSOut{let rot=i_rotation;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size*i_scale;var local=corner*sizePx;local+=d.centerOffset*i_scale;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->GBufferOutput{var output:GBufferOutput;let texel=textureSample(uTex,uSampler,in.uv);output.color=vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);let emissive=textureSample(emissiveTexture,uSampler,in.uv);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
 
 // src/sprite2/sprite.js
-var INSTANCE_STRIDE = 48;
+var INSTANCE_STRIDE = 64;
 var OFF_POS = 0;
 var OFF_SIZE = 8;
-var OFF_SCALEROT = 16;
-var OFF_SPRITEID = 24;
+var OFF_SCALE = 16;
+var OFF_ROT = 24;
 var OFF_OPACITY = 28;
 var OFF_TINT = 32;
+var OFF_SPRITEID = 48;
 var sprite_default3 = {
   type: "cobalt:sprite2",
   refs: [
@@ -14378,7 +14379,7 @@ var sprite_default3 = {
 };
 async function init10(cobalt, nodeData) {
   const { device } = cobalt;
-  const { descs, names } = buildSpriteTableFromTP(nodeData.refs.spritesheet.data.spritesheet.rawJson);
+  const { descs, names } = buildSpriteTableFromTexturePacker(nodeData.refs.spritesheet.data.spritesheet.rawJson);
   const BYTES_PER_DESC = 8 * 4;
   const buf = new ArrayBuffer(BYTES_PER_DESC * descs.length);
   const f32 = new Float32Array(buf);
@@ -14448,10 +14449,11 @@ async function init10(cobalt, nodeData) {
     attributes: [
       { shaderLocation: 0, offset: OFF_POS, format: "float32x2" },
       { shaderLocation: 1, offset: OFF_SIZE, format: "float32x2" },
-      { shaderLocation: 2, offset: OFF_SCALEROT, format: "float32x2" },
+      { shaderLocation: 2, offset: OFF_SCALE, format: "float32x2" },
       { shaderLocation: 3, offset: OFF_TINT, format: "float32x4" },
       { shaderLocation: 4, offset: OFF_SPRITEID, format: "uint32" },
-      { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" }
+      { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" },
+      { shaderLocation: 6, offset: OFF_ROT, format: "float32" }
     ]
   };
   const pipeline = device.createRenderPipeline({
@@ -14550,24 +14552,23 @@ function draw10(cobalt, node, commandEncoder) {
     const sy = d.FrameSize[1] * (s.sizeY ?? 1) * sc * 0.5;
     const rad = Math.hypot(sx, sy);
     const x = s.position[0], y = s.position[1];
-    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h) {
+    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
       continue;
-    }
     visible.push(s);
   }
   ensureCapacity(cobalt, node, visible.length);
   for (let i = 0; i < visible.length; i++) {
     const base = i * INSTANCE_STRIDE;
     const s = visible[i];
-    const tint = s.tint || [1, 1, 1, 1];
-    const sizeX = s.sizeX, sizeY = s.sizeY;
-    const scale = s.scale, rot = s.rotation;
+    const tint = s.tint;
     instanceView.setFloat32(base + OFF_POS + 0, s.position[0], true);
     instanceView.setFloat32(base + OFF_POS + 4, s.position[1], true);
-    instanceView.setFloat32(base + OFF_SIZE + 0, sizeX, true);
-    instanceView.setFloat32(base + OFF_SIZE + 4, sizeY, true);
-    instanceView.setFloat32(base + OFF_SCALEROT + 0, scale, true);
-    instanceView.setFloat32(base + OFF_SCALEROT + 4, rot, true);
+    instanceView.setFloat32(base + OFF_SIZE + 0, s.sizeX, true);
+    instanceView.setFloat32(base + OFF_SIZE + 4, s.sizeY, true);
+    instanceView.setFloat32(base + OFF_SCALE + 0, s.scale[0], true);
+    instanceView.setFloat32(base + OFF_SCALE + 4, s.scale[1], true);
+    instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
+    instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
     instanceView.setFloat32(base + OFF_TINT + 0, tint[0], true);
     instanceView.setFloat32(base + OFF_TINT + 4, tint[1], true);
     instanceView.setFloat32(base + OFF_TINT + 8, tint[2], true);
@@ -14599,10 +14600,11 @@ function draw10(cobalt, node, commandEncoder) {
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, bindGroup);
   pass.setVertexBuffer(0, instanceBuf);
-  pass.draw(4, visible.length, 0, 0);
+  if (visible.length)
+    pass.draw(4, visible.length, 0, 0);
   pass.end();
 }
-function buildSpriteTableFromTP(doc) {
+function buildSpriteTableFromTexturePacker(doc) {
   const atlasW = doc.meta.size.w;
   const atlasH = doc.meta.size.h;
   const names = Object.keys(doc.frames).sort();

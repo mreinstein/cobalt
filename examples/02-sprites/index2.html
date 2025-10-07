@@ -240,12 +240,20 @@ async function main () {
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
         position: [ 50, 20 ],
+        tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
+        opacity: 1,
         spriteNode,
     })
 
     const s = spriteEntity(world, {
         name: 'health-0.png',
         position: [ 260, 135 ],
+        tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
+        opacity: 1,
         spriteNode,
     })
 
@@ -253,9 +261,14 @@ async function main () {
         name: 'health-0.png',
         position: [ 128, 90 ],
         tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
         opacity: 1,
         spriteNode,
     })
+
+    console.log('sprite ids:', s.sprite.cobaltSpriteId, s3.sprite.cobaltSpriteId)
+    window.sn = spriteNode
 
     const gameLoop = function () {
         tick(Game)
