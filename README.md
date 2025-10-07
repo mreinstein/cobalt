@@ -8,6 +8,7 @@ A 2D Web GPU renderer.
 TODO:
 
 * move idByName, spriteDescs to spritesheet node
+
 * reduce garbage collection in sprite draw
 * improve 02-sprites example to support real time property editing (rotation scale, etc.)
 * fix scaling

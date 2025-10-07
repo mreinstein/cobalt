@@ -14401,7 +14401,6 @@ async function init10(cobalt, nodeData) {
   });
   device.queue.writeBuffer(spriteBuf, 0, buf);
   const idByName = new Map(names.map((n, i) => [n, i]));
-  const uniformBuf = nodeData.refs.spritesheet.data.uniformBuffer;
   const instanceCap = 1024;
   const instanceBuf = device.createBuffer({
     label: "sprite2 instances",
@@ -14493,7 +14492,8 @@ async function init10(cobalt, nodeData) {
   const bindGroup = device.createBindGroup({
     layout: bgl,
     entries: [
-      { binding: 0, resource: { buffer: uniformBuf } },
+      // Uniform buffer (view + proj matrices)
+      { binding: 0, resource: { buffer: nodeData.refs.spritesheet.data.uniformBuffer } },
       { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
       { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
       { binding: 3, resource: { buffer: spriteBuf } },

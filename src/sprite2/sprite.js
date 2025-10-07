@@ -95,7 +95,7 @@ async function init(cobalt, nodeData) {
         f32[base+7] = d.CenterOffset[1];
     }
 
-    // Recreate buffer and bind group
+    // create buffer for sprite uv lookup
     const spriteBuf = device.createBuffer({
         label: "sprite2 desc table",
         size: Math.max(16, buf.byteLength),
@@ -104,12 +104,8 @@ async function init(cobalt, nodeData) {
 
     device.queue.writeBuffer(spriteBuf, 0, buf);
 
-
     // Map name → ID
     const idByName = new Map(names.map((n,i)=>[n,i]));
-
-    // --- Uniform buffer (view + proj) ---
-    const uniformBuf = nodeData.refs.spritesheet.data.uniformBuffer
 
     // --- Instance buffer (growable) ---
     const instanceCap = 1024;
@@ -213,14 +209,15 @@ async function init(cobalt, nodeData) {
     const bindGroup = device.createBindGroup({
         layout: bgl,
         entries: [
-            { binding: 0, resource: { buffer: uniformBuf } },
+            // Uniform buffer (view + proj matrices)
+            { binding: 0, resource: { buffer: nodeData.refs.spritesheet.data.uniformBuffer } },
+
             { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
             { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
             { binding: 3, resource: { buffer: spriteBuf } },
             { binding: 4, resource: nodeData.refs.spritesheet.data.emissiveTexture.view },
         ],
     });
-
 
     return {
         sprites: [ ],
@@ -362,8 +359,20 @@ function draw (cobalt, node, commandEncoder) {
 }
 
 
-// ------------------------------ TexturePacker (no rotation) ------------------------------
-// Accepts the "Hash" JSON format from TexturePacker. Assumes rotated=false.
+/**
+ *  ------------------------------ TexturePacker (no rotation) ------------------------------
+ * Accepts the "Hash" JSON format from TexturePacker. Assumes rotated=false.
+ * 
+ * texturepacker frame structure:
+   "f2.png":
+    {
+        "frame": {"x":15,"y":1,"w":10,"h":15},
+        "rotated": false,
+        "trimmed": true,
+        "spriteSourceSize": {"x":22,"y":17,"w":10,"h":15},
+        "sourceSize": {"w":32,"h":32}
+    },
+*/
 function buildSpriteTableFromTP (doc) {
     const atlasW = doc.meta.size.w;
     const atlasH = doc.meta.size.h;
