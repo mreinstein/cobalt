@@ -19,7 +19,8 @@ Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gp
 export default {
     type: 'cobalt:tileHDR',
     refs: [
-        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'write' },
+        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'read' },
+        { name: "hdr", type: "textureView", format: "rgba16float", access: "write", },
     ],
 
     // @params Object cobalt renderer world object

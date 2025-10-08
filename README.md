@@ -6,7 +6,9 @@ A 2D Web GPU renderer.
 
 
 TODO:
-* update most of the examples to use the non-HDR sprite to make them shorter
+* convert tile node to non-HDR
+* convert light node to non-HDR
+* update most of the examples to use the non-HDR sprite node
 * update README
 * spritesheet: remove unneeded variables/state
 * publish 0.7.0
