@@ -168,7 +168,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const spriteNode = await Cobalt.initNode(Game.renderer, {
-        type: 'cobalt:sprite2',
+        type: 'cobalt:spriteHDR',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -253,7 +253,7 @@ async function main () {
         tint: [ 0, 0, 0, 0 ],
         scale: [ 1, 1 ],
         rotation: 0,
-        opacity: 1,
+        opacity: 0.2,
         spriteNode,
     })
 
@@ -266,9 +266,6 @@ async function main () {
         opacity: 1,
         spriteNode,
     })
-
-    console.log('sprite ids:', s.sprite.cobaltSpriteId, s3.sprite.cobaltSpriteId)
-    window.sn = spriteNode
 
     const gameLoop = function () {
         tick(Game)

@@ -1,6 +1,11 @@
-import * as publicAPI from "./public-api.js";
-import spriteWGSL     from "./sprite.wgsl";
+import * as publicAPI from './public-api.js'
+import spriteWGSL     from './sprite.wgsl'
+import round          from 'round-half-up-symmetric'
+import { mat4, vec3 } from 'wgpu-matrix'
 
+
+// temporary variables, allocated once to avoid garbage collection
+const _tmpVec3 = vec3.create(0, 0, 0)
 
 // Packed instance layout: 48 bytes (aligned for vec4 fetch)
 const INSTANCE_STRIDE = 64;
@@ -9,14 +14,14 @@ const INSTANCE_STRIDE = 64;
 const OFF_POS = 0; // float32x2 (8B)
 const OFF_SIZE = 8; // float32x2 (8B)
 const OFF_SCALE = 16;    // float32x2 (8B)
-const OFF_ROT = 24; // float32 (4B)
-const OFF_OPACITY = 28; // float32 (4B)
-const OFF_TINT = 32; // float32x4 (16B)
-const OFF_SPRITEID = 48; // uint32 (4B)
+const OFF_TINT = 24; // float32x4 (16B)
+const OFF_SPRITEID = 40; // uint32 (4B)
+const OFF_OPACITY = 44; // float32 (4B)
+const OFF_ROT = 48; // float32 (4B)
 
 
 export default {
-    type: "cobalt:sprite2",
+    type: "cobalt:spriteHDR",
     refs: [
         { name: "spritesheet", type: "customResource", access: "read" },
         {
@@ -52,6 +57,7 @@ export default {
         // Explicitly destroy GPU resources that have a destroy() method
         try { node.data.instanceBuf?.destroy(); } catch {}
         try { node.data.spriteBuf?.destroy(); } catch {}
+        try { node.data.uniformBuffer?.destroy(); } catch {}
 
         // These do not have destroy(); drop references to let GC reclaim
         node.data.pipeline = null; // GPURenderPipeline
@@ -64,9 +70,13 @@ export default {
         node.data.sprites.length = 0;
     },
 
-    onResize: function (cobalt, node) {},
+    onResize: function (cobalt, node) {
+        _writeSpriteBuffer(cobalt, node)
+    },
 
-    onViewportPosition: function (cobalt, node) {},
+    onViewportPosition: function (cobalt, node) {
+        _writeSpriteBuffer(cobalt, node)
+    },
 
     // optional
     customFunctions: {
@@ -77,7 +87,12 @@ export default {
 async function init(cobalt, nodeData) {
     const { device } = cobalt;
 
-    const { descs, names } = buildSpriteTableFromTexturePacker(nodeData.refs.spritesheet.data.spritesheet.rawJson);
+    const { descs, names } = nodeData.refs.spritesheet.data.spritesheet
+
+    const uniformBuffer = device.createBuffer({
+        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
 
     // Pack into std430-like struct (4*float*? + vec2 + vec2 → 32 bytes). We'll just write tightly as 8 floats.
     const BYTES_PER_DESC = 8 * 4; // 8 float32s
@@ -98,20 +113,17 @@ async function init(cobalt, nodeData) {
 
     // create buffer for sprite uv lookup
     const spriteBuf = device.createBuffer({
-        label: "sprite2 desc table",
+        label: "spriteHDR desc table",
         size: Math.max(16, buf.byteLength),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
     device.queue.writeBuffer(spriteBuf, 0, buf);
 
-    // Map name → ID
-    const idByName = new Map(names.map((n,i)=>[n,i]));
-
     // --- Instance buffer (growable) ---
     const instanceCap = 1024;
     const instanceBuf = device.createBuffer({
-        label: "sprite2 instances",
+        label: "spriteHDR instances",
         size: INSTANCE_STRIDE * instanceCap,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
@@ -212,7 +224,7 @@ async function init(cobalt, nodeData) {
         layout: bgl,
         entries: [
             // Uniform buffer (view + proj matrices)
-            { binding: 0, resource: { buffer: nodeData.refs.spritesheet.data.uniformBuffer } },
+            { binding: 0, resource: { buffer: uniformBuffer } },
 
             { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
             { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
@@ -224,7 +236,7 @@ async function init(cobalt, nodeData) {
     return {
         sprites: [ ],
         spriteBuf,
-        spriteDescs: descs,
+        uniformBuffer,
 
         instanceCap,
         instanceView,
@@ -233,8 +245,6 @@ async function init(cobalt, nodeData) {
 
         pipeline,
         bindGroup,
-
-        idByName,
     }
 }
 
@@ -271,6 +281,8 @@ function draw (cobalt, node, commandEncoder) {
 
     const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data
 
+    const { descs } = node.refs.spritesheet.data.spritesheet
+
     // TODO: don't generate all this garbage each frame. pre-allocate viewRect, visible.
 
     const viewRect = {
@@ -282,7 +294,7 @@ function draw (cobalt, node, commandEncoder) {
 
     const visible = [ ]
     for (const s of node.data.sprites) {
-        const d = node.data.spriteDescs[s.spriteID];
+        const d = descs[s.spriteID];
         if (!d)
             continue;
 
@@ -314,25 +326,25 @@ function draw (cobalt, node, commandEncoder) {
         instanceView.setFloat32(base + OFF_SCALE + 0, s.scale[0], true);
         instanceView.setFloat32(base + OFF_SCALE + 4, s.scale[1], true);
 
-        instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
-        instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
-        
         instanceView.setFloat32(base + OFF_TINT + 0, tint[0], true);
         instanceView.setFloat32(base + OFF_TINT + 4, tint[1], true);
         instanceView.setFloat32(base + OFF_TINT + 8, tint[2], true);
         instanceView.setFloat32(base + OFF_TINT + 12, tint[3], true);
        
         instanceView.setUint32(base + OFF_SPRITEID, s.spriteID >>> 0, true);
-    
+
         instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
+
+        instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
     }
+
 
     device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, visible.length * INSTANCE_STRIDE);
 
     const loadOp = node.options.loadOp || 'load'
 
     const pass = commandEncoder.beginRenderPass({
-        label: "sprite2 renderpass",
+        label: "spriteHDR renderpass",
         colorAttachments: [
             // color
             {
@@ -362,40 +374,34 @@ function draw (cobalt, node, commandEncoder) {
 }
 
 
-/**
- *  ------------------------------ TexturePacker (no rotation) ------------------------------
- * Accepts the "Hash" JSON format from TexturePacker. Assumes rotated=false.
- * 
- * texturepacker frame structure:
-   "f2.png":
-    {
-        "frame": {"x":15,"y":1,"w":10,"h":15},
-        "rotated": false,
-        "trimmed": true,
-        "spriteSourceSize": {"x":22,"y":17,"w":10,"h":15},
-        "sourceSize": {"w":32,"h":32}
-    },
-*/
-function buildSpriteTableFromTexturePacker (doc) {
-    const atlasW = doc.meta.size.w;
-    const atlasH = doc.meta.size.h;
-    const names = Object.keys(doc.frames).sort();
-    const descs = new Array(names.length);
-    for (let i=0;i<names.length;i++){
-        const fr = doc.frames[names[i]];
-        const fx = fr.frame.x, fy = fr.frame.y, fw = fr.frame.w, fh = fr.frame.h;
-        const offX = fx / atlasW, offY = fy / atlasH;
-        const spanX = fw / atlasW, spanY = fh / atlasH;
-        const sw = fr.sourceSize.w, sh = fr.sourceSize.h;
-        const ox = fr.spriteSourceSize.x, oy = fr.spriteSourceSize.y;
-        const cx = (ox + fw*0.5) - (sw*0.5);
-        const cy = (oy + fh*0.5) - (sh*0.5);
-        descs[i] = {
-            UvOrigin: [offX, offY],
-            UvSpan: [spanX, spanY],
-            FrameSize:[fw, fh],
-            CenterOffset:[cx, cy],
-        };
-    }
-    return { descs, names };
+function _writeSpriteBuffer (cobalt, node) {
+
+    const { device, viewport } = cobalt
+
+    const GAME_WIDTH = viewport.width / viewport.zoom
+    const GAME_HEIGHT = viewport.height / viewport.zoom
+
+    //                         left          right    bottom        top     near     far
+    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+
+    
+    // TODO: if this doesn't introduce jitter into the crossroads render, remove this disabled code entirely.
+    //
+    // I'm disabling the rounding because I think it fails in cases where units are not expressed in pixels
+    // e.g., most physics engines operate on meters, not pixels, so we don't want to round to the nearest integer as that 
+    // probably isn't high enough resolution. That would mean the camera could be snapped by up to 0.5 meters
+    // in that case. I think the better solution for expressing camera position in pixels is to round before calling
+    // cobalt.setViewportPosition(...)
+    //
+    // set 3d camera position
+    if (!!node.options.isScreenSpace)
+        vec3.set(0, 0, 0, _tmpVec3)
+    else
+        vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
+        //vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
+
+    const view = mat4.translation(_tmpVec3)
+
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
 }

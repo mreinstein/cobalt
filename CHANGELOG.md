@@ -1,3 +1,19 @@
+# 0.7.0
+
+This release has several breaking changes:
+
+* builtin nodes `cobalt:sprite` and `cobalt:tile` are renamed to `cobalt:spriteHDR` and `cobalt:tileHDR` to
+  reflect the fact that they work with high dynamic range rendering pipelines.
+* a new builtin node was created, `cobalt:sprite` which is meant to work with non-HDR rendering pipelines. If you're
+  not using bloom this is probably a better node because it's simpler and doesn't require as complicated a node graph.
+* sprite nodes are completely re-written
+  * simpler and also run 2X faster
+  * now cull sprites that are outside the viewport.
+  * no longer support z-index. If you want specific layering, add more nodes and order them as you wish
+* the overlay node is removed. You can now do overlays by passing ` isScreenSpace: true` to a sprite node's options to
+  achieve the same thing. (see examples/04-overlay for a working example)
+
+
 # 0.6.15
 * handle destroyed texture case in tile nodes
 

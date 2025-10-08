@@ -5,6 +5,8 @@ import { vec2 } from 'wgpu-matrix'
 // returns a unique identifier for the created sprite
 export function addSprite (cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
 
+    const { idByName } = renderPass.refs.spritesheet.data
+
     renderPass.data.sprites.push({
 		position,
 		sizeX: 1, sizeY: 1,
@@ -12,7 +14,7 @@ export function addSprite (cobalt, renderPass, name, position, scale, tint, opac
 		rotation,
 		opacity,
 		tint,
-		spriteID: renderPass.data.idByName.get(name),
+		spriteID: idByName.get(name),
 		id: uuid(),
 	});
 
@@ -42,7 +44,9 @@ export function setSpriteName (cobalt, renderPass, id, name) {
     if (!sprite)
         return
 
-    sprite.spriteID = renderPass.data.idByName.get(name)
+    const { idByName } = renderPass.refs.spritesheet.data
+
+    sprite.spriteID = idByName.get(name)
 }
 
 

@@ -6,14 +6,11 @@ A 2D Web GPU renderer.
 
 
 TODO:
-
-* sprite2: move idByName, spriteDescs to spritesheet node
-* sprite2: reduce garbage collection in draw function
-* overlay: cleanup/simplify
-* copy cobalt:sprite2 -> cobalt:HDRsprite
-* rename cobalt:sprite2 -> cobalt:sprite
+* write changelog
+* sprite-hdr: reduce garbage collection in draw function
+* make cobalt:sprite from HDR sprite
 * spritesheet: remove unneeded variables/state
-* update usage docs, changelog
+* update usage docs
 * publish 0.7.0
 
 

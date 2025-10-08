@@ -2,17 +2,15 @@ import createSpriteQuads       from './create-sprite-quads.js'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
 import readSpriteSheet         from './read-spritesheet.js'
-import spriteWGSL              from './sprite.wgsl'
-import round                   from 'round-half-up-symmetric'
-import { mat4, vec3 }          from 'wgpu-matrix'
+//import spriteWGSL              from './sprite.wgsl'
+//import round                   from 'round-half-up-symmetric'
+//import { mat4, vec3 }          from 'wgpu-matrix'
 
 
 // shared spritesheet resource, used by each sprite render node
 
-
 // temporary variables, allocated once to avoid garbage collection
-const _tmpVec3 = vec3.create(0, 0, 0)
-
+//const _tmpVec3 = vec3.create(0, 0, 0)
 
 export default {
     type: 'cobalt:spritesheet',
@@ -34,12 +32,11 @@ export default {
     },
 
     onResize: function (cobalt, node) {
-        // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        _writeSpriteBuffer(cobalt, node)
+        //_writeSpriteBuffer(cobalt, node)
     },
 
     onViewportPosition: function (cobalt, node) {
-        _writeSpriteBuffer(cobalt, node)
+        //_writeSpriteBuffer(cobalt, node)
     },
 }
 
@@ -70,9 +67,13 @@ async function init (cobalt, node) {
         colorTexture = await createTextureFromBuffer(cobalt, 'sprite', node.options.colorTexture, format)
         emissiveTexture = await createTextureFromBuffer(cobalt, 'emissive sprite', node.options.emissiveTexture, format)
     }
-    
+
+    // Map sprite name → ID
+    const idByName = new Map(spritesheet.locations.map((n,i)=>[n,i]))
+
     const quads = createSpriteQuads(device, spritesheet)
 
+    /*
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -158,15 +159,17 @@ async function init (cobalt, node) {
 
         layout: pipelineLayout
     })
+    */
     
     return {
-        pipeline,
-        uniformBuffer, // perspective and view matrices for the camera
+       // pipeline,
+        //uniformBuffer, // perspective and view matrices for the camera
         quads,
         colorTexture,
         emissiveTexture,
-        bindGroupLayout,
+        //bindGroupLayout,
         spritesheet,
+        idByName,
     }
 }
 
@@ -174,7 +177,7 @@ async function init (cobalt, node) {
 function destroy (node) {
     node.data.quads.buffer.destroy()
     node.data.colorTexture.buffer.destroy()
-    node.data.uniformBuffer.destroy()
+    //node.data.uniformBuffer.destroy()
     node.data.emissiveTexture.texture.destroy()
 }
 
@@ -184,7 +187,7 @@ async function fetchJson (url) {
     return raw.json()
 }
 
-
+/*
 function _writeSpriteBuffer (cobalt, node) {
 
     const { device, viewport } = cobalt
@@ -212,4 +215,4 @@ function _writeSpriteBuffer (cobalt, node) {
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
     device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
 }
-
+*/
