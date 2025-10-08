@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title class="titleText">Web GPU prototyping</title>
+        <title class="titleText">WebGPU - Cobalt real time point lighting and shadow casting</title>
         <meta name="description" content="Web GPU 2d cobalt" />
         <meta name="author" content="Michael Reinstein" />
         <meta name="viewport" content="width=device-width" />
@@ -55,6 +55,8 @@
     </head>
     <body>
         
+        Drag the mouse to create a shadow segment.
+
         <div class="viewport-container">
             <canvas id="viewport" width="480" height="270"></canvas>
         </div>
@@ -200,7 +202,7 @@ async function main () {
             viewportPosition[1] + viewportCenter[1] - 0.5 * constants.GAME_HEIGHT/ Global.renderer.viewport.zoom,
         ];
     };
-    
+
     canvas.addEventListener("mouseenter", event => {
         mouseViewportPosition = convertToViewportPosition([event.clientX, event.clientY]);
     });
