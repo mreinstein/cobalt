@@ -63,7 +63,7 @@
         </div>
 
 <script type="module">
-import Game             from './Game.js'
+import Global             from './Global.js'
 import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
 import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
@@ -79,10 +79,10 @@ async function main () {
 
     const viewportWidth = constants.GAME_WIDTH
     const viewportHeight = constants.GAME_HEIGHT
-    Game.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+    Global.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
     // instantiate all resource nodes
-    const tileAtlasNode = await Cobalt.initNode(Game.renderer, {
+    const tileAtlasNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileAtlas',
         refs: { },
         options: {
@@ -93,7 +93,7 @@ async function main () {
         }
     })
 
-    const hdrTex = await Cobalt.initNode(Game.renderer, {
+    const hdrTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
         options: {
@@ -105,7 +105,7 @@ async function main () {
         }
     })
 
-    const emissiveTex = await Cobalt.initNode(Game.renderer, {
+    const emissiveTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
         options: {
@@ -117,7 +117,7 @@ async function main () {
         }
     })
 
-    const bloomTex = await Cobalt.initNode(Game.renderer, {
+    const bloomTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
         options: {
@@ -129,7 +129,7 @@ async function main () {
         }
     })
 
-    const bloomNode = await Cobalt.initNode(Game.renderer, {
+    const bloomNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:bloom',
         refs: {
             // key is the var name defined in this node
@@ -157,7 +157,7 @@ async function main () {
         }
     })
 
-    const tmpTex = await Cobalt.initNode(Game.renderer, {
+    const tmpTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
         options: {
@@ -169,11 +169,11 @@ async function main () {
         }
     })
 
-    const perlinTex = await Cobalt.createTextureFromUrl(Game.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
+    const perlinTex = await Cobalt.createTextureFromUrl(Global.renderer, 'displacement map', './assets/displacement_map_repeat.jpg')
 
     // instantiate all runnable nodes
-    const tileNode = await Cobalt.initNode(Game.renderer, {
-        type: 'cobalt:tile',
+    const tileNode = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:tileHDR',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -187,8 +187,8 @@ async function main () {
         }
     })
 
-    const tileNode2 = await Cobalt.initNode(Game.renderer, {
-        type: 'cobalt:tile',
+    const tileNode2 = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:tileHDR',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -203,7 +203,7 @@ async function main () {
     })
 
 
-    const compositeNode = await Cobalt.initNode(Game.renderer, {
+    const compositeNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:composite',
         refs: {
             hdr: hdrTex,
@@ -215,7 +215,7 @@ async function main () {
         }
     })
 
-    const b = await Cobalt.initNode(Game.renderer, {
+    const b = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbBlit',
         refs: {
             in: tmpTex,
@@ -224,7 +224,7 @@ async function main () {
         options: { }
     })
 
-    const displacement = await Cobalt.initNode(Game.renderer, {
+    const displacement = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:displacement',
         refs: {
             color: tmpTex,
@@ -247,11 +247,11 @@ async function main () {
 
 
     // use resizeViewport to init values on load:
-    resizeViewport(Game.renderer, window.innerWidth, window.innerHeight)
+    resizeViewport(Global.renderer, window.innerWidth, window.innerHeight)
 
     // window resize is *expensive* - best to debounce:
     const debouncedResize = debounce(function () {
-       resizeViewport(Game.renderer, window.innerWidth, window.innerHeight) 
+       resizeViewport(Global.renderer, window.innerWidth, window.innerHeight) 
     }, 50)
 
     window.addEventListener('resize', debouncedResize, { passive: true })
@@ -276,9 +276,9 @@ async function main () {
 
     
     const world = ECS.createWorld()
-    ECS.addSystem(world, rendererSystem(Game.renderer))
+    ECS.addSystem(world, rendererSystem(Global.renderer))
 
-    Cobalt.setViewportPosition(Game.renderer, [ 240, 135 ])
+    Cobalt.setViewportPosition(Global.renderer, [ 240, 135 ])
 
     ECS.addSystem(world, function displacementSystem (world) {
         const onUpdate = function (dt) {
@@ -292,11 +292,11 @@ async function main () {
         return { onUpdate }
     })
 
-    Game.world = world
+    Global.world = world
 
 
     const gameLoop = function () {
-        tick(Game)
+        tick(Global)
         requestAnimationFrame(gameLoop)
     }
 

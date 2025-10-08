@@ -11769,7 +11769,8 @@ function _writeSpriteBuffer(cobalt, node) {
 var tile_default = {
   type: "cobalt:tileHDR",
   refs: [
-    { name: "tileAtlas", type: "textureView", format: "rgba8unorm", access: "write" }
+    { name: "tileAtlas", type: "textureView", format: "rgba8unorm", access: "read" },
+    { name: "hdr", type: "textureView", format: "rgba16float", access: "write" }
   ],
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node

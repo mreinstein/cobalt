@@ -1,5 +1,5 @@
 import * as Cobalt from '../../bundle.js'
-import Game        from './Game.js'
+import Global      from './Global.js'
 import { ECS }     from './deps.js'
 
 
@@ -30,7 +30,7 @@ export default function createRendererSystem (renderer) {
                 oldSprite.spriteNode.removeSprite(oldSprite.sprite.cobaltSpriteId)
             }
 
-            Cobalt.draw(Game.renderer)
+            Cobalt.draw(Global.renderer)
         }
 
         return { onUpdate }
