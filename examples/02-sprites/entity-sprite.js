@@ -18,12 +18,11 @@ export default function spriteEntity (world, opts) {
     const spriteNode = opts.spriteNode
 
     const cobaltSpriteId = spriteNode.addSprite(opts.name, 
-                                           opts.position,
-                                           opts.scale,
-                                           opts.tint,
-                                           opts.opacity,
-                                           opts.rotation,
-                                           opts.zIndex)
+                                               opts.position,
+                                               opts.scale,
+                                               opts.tint,
+                                               opts.opacity,
+                                               opts.rotation)
 
     ECS.addComponentToEntity(world, ENTITY, 'sprite', {
         name: opts.name,

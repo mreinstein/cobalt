@@ -3606,7 +3606,7 @@ var require_bn = __commonJS({
         if (left.cmp(right) < 0) return left;
         return right;
       };
-      BN.prototype._init = function init13(number, base, endian) {
+      BN.prototype._init = function init14(number, base, endian) {
         if (typeof number === "number") {
           return this._initNumber(number, base, endian);
         }
@@ -11505,6 +11505,7 @@ var sprite_default2 = {
     node.data.instanceStaging = null;
     node.data.instanceView = null;
     node.data.sprites.length = 0;
+    node.data.visible.length = 0;
   },
   onResize: function(cobalt, node) {
     _writeSpriteBuffer(cobalt, node);
@@ -11648,6 +11649,9 @@ async function init3(cobalt, nodeData) {
   });
   return {
     sprites: [],
+    visible: [],
+    visibleCount: 0,
+    viewRect: { x: 0, y: 0, w: 0, h: 0 },
     spriteBuf,
     uniformBuffer,
     instanceCap,
@@ -11680,30 +11684,29 @@ function draw3(cobalt, node, commandEncoder) {
   const { device, context } = cobalt;
   const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data;
   const { descs } = node.refs.spritesheet.data.spritesheet;
-  const viewRect = {
-    x: cobalt.viewport.position[0],
-    y: cobalt.viewport.position[1],
-    w: cobalt.viewport.width,
-    h: cobalt.viewport.height
-  };
-  const visible = [];
+  const viewRect = node.data.viewRect;
+  viewRect.x = cobalt.viewport.position[0];
+  viewRect.y = cobalt.viewport.position[1];
+  viewRect.w = cobalt.viewport.width;
+  viewRect.h = cobalt.viewport.height;
+  node.data.visibleCount = 0;
   for (const s of node.data.sprites) {
     const d = descs[s.spriteID];
     if (!d)
       continue;
-    const sc = s.scale ?? 1;
-    const sx = d.FrameSize[0] * (s.sizeX ?? 1) * sc * 0.5;
-    const sy = d.FrameSize[1] * (s.sizeY ?? 1) * sc * 0.5;
+    const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+    const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
     const rad = Math.hypot(sx, sy);
     const x = s.position[0], y = s.position[1];
     if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
       continue;
-    visible.push(s);
+    node.data.visible[node.data.visibleCount] = s;
+    node.data.visibleCount++;
   }
-  ensureCapacity(cobalt, node, visible.length);
-  for (let i = 0; i < visible.length; i++) {
+  ensureCapacity(cobalt, node, node.data.visibleCount);
+  for (let i = 0; i < node.data.visibleCount; i++) {
     const base = i * INSTANCE_STRIDE;
-    const s = visible[i];
+    const s = node.data.visible[i];
     const tint = s.tint;
     instanceView.setFloat32(base + OFF_POS + 0, s.position[0], true);
     instanceView.setFloat32(base + OFF_POS + 4, s.position[1], true);
@@ -11719,7 +11722,7 @@ function draw3(cobalt, node, commandEncoder) {
     instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
     instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
   }
-  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, visible.length * INSTANCE_STRIDE);
+  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, node.data.visibleCount * INSTANCE_STRIDE);
   const loadOp = node.options.loadOp || "load";
   const pass = commandEncoder.beginRenderPass({
     label: "spriteHDR renderpass",
@@ -11743,8 +11746,8 @@ function draw3(cobalt, node, commandEncoder) {
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, bindGroup);
   pass.setVertexBuffer(0, instanceBuf);
-  if (visible.length)
-    pass.draw(4, visible.length, 0, 0);
+  if (node.data.visibleCount)
+    pass.draw(4, node.data.visibleCount, 0, 0);
   pass.end();
 }
 function _writeSpriteBuffer(cobalt, node) {
@@ -11752,10 +11755,11 @@ function _writeSpriteBuffer(cobalt, node) {
   const GAME_WIDTH = viewport.width / viewport.zoom;
   const GAME_HEIGHT = viewport.height / viewport.zoom;
   const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
-  if (!!node.options.isScreenSpace)
+  if (!!node.options.isScreenSpace) {
     vec3.set(0, 0, 0, _tmpVec3);
-  else
+  } else {
     vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3);
+  }
   const view = mat4.translation(_tmpVec3);
   device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
   device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
@@ -13993,6 +13997,380 @@ function resize4(cobalt, node) {
   node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
 }
 
+// src/sprite/public-api.js
+var public_api_exports3 = {};
+__export(public_api_exports3, {
+  addSprite: () => addSprite2,
+  clear: () => clear2,
+  removeSprite: () => removeSprite2,
+  setSpriteName: () => setSpriteName2,
+  setSpriteOpacity: () => setSpriteOpacity2,
+  setSpritePosition: () => setSpritePosition2,
+  setSpriteRotation: () => setSpriteRotation2,
+  setSpriteScale: () => setSpriteScale2,
+  setSpriteTint: () => setSpriteTint2
+});
+function addSprite2(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
+  const { idByName } = renderPass.refs.spritesheet.data;
+  renderPass.data.sprites.push({
+    position,
+    sizeX: 1,
+    sizeY: 1,
+    scale,
+    rotation,
+    opacity,
+    tint,
+    spriteID: idByName.get(name),
+    id: _uuid()
+  });
+  return renderPass.data.sprites.at(-1).id;
+}
+function removeSprite2(cobalt, renderPass, id) {
+  for (let i = 0; i < renderPass.data.sprites.length; i++) {
+    if (renderPass.data.sprites[i].id === id) {
+      renderPass.data.sprites.splice(i, 1);
+      return;
+    }
+  }
+}
+function clear2(cobalt, renderPass) {
+  renderPass.data.sprites.length = 0;
+}
+function setSpriteName2(cobalt, renderPass, id, name) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  const { idByName } = renderPass.refs.spritesheet.data;
+  sprite.spriteID = idByName.get(name);
+}
+function setSpritePosition2(cobalt, renderPass, id, position) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(position, sprite.position);
+}
+function setSpriteTint2(cobalt, renderPass, id, tint) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.tint = tint;
+}
+function setSpriteOpacity2(cobalt, renderPass, id, opacity) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.opacity = opacity;
+}
+function setSpriteRotation2(cobalt, renderPass, id, rotation) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.rotation = rotation;
+}
+function setSpriteScale2(cobalt, renderPass, id, scale) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(scale, sprite.scale);
+}
+
+// src/sprite/sprite.wgsl
+var sprite_default3 = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,@location(6)i_rotation:f32)->VSOut{let rot=i_rotation;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size*i_scale;var local=corner*sizePx;local+=d.centerOffset*i_scale;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->@location(0)vec4<f32>{let texel=textureSample(uTex,uSampler,in.uv);return vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);}`;
+
+// src/sprite/sprite.js
+var _tmpVec33 = vec3.create(0, 0, 0);
+var INSTANCE_STRIDE2 = 64;
+var OFF_POS2 = 0;
+var OFF_SIZE2 = 8;
+var OFF_SCALE2 = 16;
+var OFF_TINT2 = 24;
+var OFF_SPRITEID2 = 40;
+var OFF_OPACITY2 = 44;
+var OFF_ROT2 = 48;
+var sprite_default4 = {
+  type: "cobalt:sprite",
+  refs: [
+    { name: "spritesheet", type: "customResource", access: "read" },
+    {
+      name: "color",
+      type: "textureView",
+      format: "rgba8unorm",
+      access: "write"
+    }
+  ],
+  // cobalt event handling functions
+  // @params Object cobalt renderer world object
+  // @params Object options optional data passed when initing this node
+  onInit: async function(cobalt, options = {}) {
+    return init9(cobalt, options);
+  },
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw9(cobalt, node, webGpuCommandEncoder);
+  },
+  // Clean up GPU resources. Most WebGPU objects are GC-managed and don't
+  // expose destroy(); buffers/textures/query-sets do.
+  onDestroy: function(cobalt, node) {
+    try {
+      node.data.instanceBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.spriteBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.uniformBuffer?.destroy();
+    } catch {
+    }
+    node.data.pipeline = null;
+    node.data.bindGroup = null;
+    node.data.bindGroupLayout = null;
+    node.data.instanceStaging = null;
+    node.data.instanceView = null;
+    node.data.sprites.length = 0;
+    node.data.visible.length = 0;
+  },
+  onResize: function(cobalt, node) {
+    _writeSpriteBuffer2(cobalt, node);
+  },
+  onViewportPosition: function(cobalt, node) {
+    _writeSpriteBuffer2(cobalt, node);
+  },
+  // optional
+  customFunctions: {
+    ...public_api_exports3
+  }
+};
+async function init9(cobalt, nodeData) {
+  const { device } = cobalt;
+  const { descs, names } = nodeData.refs.spritesheet.data.spritesheet;
+  const uniformBuffer = device.createBuffer({
+    size: 64 * 2,
+    // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+  });
+  const BYTES_PER_DESC = 8 * 4;
+  const buf = new ArrayBuffer(BYTES_PER_DESC * descs.length);
+  const f32 = new Float32Array(buf);
+  for (let i = 0; i < descs.length; i++) {
+    const d = descs[i];
+    const base = i * 8;
+    f32[base + 0] = d.UvOrigin[0];
+    f32[base + 1] = d.UvOrigin[1];
+    f32[base + 2] = d.UvSpan[0];
+    f32[base + 3] = d.UvSpan[1];
+    f32[base + 4] = d.FrameSize[0];
+    f32[base + 5] = d.FrameSize[1];
+    f32[base + 6] = d.CenterOffset[0];
+    f32[base + 7] = d.CenterOffset[1];
+  }
+  const spriteBuf = device.createBuffer({
+    label: "sprite desc table",
+    size: Math.max(16, buf.byteLength),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(spriteBuf, 0, buf);
+  const instanceCap = 1024;
+  const instanceBuf = device.createBuffer({
+    label: "sprite instances",
+    size: INSTANCE_STRIDE2 * instanceCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  const instanceStaging = new ArrayBuffer(INSTANCE_STRIDE2 * instanceCap);
+  const instanceView = new DataView(instanceStaging);
+  const shader = device.createShaderModule({ code: sprite_default3 });
+  const bgl = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "uniform" }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: { type: "filtering" }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "read-only-storage" }
+      }
+    ]
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgl]
+  });
+  const instLayout = {
+    arrayStride: INSTANCE_STRIDE2,
+    stepMode: "instance",
+    attributes: [
+      { shaderLocation: 0, offset: OFF_POS2, format: "float32x2" },
+      { shaderLocation: 1, offset: OFF_SIZE2, format: "float32x2" },
+      { shaderLocation: 2, offset: OFF_SCALE2, format: "float32x2" },
+      { shaderLocation: 3, offset: OFF_TINT2, format: "float32x4" },
+      { shaderLocation: 4, offset: OFF_SPRITEID2, format: "uint32" },
+      { shaderLocation: 5, offset: OFF_OPACITY2, format: "float32" },
+      { shaderLocation: 6, offset: OFF_ROT2, format: "float32" }
+    ]
+  };
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: {
+      module: shader,
+      entryPoint: "vs_main",
+      buffers: [instLayout]
+    },
+    fragment: {
+      module: shader,
+      entryPoint: "fs_main",
+      targets: [
+        // color
+        {
+          format: getPreferredFormat(cobalt),
+          blend: {
+            color: {
+              srcFactor: "src-alpha",
+              dstFactor: "one-minus-src-alpha"
+            },
+            alpha: {
+              srcFactor: "zero",
+              dstFactor: "one"
+            }
+          }
+        }
+      ]
+    },
+    primitive: { topology: "triangle-strip", cullMode: "none" },
+    multisample: { count: 1 }
+  });
+  const bindGroupLayout = bgl;
+  const bindGroup = device.createBindGroup({
+    layout: bgl,
+    entries: [
+      // Uniform buffer (view + proj matrices)
+      { binding: 0, resource: { buffer: uniformBuffer } },
+      { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
+      { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
+      { binding: 3, resource: { buffer: spriteBuf } }
+    ]
+  });
+  return {
+    sprites: [],
+    visible: [],
+    visibleCount: 0,
+    viewRect: { x: 0, y: 0, w: 0, h: 0 },
+    spriteBuf,
+    uniformBuffer,
+    instanceCap,
+    instanceView,
+    instanceBuf,
+    instanceStaging,
+    pipeline,
+    bindGroup
+  };
+}
+function ensureCapacity2(cobalt, node, nInstances) {
+  const { instanceCap } = node.data;
+  if (nInstances <= instanceCap)
+    return;
+  let newCap = instanceCap;
+  if (newCap === 0)
+    newCap = 1024;
+  while (newCap < nInstances)
+    newCap *= 2;
+  node.data.instanceBuf.destroy();
+  node.data.instanceBuf = cobalt.device.createBuffer({
+    size: INSTANCE_STRIDE2 * newCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  node.data.instanceStaging = new ArrayBuffer(INSTANCE_STRIDE2 * newCap);
+  node.data.instanceView = new DataView(node.data.instanceStaging);
+  node.data.instanceCap = newCap;
+}
+function draw9(cobalt, node, commandEncoder) {
+  const { device, context } = cobalt;
+  const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data;
+  const { descs } = node.refs.spritesheet.data.spritesheet;
+  const viewRect = node.data.viewRect;
+  viewRect.x = cobalt.viewport.position[0];
+  viewRect.y = cobalt.viewport.position[1];
+  viewRect.w = cobalt.viewport.width;
+  viewRect.h = cobalt.viewport.height;
+  node.data.visibleCount = 0;
+  for (const s of node.data.sprites) {
+    const d = descs[s.spriteID];
+    if (!d)
+      continue;
+    const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+    const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
+    const rad = Math.hypot(sx, sy);
+    const x = s.position[0], y = s.position[1];
+    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+      continue;
+    node.data.visible[node.data.visibleCount] = s;
+    node.data.visibleCount++;
+  }
+  ensureCapacity2(cobalt, node, node.data.visibleCount);
+  for (let i = 0; i < node.data.visibleCount; i++) {
+    const base = i * INSTANCE_STRIDE2;
+    const s = node.data.visible[i];
+    const tint = s.tint;
+    instanceView.setFloat32(base + OFF_POS2 + 0, s.position[0], true);
+    instanceView.setFloat32(base + OFF_POS2 + 4, s.position[1], true);
+    instanceView.setFloat32(base + OFF_SIZE2 + 0, s.sizeX, true);
+    instanceView.setFloat32(base + OFF_SIZE2 + 4, s.sizeY, true);
+    instanceView.setFloat32(base + OFF_SCALE2 + 0, s.scale[0], true);
+    instanceView.setFloat32(base + OFF_SCALE2 + 4, s.scale[1], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 0, tint[0], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 4, tint[1], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 8, tint[2], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 12, tint[3], true);
+    instanceView.setUint32(base + OFF_SPRITEID2, s.spriteID >>> 0, true);
+    instanceView.setFloat32(base + OFF_OPACITY2, s.opacity, true);
+    instanceView.setFloat32(base + OFF_ROT2, s.rotation, true);
+  }
+  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, node.data.visibleCount * INSTANCE_STRIDE2);
+  const loadOp = node.options.loadOp || "load";
+  const pass = commandEncoder.beginRenderPass({
+    label: "sprite renderpass",
+    colorAttachments: [
+      // color
+      {
+        view: node.refs.color,
+        clearValue: cobalt.clearValue,
+        loadOp,
+        storeOp: "store"
+      }
+    ]
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.setVertexBuffer(0, instanceBuf);
+  if (node.data.visibleCount)
+    pass.draw(4, node.data.visibleCount, 0, 0);
+  pass.end();
+}
+function _writeSpriteBuffer2(cobalt, node) {
+  const { device, viewport } = cobalt;
+  const GAME_WIDTH = viewport.width / viewport.zoom;
+  const GAME_HEIGHT = viewport.height / viewport.zoom;
+  const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
+  if (!!node.options.isScreenSpace) {
+    vec3.set(0, 0, 0, _tmpVec33);
+  } else {
+    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec33);
+  }
+  const view = mat4.translation(_tmpVec33);
+  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
+}
+
 // src/tile-hdr/tile.wgsl
 var tile_default2 = `struct TransformData{viewOffset:vec2<f32>,viewportSize:vec2<f32>,inverseAtlasTextureSize:vec2<f32>,tileSize:f32,inverseTileSize:f32,};struct TileScroll{scrollScale:vec2<f32>};const positions=array<vec2<f32>,3>(vec2<f32>(-1.0,-3.0),vec2<f32>(3.0,1.0),vec2<f32>(-1.0,1.0));const uvs=array<vec2<f32>,3>(vec2<f32>(0.0,2.0),vec2<f32>(2.0,0.0),vec2<f32>(0.0,0.0));@binding(0)@group(0)var<uniform> myScroll:TileScroll;@binding(1)@group(0)var tileTexture:texture_2d<f32>;@binding(2)@group(0)var tileSampler:sampler;@binding(0)@group(1)var<uniform> transformUBO:TransformData;@binding(1)@group(1)var atlasTexture:texture_2d<f32>;@binding(2)@group(1)var atlasSampler:sampler;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>};@vertex fn vs_main(@builtin(instance_index)i_id:u32,@builtin(vertex_index)VertexIndex:u32)->Fragment{var vertexPosition=vec2<f32>(positions[VertexIndex]);var vertexTexCoord=vec2<f32>(uvs[VertexIndex]);var output:Fragment;let inverseTileTextureSize=1/vec2<f32>(textureDimensions(tileTexture,0));var scrollScale=myScroll.scrollScale;var viewOffset:vec2<f32>=transformUBO.viewOffset*scrollScale;let PixelCoord=(vertexTexCoord*transformUBO.viewportSize)+viewOffset;output.TexCoord=PixelCoord/transformUBO.tileSize;output.Position=vec4<f32>(vertexPosition,0.0,1.0);return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>)->@location(0)vec4<f32>{var tilemapCoord=floor(TexCoord);var u_tilemapSize=vec2<f32>(textureDimensions(tileTexture,0));var tileFoo=fract((tilemapCoord+vec2<f32>(0.5,0.5))/u_tilemapSize);var tile=floor(textureSample(tileTexture,tileSampler,tileFoo)*255.0);if(tile.x==255&&tile.y==255){discard;}var u_tilesetSize=vec2<f32>(textureDimensions(atlasTexture,0))/transformUBO.tileSize;let u_tileUVMinBounds=vec2<f32>(0.5/transformUBO.tileSize,0.5/transformUBO.tileSize);let u_tileUVMaxBounds=vec2<f32>((transformUBO.tileSize-0.5)/transformUBO.tileSize,(transformUBO.tileSize-0.5)/transformUBO.tileSize);var texcoord=clamp(fract(TexCoord),u_tileUVMinBounds,u_tileUVMaxBounds);var tileCoord=(tile.xy+texcoord)/u_tilesetSize;var color=textureSample(atlasTexture,atlasSampler,tileCoord);if(color.a<=0.1){discard;}return color;}`;
 
@@ -14004,7 +14382,7 @@ var atlas_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init9(cobalt, options);
+    return init10(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14018,7 +14396,7 @@ var atlas_default = {
     _writeTileBuffer(cobalt, node);
   }
 };
-async function init9(cobalt, nodeData) {
+async function init10(cobalt, nodeData) {
   const { canvas, device } = cobalt;
   const format = nodeData.options.format || "rgba8unorm";
   let atlasMaterial;
@@ -14271,7 +14649,7 @@ var spritesheet_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init10(cobalt, options);
+    return init11(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14283,12 +14661,13 @@ var spritesheet_default = {
   onViewportPosition: function(cobalt, node) {
   }
 };
-async function init10(cobalt, node) {
+async function init11(cobalt, node) {
   const { canvas, device } = cobalt;
   let spritesheet, colorTexture, emissiveTexture;
   const format = node.options.format || "rgba8unorm";
   if (canvas) {
-    spritesheet = await fetchJson(node.options.spriteSheetJsonUrl);
+    spritesheet = await fetch(node.options.spriteSheetJsonUrl);
+    spritesheet = await spritesheet.json();
     spritesheet = readSpriteSheet(spritesheet);
     colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, format);
     emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, format);
@@ -14316,10 +14695,6 @@ function destroy7(node) {
   node.data.colorTexture.buffer.destroy();
   node.data.emissiveTexture.texture.destroy();
 }
-async function fetchJson(url) {
-  const raw = await fetch(url);
-  return raw.json();
-}
 
 // src/fb-texture/fb-texture.js
 var fb_texture_default = {
@@ -14328,7 +14703,7 @@ var fb_texture_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init11(cobalt, options);
+    return init12(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
@@ -14341,7 +14716,7 @@ var fb_texture_default = {
   onViewportPosition: function(cobalt, node) {
   }
 };
-async function init11(cobalt, node) {
+async function init12(cobalt, node) {
   const { device } = cobalt;
   node.options.format = node.options.format === "PREFERRED_TEXTURE_FORMAT" ? getPreferredFormat(cobalt) : node.options.format;
   const { format, label, mip_count, usage, viewportScale } = node.options;
@@ -14360,7 +14735,7 @@ function resize5(cobalt, node) {
 }
 
 // src/cobalt.js
-async function init12(ctx, viewportWidth, viewportHeight) {
+async function init13(ctx, viewportWidth, viewportHeight) {
   let device, gpu, context, canvas;
   if (ctx.sdlWindow && ctx.gpu) {
     gpu = ctx.gpu;
@@ -14392,6 +14767,7 @@ async function init12(ctx, viewportWidth, viewportHeight) {
     "cobalt:spritesheet": spritesheet_default,
     "cobalt:fbTexture": fb_texture_default,
     // builtin run nodes
+    "cobalt:sprite": sprite_default4,
     "cobalt:bloom": bloom_default2,
     "cobalt:composite": scene_composite_default2,
     "cobalt:spriteHDR": sprite_default2,
@@ -14456,7 +14832,7 @@ async function initNode(c, nodeData) {
   c.nodes.push(node);
   return node;
 }
-function draw9(c) {
+function draw10(c) {
   const { device, context } = c;
   const commandEncoder = device.createCommandEncoder();
   const v = getCurrentTextureView(c);
@@ -14508,9 +14884,9 @@ export {
   createTextureFromBuffer,
   createTextureFromUrl,
   defineNode,
-  draw9 as draw,
+  draw10 as draw,
   getCurrentTextureView,
-  init12 as init,
+  init13 as init,
   initNode,
   reset,
   setViewportDimensions,

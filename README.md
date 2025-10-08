@@ -6,11 +6,9 @@ A 2D Web GPU renderer.
 
 
 TODO:
-* write changelog
-* sprite-hdr: reduce garbage collection in draw function
-* make cobalt:sprite from HDR sprite
+* update most of the examples to use the non-HDR sprite to make them shorter
+* update README
 * spritesheet: remove unneeded variables/state
-* update usage docs
 * publish 0.7.0
 
 

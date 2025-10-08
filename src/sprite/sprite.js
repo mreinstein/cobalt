@@ -1,3 +1,4 @@
+import getPreferredFormat from '../get-preferred-format.js'
 import * as publicAPI from './public-api.js'
 import spriteWGSL     from './sprite.wgsl'
 import round          from 'round-half-up-symmetric'
@@ -21,19 +22,13 @@ const OFF_ROT = 48; // float32 (4B)
 
 
 export default {
-    type: "cobalt:spriteHDR",
+    type: "cobalt:sprite",
     refs: [
         { name: "spritesheet", type: "customResource", access: "read" },
         {
-            name: "hdr",
+            name: "color",
             type: "textureView",
-            format: "rgba16float",
-            access: "write",
-        },
-        {
-            name: "emissive",
-            type: "textureView",
-            format: "rgba16float",
+            format: "rgba8unorm",
             access: "write",
         },
     ],
@@ -114,7 +109,7 @@ async function init(cobalt, nodeData) {
 
     // create buffer for sprite uv lookup
     const spriteBuf = device.createBuffer({
-        label: "spriteHDR desc table",
+        label: "sprite desc table",
         size: Math.max(16, buf.byteLength),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
@@ -124,7 +119,7 @@ async function init(cobalt, nodeData) {
     // --- Instance buffer (growable) ---
     const instanceCap = 1024;
     const instanceBuf = device.createBuffer({
-        label: "spriteHDR instances",
+        label: "sprite instances",
         size: INSTANCE_STRIDE * instanceCap,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
@@ -155,12 +150,6 @@ async function init(cobalt, nodeData) {
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { type: "read-only-storage" },
             },
-            {
-                binding: 4,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture: { sampleType: "float" },
-            },
-
         ],
     });
     const pipelineLayout = device.createPipelineLayout({
@@ -175,7 +164,6 @@ async function init(cobalt, nodeData) {
             { shaderLocation: 1, offset: OFF_SIZE, format: "float32x2" },
             { shaderLocation: 2, offset: OFF_SCALE, format: "float32x2" },
             { shaderLocation: 3, offset: OFF_TINT, format: "float32x4" },
-
             { shaderLocation: 4, offset: OFF_SPRITEID, format: "uint32" },
             { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" },
             { shaderLocation: 6, offset: OFF_ROT, format: "float32" },
@@ -195,7 +183,7 @@ async function init(cobalt, nodeData) {
             targets: [
                 // color
                 {
-                    format: 'rgba16float',
+                    format: getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',
@@ -207,12 +195,6 @@ async function init(cobalt, nodeData) {
                         }
                     }
                 },
-
-                // emissive
-                {
-                    format: 'rgba16float',
-                }
-
             ],
         },
         primitive: { topology: "triangle-strip", cullMode: "none" },
@@ -230,7 +212,6 @@ async function init(cobalt, nodeData) {
             { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
             { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
             { binding: 3, resource: { buffer: spriteBuf } },
-            { binding: 4, resource: nodeData.refs.spritesheet.data.emissiveTexture.view },
         ],
     });
 
@@ -347,24 +328,15 @@ function draw (cobalt, node, commandEncoder) {
     const loadOp = node.options.loadOp || 'load'
 
     const pass = commandEncoder.beginRenderPass({
-        label: "spriteHDR renderpass",
+        label: "sprite renderpass",
         colorAttachments: [
             // color
             {
-                view: node.refs.hdr.data.view,
+                view: node.refs.color,
                 clearValue: cobalt.clearValue,
                 loadOp: loadOp,
                 storeOp: 'store',
             },
-
-            // emissive
-            {
-                view: node.refs.emissive.data.view,
-                clearValue: cobalt.clearValue,
-                loadOp: 'clear',
-                storeOp: 'store'
-            }
-
         ],
     });
 

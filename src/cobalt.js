@@ -12,7 +12,7 @@ import displacementNode from './displacement/displacement.js'
 import fbBlitNode       from './fb-blit/fb-blit.js'  
 import primitivesNode   from './primitives/primitives.js'
 import lightNode        from './light/light.js'
-//import spriteNode      from './sprite/sprite.js'
+import spriteNode      from './sprite/sprite.js'
 
 // built-in resource nodes
 import tileAtlasNode    from './tile-hdr/atlas.js'
@@ -70,6 +70,7 @@ export async function init (ctx, viewportWidth, viewportHeight) {
         'cobalt:fbTexture': fbTextureNode,
 
         // builtin run nodes
+        'cobalt:sprite': spriteNode,
         'cobalt:bloom': bloomNode,
         'cobalt:composite': compositeNode,
         'cobalt:spriteHDR': spriteHDRNode,

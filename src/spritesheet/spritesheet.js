@@ -2,15 +2,9 @@ import createSpriteQuads       from './create-sprite-quads.js'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
 import readSpriteSheet         from './read-spritesheet.js'
-//import spriteWGSL              from './sprite.wgsl'
-//import round                   from 'round-half-up-symmetric'
-//import { mat4, vec3 }          from 'wgpu-matrix'
 
 
 // shared spritesheet resource, used by each sprite render node
-
-// temporary variables, allocated once to avoid garbage collection
-//const _tmpVec3 = vec3.create(0, 0, 0)
 
 export default {
     type: 'cobalt:spritesheet',
@@ -22,22 +16,16 @@ export default {
         return init(cobalt, options)
     },
 
-    onRun: function (cobalt, node, webGpuCommandEncoder) {
-        // do whatever you need for this node. webgpu renderpasses, etc.
-    },
+    onRun: function (cobalt, node, webGpuCommandEncoder) { },
 
     onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
         destroy(node)
     },
 
-    onResize: function (cobalt, node) {
-        //_writeSpriteBuffer(cobalt, node)
-    },
+    onResize: function (cobalt, node) { },
 
-    onViewportPosition: function (cobalt, node) {
-        //_writeSpriteBuffer(cobalt, node)
-    },
+    onViewportPosition: function (cobalt, node) { },
 }
 
 
@@ -51,7 +39,8 @@ async function init (cobalt, node) {
 
     if (canvas) {
         // browser (canvas) path
-        spritesheet = await fetchJson(node.options.spriteSheetJsonUrl)
+        spritesheet = await fetch(node.options.spriteSheetJsonUrl)
+        spritesheet = await spritesheet.json()
         spritesheet = readSpriteSheet(spritesheet)
 
         colorTexture = await createTextureFromUrl(cobalt, 'sprite', node.options.colorTextureUrl, format)
@@ -72,94 +61,6 @@ async function init (cobalt, node) {
     const idByName = new Map(spritesheet.locations.map((n,i)=>[n,i]))
 
     const quads = createSpriteQuads(device, spritesheet)
-
-    /*
-    const uniformBuffer = device.createBuffer({
-        size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    })
-
-    const bindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { }
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            },
-            {
-                binding: 3,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'read-only-storage'
-                }
-            },
-            {
-                binding: 4,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
-            },
-        ],
-    })
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
-    })
-
-    const pipeline = device.createRenderPipeline({
-        label: 'spritesheet',
-        vertex: {
-            module: device.createShaderModule({
-                code: spriteWGSL
-            }),
-            entryPoint: 'vs_main',
-            buffers: [ quads.bufferLayout ]
-        },
-
-        fragment: {
-            module: device.createShaderModule({
-                code: spriteWGSL
-            }),
-            entryPoint: 'fs_main',
-            targets: [
-                // color
-                {
-                    format: 'rgba16float',
-                    blend: {
-                        color: {
-                            srcFactor: 'src-alpha',
-                            dstFactor: 'one-minus-src-alpha',
-                        },
-                        alpha: {
-                            srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                },
-
-                // emissive
-                {
-                    format: 'rgba16float',
-                }
-            ]
-        },
-
-        primitive: {
-            topology: 'triangle-list'
-        },
-
-        layout: pipelineLayout
-    })
-    */
     
     return {
        // pipeline,
@@ -180,39 +81,3 @@ function destroy (node) {
     //node.data.uniformBuffer.destroy()
     node.data.emissiveTexture.texture.destroy()
 }
-
-
-async function fetchJson (url) {
-    const raw = await fetch(url)
-    return raw.json()
-}
-
-/*
-function _writeSpriteBuffer (cobalt, node) {
-
-    const { device, viewport } = cobalt
-
-    const GAME_WIDTH = viewport.width / viewport.zoom
-    const GAME_HEIGHT = viewport.height / viewport.zoom
-
-    //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
-
-    
-    // TODO: if this doesn't introduce jitter into the crossroads render, remove this disabled code entirely.
-    //
-    // I'm disabling the rounding because I think it fails in cases where units are not expressed in pixels
-    // e.g., most physics engines operate on meters, not pixels, so we don't want to round to the nearest integer as that 
-    // probably isn't high enough resolution. That would mean the camera could be snapped by up to 0.5 meters
-    // in that case. I think the better solution for expressing camera position in pixels is to round before calling
-    // cobalt.setViewportPosition(...)
-    //
-    // set 3d camera position
-    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3)
-    //vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
-    const view = mat4.translation(_tmpVec3)
-
-    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
-    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
-}
-*/
