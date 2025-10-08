@@ -1,5 +1,6 @@
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
+import getPreferredFormat      from '../get-preferred-format.js'
 import tileWGSL                from './tile.wgsl'
 
 
@@ -139,7 +140,7 @@ async function init (cobalt, nodeData) {
             entryPoint: 'fs_main',
             targets: [
                 {
-                    format: 'rgba16float',
+                    format: nodeData.options.outputFormat || getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',

@@ -99,10 +99,11 @@ async function main () {
             label: 'tile atlas',
             tileSize: 16,
             tileScale: 1.0,
-            textureUrl: 'assets/spelunky-tiles.png'
+            textureUrl: 'assets/spelunky-tiles.png',
         }
     })
 
+    /*
     const hdrTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
@@ -178,14 +179,13 @@ async function main () {
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
         }
     })
+    */
 
      const tileNodeBG = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileHDR',
         refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
             tileAtlas: tileAtlasNode,
-            hdr: hdrTex,
+            hdr: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP4DwQACfsD/Wj6HMwAAAAASUVORK5CYII=',
@@ -198,10 +198,8 @@ async function main () {
     const tileNodeBg = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileHDR',
         refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
             tileAtlas: tileAtlasNode,
-            hdr: hdrTex,
+            hdr: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'assets/spelunky1.png',
@@ -212,10 +210,8 @@ async function main () {
     const tileNodeFg = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileHDR',
         refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
             tileAtlas: tileAtlasNode,
-            hdr: hdrTex,
+            hdr: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'assets/spelunky0.png',
@@ -224,6 +220,7 @@ async function main () {
     })
 
 
+    /*
     const compositeNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:composite',
         refs: {
@@ -243,6 +240,7 @@ async function main () {
         },
         options: { }
     })
+    */
 
 
     // use resizeViewport to init values on load:

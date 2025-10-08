@@ -6,11 +6,9 @@ A 2D Web GPU renderer.
 
 
 TODO:
-* update most of the examples to use the non-HDR sprite node
-* try to integrate cobalt@0.7.0 into crossroads before publishing
-
-* convert tile node to non-HDR
-* convert light node to non-HDR
+* try to make tile node work in hdr and regular pipelines
+* convert light node to non-HDR?
+* integration test cobalt@0.7.0 in crossroads before publishing
 * update README
 * spritesheet: remove unneeded variables/state
 * publish 0.7.0

@@ -89,7 +89,8 @@ async function main () {
             label: 'tile atlas',
             tileSize: 16,
             tileScale: 1.0,
-            textureUrl: 'assets/spelunky-tiles.png'
+            textureUrl: 'assets/spelunky-tiles.png',
+            outputFormat: 'rgba16float',
         }
     })
 
@@ -117,70 +118,6 @@ async function main () {
         }
     })
 
-    const emissiveTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr emissive texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr bloom texture',
-            format: 'rgba16float',
-            mip_count: 7,
-            viewportScale: 0.5,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:bloom',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            emissive: emissiveTex,
-            hdr: hdrTex,
-            bloom: bloomTex
-        },
-        options: {
-            // any extra options you want to pass to this node
-            bloom_intensity: 45.0,
-            bloom_combine_constant: 0.3,
-            bloom_knee: 0.2,
-            bloom_threshold: 0.1, // 1.0
-
-            // sprite instance 1
-            sprite_instances: [
-                {
-                    emissive_intensity: 1.0,
-                },
-                {
-                    emissive_intensity: 0.5,
-                },
-            ],
-        }
-    })
-
-    const tmpTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'bloom + hdr compositing',
-            format: 'PREFERRED_TEXTURE_FORMAT',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
     // instantiate all runnable nodes
     const tileNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileHDR',
@@ -193,7 +130,6 @@ async function main () {
         options: {
             textureUrl: 'assets/spelunky1.png',
             scrollScale: 0.6,
-            //zIndex: 0,
         }
     })
 
@@ -208,25 +144,8 @@ async function main () {
         options: {
             textureUrl: 'assets/spelunky0.png',
             scrollScale: 1.0,
-            //zIndex: 5,
         }
     })
-
-
-    const convertToViewportPosition = (clientPosition /* [number, number] */) /* [number, number] */ => {
-        const canvasBox = canvas.getBoundingClientRect();
-        return [
-             ((clientPosition[0] - canvasBox.left) / canvasBox.width) * constants.GAME_WIDTH  /Global.renderer.viewport.zoom,
-             ((clientPosition[1] - canvasBox.top) / canvasBox.height) * constants.GAME_HEIGHT /Global.renderer.viewport.zoom,
-        ];
-    }
-
-    const convertToWorldPosition = (viewportPosition /* [number, number] */) /* [number, number] */ => {
-        return [
-            viewportPosition[0] + viewportCenter[0] - 0.5 * constants.GAME_WIDTH / Global.renderer.viewport.zoom,
-            viewportPosition[1] + viewportCenter[1] - 0.5 * constants.GAME_HEIGHT/ Global.renderer.viewport.zoom,
-        ];
-    };
 
     // lights and shadows node
     const light = await Cobalt.initNode(Global.renderer, {
@@ -238,6 +157,17 @@ async function main () {
         options: {
         }
     })
+
+    const b = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:fbBlit',
+        refs: {
+            in: lightCompositeHdrTex,
+            out: 'FRAME_TEXTURE_VIEW',
+        },
+        options: { }
+    })
+
+
     light.setAmbientLight([0.3, 0.3, 0.3]);
 
     const permanentObstacleSegments = [];
@@ -255,6 +185,22 @@ async function main () {
         return segments;
 
     };
+
+    const convertToViewportPosition = (clientPosition /* [number, number] */) /* [number, number] */ => {
+        const canvasBox = canvas.getBoundingClientRect();
+        return [
+             ((clientPosition[0] - canvasBox.left) / canvasBox.width) * constants.GAME_WIDTH  /Global.renderer.viewport.zoom,
+             ((clientPosition[1] - canvasBox.top) / canvasBox.height) * constants.GAME_HEIGHT /Global.renderer.viewport.zoom,
+        ];
+    }
+
+    const convertToWorldPosition = (viewportPosition /* [number, number] */) /* [number, number] */ => {
+        return [
+            viewportPosition[0] + viewportCenter[0] - 0.5 * constants.GAME_WIDTH / Global.renderer.viewport.zoom,
+            viewportPosition[1] + viewportCenter[1] - 0.5 * constants.GAME_HEIGHT/ Global.renderer.viewport.zoom,
+        ];
+    };
+    
     canvas.addEventListener("mouseenter", event => {
         mouseViewportPosition = convertToViewportPosition([event.clientX, event.clientY]);
     });
@@ -344,26 +290,6 @@ async function main () {
         movingGreenLight,
     ];
     light.setLights(lights)
-
-    const compositeNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:composite',
-        refs: {
-            hdr: lightCompositeHdrTex,
-            bloom: bloomTex,
-            combined: tmpTex,
-        },
-        options: { }
-    })
-
-
-    const b = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbBlit',
-        refs: {
-            in: tmpTex,
-            out: 'FRAME_TEXTURE_VIEW',
-        },
-        options: { }
-    })
 
 
     // use resizeViewport to init values on load:

@@ -11792,7 +11792,7 @@ var tile_default = {
     setTexture: async function(cobalt, node, texture) {
       const { canvas, device } = cobalt;
       destroy2(node);
-      const format = node.options.format || "rgba8unorm";
+      const format = node.options.format || getPreferredFormat(cobalt);
       let material;
       if (canvas) {
         node.options.textureUrl = texture;
@@ -11827,7 +11827,7 @@ var tile_default = {
 async function init4(cobalt, nodeData) {
   const { canvas, device } = cobalt;
   let material;
-  const format = nodeData.options.format || "rgba8unorm";
+  const format = nodeData.options.format || getPreferredFormat(cobalt);
   if (canvas) {
     material = await createTextureFromUrl(cobalt, "tile map", nodeData.options.textureUrl, format);
   } else {
@@ -11879,7 +11879,8 @@ function draw4(cobalt, nodeData, commandEncoder) {
     label: "tile",
     colorAttachments: [
       {
-        view: nodeData.refs.hdr.data.view,
+        //    hdr is passsed as a node     ||  FRAME_TEXTURE_VIEW
+        view: nodeData.refs.hdr.data?.view || nodeData.refs.hdr,
         clearValue: cobalt.clearValue,
         loadOp,
         storeOp: "store"
@@ -14487,7 +14488,7 @@ async function init10(cobalt, nodeData) {
       entryPoint: "fs_main",
       targets: [
         {
-          format: "rgba16float",
+          format: nodeData.options.outputFormat || getPreferredFormat(cobalt),
           blend: {
             color: {
               srcFactor: "src-alpha",
