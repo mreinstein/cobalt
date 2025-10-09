@@ -14527,8 +14527,8 @@ function destroy6(data2) {
   data2.atlasMaterial.texture = void 0;
 }
 function _writeTileBuffer(c, nodeData) {
-  _buf[0] = c.viewport.position[0];
-  _buf[1] = c.viewport.position[1];
+  _buf[0] = round(c.viewport.position[0]);
+  _buf[1] = round(c.viewport.position[1]);
   const tile = nodeData.data;
   const { tileScale, tileSize } = tile;
   const GAME_WIDTH = c.viewport.width / c.viewport.zoom;

@@ -2,6 +2,7 @@ import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
 import getPreferredFormat      from '../get-preferred-format.js'
 import tileWGSL                from './tile.wgsl'
+import round                   from 'round-half-up-symmetric'
 
 
 const _buf = new Float32Array(8) //(136)  // tile instance data stored in a UBO
@@ -184,8 +185,8 @@ function destroy (data) {
 
 function _writeTileBuffer (c, nodeData) {
     // c.viewport.position is the top left visible corner of the level
-    _buf[0] = c.viewport.position[0]
-    _buf[1] = c.viewport.position[1]
+    _buf[0] = round(c.viewport.position[0])
+    _buf[1] = round(c.viewport.position[1])
 
     const tile = nodeData.data
     const { tileScale, tileSize } = tile
