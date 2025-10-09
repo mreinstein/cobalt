@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title class="titleText">Web GPU prototyping</title>
+        <title class="titleText">WebGPU - Cobalt screen space sprite overlays</title>
         <meta name="description" content="Web GPU 2d cobalt" />
         <meta name="author" content="Michael Reinstein" />
         <meta name="viewport" content="width=device-width" />
@@ -66,7 +66,8 @@
 <script type="module">
 import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
-import { vec2, vec3, vec4 } from './deps.js'
+import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
+import { vec2, vec3, vec4 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.js'
 
 
 async function main () {
@@ -88,39 +89,195 @@ async function main () {
         }
     })
 
-    const overlayNode = await Cobalt.initNode(renderer, {
-        type: 'cobalt:overlay',
+    const hdrTex = await Cobalt.initNode(renderer, {
+        type: 'cobalt:fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr color texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const emissiveTex = await Cobalt.initNode(renderer, {
+        type: 'cobalt:fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr emissive texture',
+            format: 'rgba16float',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const bloomTex = await Cobalt.initNode(renderer, {
+        type: 'cobalt:fbTexture',
+        refs: { },
+        options: {
+            label: 'hdr bloom texture',
+            format: 'rgba16float',
+            mip_count: 7,
+            viewportScale: 0.5,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const bloomNode = await Cobalt.initNode(renderer, {
+        type: 'cobalt:bloom',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
+            emissive: emissiveTex,
+            hdr: hdrTex,
+            bloom: bloomTex
+        },
+        options: {
+            // any extra options you want to pass to this node
+            bloom_intensity: 0.0,
+            bloom_knee: 0.0,
+            bloom_threshold: 0.1, // 1.0
+            /*
+            // sprite instance 1
+            sprite_instances: [
+                {
+                    emissive_intensity: 1.0,
+                },
+                {
+                    emissive_intensity: 0.5,
+                },
+            ],
+            */
+        }
+    })
+
+    const tmpTex = await Cobalt.initNode(renderer, {
+        type: 'cobalt:fbTexture',
+        refs: { },
+        options: {
+            label: 'bloom + hdr compositing',
+            format: 'PREFERRED_TEXTURE_FORMAT',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    const overlayNode = await Cobalt.initNode(renderer, {
+        type: 'cobalt:spriteHDR',
+        refs: {
             spritesheet: spritesheet,
-            color: 'FRAME_TEXTURE_VIEW',
+            emissive: emissiveTex,
+            color: hdrTex,
+        },
+        options: {
+            loadOp: 'clear',
+            isScreenSpace: true
+        }
+    })
+
+    const compositeNode = await Cobalt.initNode(renderer, {
+        type: 'cobalt:composite',
+        refs: {
+            hdr: hdrTex,
+            bloom: bloomTex,
+            combined: tmpTex,
+        },
+        options: {
+            bloom_combine_constant: 0.0,
+        },
+    })
+
+
+    const b = await Cobalt.initNode(renderer, {
+        type: 'cobalt:fbBlit',
+        refs: {
+            in: tmpTex,
+            out: 'FRAME_TEXTURE_VIEW',
         },
         options: { }
     })
 
 
     // test sprites
-    overlayNode.addSprite('health-0.png',  // name
-                           [ 20, 20 ],     // position
-                           vec3.create(1, 1, 1),
-                           vec4.create(0, 0, 0, 0),  // tint
-                           1.0, // opacity
-                           0,  // rotation
-                           //zIndex
+    overlayNode.addSprite('health-0.png',               // name
+                           vec2.fromValues(20, 20),     // position
+                           vec2.fromValues(1, 1),       // scale
+                           vec4.fromValues(0, 0, 0, 0), // tint
+                           1.0,                         // opacity
+                           Math.PI,                     // rotation
                           )
 
-    overlayNode.addSprite('health-0.png',  // name
-                           [ 420, 220 ],     // position
-                           vec3.create(1, 1, 1),
-                           vec4.create(0, 0, 0, 0),  // tint
-                           1.0, // opacity
-                           0,  // rotation
-                           //zIndex
+    overlayNode.addSprite('health-0.png',               // name
+                           vec2.fromValues(150, 220),   // position
+                           vec2.fromValues(-2, 2),      // scale
+                           vec4.fromValues(0, 0, 0, 0), // tint
+                           0.4,                         // opacity
+                           0.0,                         // rotation
                           )
 
-    Cobalt.setViewportDimensions(renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
-    Cobalt.draw(renderer)
+    overlayNode.addSprite('health-0.png',                 // name
+                           vec2.fromValues(300, 220),     // position
+                           vec2.fromValues(1, 1),         // scale
+                           vec4.fromValues(0, 0, 0, 0),   // tint
+                           0.3,                           // opacity
+                           0.0,                           // rotation
+                          )
+
+    function resizeViewport (renderer, width, height) {
+
+        const { canvas, device } = renderer
+
+        // determine which screen dimension is most constrained
+        // we floor the render scale to an integer because we get weird texture artifacts when trying to render at
+        // certain float values (e.g., 3.0145833333333334)
+        const renderScale = Math.floor(Math.min(width/constants.GAME_WIDTH, height/constants.GAME_HEIGHT))
+
+        canvas.width = Math.ceil(constants.GAME_WIDTH)
+        canvas.height = Math.ceil(constants.GAME_HEIGHT)
+
+        Cobalt.setViewportDimensions(renderer, constants.GAME_WIDTH, constants.GAME_HEIGHT)
+
+        // https://www.khronos.org/webgl/wiki/HandlingHighDPI
+        // webgl display resolution size within canvas
+        const resolution = window.devicePixelRatio || 1
+
+        // center the canvas if native window doesn't match aspect ratio
+        canvas.style.width = canvas.width * renderScale + 'px'
+        canvas.style.height = canvas.height * renderScale + 'px'
+        
+        canvas.style.left = Math.round((width - canvas.width * renderScale) / 2) + 'px'
+        canvas.style.top = Math.round((height - canvas.height * renderScale) / 2) + 'px'
+    }
+
+
+    // use resizeViewport to init values on load:
+    resizeViewport(renderer, window.innerWidth, window.innerHeight)
+
+    // window resize is *expensive* - best to debounce:
+    const debouncedResize = debounce(function () {
+       resizeViewport(renderer, window.innerWidth, window.innerHeight) 
+    }, 50)
+
+    window.addEventListener('resize', debouncedResize, { passive: true })
+
+    const gameLoop = function () {
+
+        const elapsed = performance.now()
+        //const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
+        //const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
+
+        //Cobalt.setViewportPosition(renderer, [ x, y ])
+
+        Cobalt.setViewportPosition(renderer, [ 240, 135 ])
+
+        Cobalt.draw(renderer)
+        requestAnimationFrame(gameLoop)
+    }
+
+    requestAnimationFrame(gameLoop)
 }
 
 

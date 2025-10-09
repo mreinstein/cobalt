@@ -7,6 +7,7 @@ struct ViewParams {
 @group(0) @binding(1) var uSampler : sampler;
 @group(0) @binding(2) var uTex : texture_2d<f32>;
 
+
 struct SpriteDesc {
 	uvOrigin : vec2<f32>,
 	uvSpan : vec2<f32>,
@@ -16,6 +17,7 @@ struct SpriteDesc {
 
 @group(0) @binding(3) var<storage, read> Sprites : array<SpriteDesc>;
 
+@group(0) @binding(4) var emissiveTexture: texture_2d<f32>;
 
 struct VSOut {
 	@builtin(position) pos : vec4<f32>,
@@ -31,13 +33,18 @@ const corners = array<vec2<f32>, 4>(
 	vec2<f32>(-0.5, 0.5),
 	vec2<f32>( 0.5, 0.5),
 );
-
 const uvBase = array<vec2<f32>, 4>(
 	vec2<f32>(0.0, 0.0),
 	vec2<f32>(1.0, 0.0),
 	vec2<f32>(0.0, 1.0),
 	vec2<f32>(1.0, 1.0),
 );
+
+// multiple render targets
+struct GBufferOutput {
+  @location(0) color : vec4<f32>,
+  @location(1) emissive : vec4<f32>,
+}
 
 
 @vertex
@@ -78,7 +85,17 @@ fn vs_main(@builtin(vertex_index) vid : u32,
 
 
 @fragment
-fn fs_main(in : VSOut) -> @location(0) vec4<f32>  {
+fn fs_main(in : VSOut) -> GBufferOutput {
+    
+    var output : GBufferOutput;
+
 	let texel = textureSample(uTex, uSampler, in.uv);
-	return vec4<f32>(texel.rgb * (1.0 - in.tint.a) + (in.tint.rgb * in.tint.a), texel.a * in.opacity);
+	output.color = vec4<f32>(texel.rgb * (1.0 - in.tint.a) + (in.tint.rgb * in.tint.a), texel.a * in.opacity);
+
+	let emissive = textureSample(emissiveTexture, uSampler, in.uv);
+
+    // the alpha channel in the emissive texture is used for emission strength
+    output.emissive = vec4(emissive.rgb, 1.0) * emissive.a;
+
+	return output;
 }

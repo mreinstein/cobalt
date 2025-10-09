@@ -7852,13 +7852,12 @@ function resize2(cobalt, node) {
   });
 }
 
-// src/sprite/public-api.js
+// src/sprite-hdr/public-api.js
 var public_api_exports = {};
 __export(public_api_exports, {
   addSprite: () => addSprite,
   clear: () => clear,
   removeSprite: () => removeSprite,
-  setSprite: () => setSprite,
   setSpriteName: () => setSpriteName,
   setSpriteOpacity: () => setSpriteOpacity,
   setSpritePosition: () => setSpritePosition,
@@ -7867,695 +7866,10 @@ __export(public_api_exports, {
   setSpriteTint: () => setSpriteTint
 });
 
-// src/sprite/constants.js
-var FLOAT32S_PER_SPRITE = 12;
-
-// src/sprite/sorted-binary-insert.js
-function sortedBinaryInsert(spriteZIndex, spriteType, renderPass) {
-  if (renderPass.spriteCount === 0)
-    return 0;
-  let low = 0;
-  let high = renderPass.spriteCount - 1;
-  const order = spriteZIndex << 16 & 16711680 | spriteType & 65535;
-  while (low <= high) {
-    const lowOrder = renderPass.spriteData[low * FLOAT32S_PER_SPRITE + 11];
-    if (order <= lowOrder)
-      return low;
-    const highOrder = renderPass.spriteData[high * FLOAT32S_PER_SPRITE + 11];
-    if (order >= highOrder)
-      return high + 1;
-    const mid = Math.floor((low + high) / 2);
-    const midOrder = renderPass.spriteData[mid * FLOAT32S_PER_SPRITE + 11];
-    if (order === midOrder)
-      return mid + 1;
-    if (order > midOrder)
-      low = mid + 1;
-    else
-      high = mid - 1;
-  }
-  return low;
-}
-
 // src/uuid.js
 function _uuid() {
   return Math.ceil(Math.random() * (Number.MAX_SAFE_INTEGER - 10));
 }
-
-// src/sprite/public-api.js
-function addSprite(cobalt, renderPass, name, position, scale, tint, opacity, rotation, zIndex) {
-  const spritesheet = renderPass.refs.spritesheet.data.spritesheet;
-  renderPass = renderPass.data;
-  const spriteType = spritesheet.locations.indexOf(name);
-  const insertIdx = sortedBinaryInsert(zIndex, spriteType, renderPass);
-  const offset = (insertIdx + 1) * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData.set(
-    renderPass.spriteData.subarray(insertIdx * FLOAT32S_PER_SPRITE, renderPass.spriteCount * FLOAT32S_PER_SPRITE),
-    offset
-  );
-  copySpriteDataToBuffer(renderPass, spritesheet, insertIdx, name, position, scale, tint, opacity, rotation, zIndex);
-  for (const [spriteId2, idx] of renderPass.spriteIndices)
-    if (idx >= insertIdx)
-      renderPass.spriteIndices.set(spriteId2, idx + 1);
-  const spriteId = _uuid();
-  renderPass.spriteIndices.set(spriteId, insertIdx);
-  renderPass.spriteCount++;
-  renderPass.dirty = true;
-  return spriteId;
-}
-function removeSprite(cobalt, renderPass, spriteId) {
-  renderPass = renderPass.data;
-  const removeIdx = renderPass.spriteIndices.get(spriteId);
-  for (const [spriteId2, idx] of renderPass.spriteIndices)
-    if (idx > removeIdx)
-      renderPass.spriteIndices.set(spriteId2, idx - 1);
-  let offset = removeIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData.set(
-    renderPass.spriteData.subarray((removeIdx + 1) * FLOAT32S_PER_SPRITE, renderPass.spriteCount * FLOAT32S_PER_SPRITE),
-    offset
-  );
-  renderPass.spriteIndices.delete(spriteId);
-  renderPass.spriteCount--;
-  renderPass.dirty = true;
-}
-function clear(cobalt, renderPass) {
-  renderPass = renderPass.data;
-  renderPass.spriteIndices.clear();
-  renderPass.spriteCount = 0;
-  renderPass.instancedDrawCallCount = 0;
-  renderPass.dirty = true;
-}
-function setSpriteName(cobalt, renderPass, spriteId, name, scale) {
-  const spritesheet = renderPass.refs.spritesheet.data.spritesheet;
-  renderPass = renderPass.data;
-  const spriteType = spritesheet.locations.indexOf(name);
-  const SPRITE_WIDTH = spritesheet.spriteMeta[name].w;
-  const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData[offset + 2] = SPRITE_WIDTH * scale[0];
-  renderPass.spriteData[offset + 3] = SPRITE_HEIGHT * scale[1];
-  const zIndex = renderPass.spriteData[offset + 11] >> 16 & 255;
-  const sortValue = zIndex << 16 & 16711680 | spriteType & 65535;
-  renderPass.spriteData[offset + 11] = sortValue;
-  renderPass.dirty = true;
-}
-function setSpritePosition(cobalt, renderPass, spriteId, position) {
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData[offset] = position[0];
-  renderPass.spriteData[offset + 1] = position[1];
-  renderPass.dirty = true;
-}
-function setSpriteTint(cobalt, renderPass, spriteId, tint) {
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData[offset + 4] = tint[0];
-  renderPass.spriteData[offset + 5] = tint[1];
-  renderPass.spriteData[offset + 6] = tint[2];
-  renderPass.spriteData[offset + 7] = tint[3];
-  renderPass.dirty = true;
-}
-function setSpriteOpacity(cobalt, renderPass, spriteId, opacity) {
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData[offset + 8] = opacity;
-  renderPass.dirty = true;
-}
-function setSpriteRotation(cobalt, renderPass, spriteId, rotation) {
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  renderPass.spriteData[offset + 9] = rotation;
-  renderPass.dirty = true;
-}
-function setSpriteScale(cobalt, renderPass, spriteId, name, scale) {
-  const spritesheet = renderPass.refs.spritesheet.data.spritesheet;
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  const offset = spriteIdx * FLOAT32S_PER_SPRITE;
-  const SPRITE_WIDTH = spritesheet.spriteMeta[name].w;
-  const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h;
-  renderPass.spriteData[offset + 2] = SPRITE_WIDTH * scale[0];
-  renderPass.spriteData[offset + 3] = SPRITE_HEIGHT * scale[1];
-  renderPass.dirty = true;
-}
-function setSprite(cobalt, renderPass, spriteId, name, position, scale, tint, opacity, rotation, zIndex) {
-  const spritesheet = renderPass.refs.spritesheet.data.spritesheet;
-  renderPass = renderPass.data;
-  const spriteIdx = renderPass.spriteIndices.get(spriteId);
-  copySpriteDataToBuffer(renderPass, spritesheet, spriteIdx, name, position, scale, tint, opacity, rotation, zIndex);
-  renderPass.dirty = true;
-}
-function copySpriteDataToBuffer(renderPass, spritesheet, insertIdx, name, position, scale, tint, opacity, rotation, zIndex) {
-  if (!spritesheet.spriteMeta[name])
-    throw new Error(`Sprite name ${name} could not be found in the spritesheet metaData`);
-  const offset = insertIdx * FLOAT32S_PER_SPRITE;
-  const SPRITE_WIDTH = spritesheet.spriteMeta[name].w;
-  const SPRITE_HEIGHT = spritesheet.spriteMeta[name].h;
-  const spriteType = spritesheet.locations.indexOf(name);
-  const sortValue = zIndex << 16 & 16711680 | spriteType & 65535;
-  renderPass.spriteData[offset] = position[0];
-  renderPass.spriteData[offset + 1] = position[1];
-  renderPass.spriteData[offset + 2] = SPRITE_WIDTH * scale[0];
-  renderPass.spriteData[offset + 3] = SPRITE_HEIGHT * scale[1];
-  renderPass.spriteData[offset + 4] = tint[0];
-  renderPass.spriteData[offset + 5] = tint[1];
-  renderPass.spriteData[offset + 6] = tint[2];
-  renderPass.spriteData[offset + 7] = tint[3];
-  renderPass.spriteData[offset + 8] = opacity;
-  renderPass.spriteData[offset + 9] = rotation;
-  renderPass.spriteData[offset + 11] = sortValue;
-}
-
-// src/sprite/sprite.js
-var sprite_default = {
-  type: "cobalt:sprite",
-  refs: [
-    { name: "spritesheet", type: "customResource", access: "read" },
-    { name: "hdr", type: "textureView", format: "rgba16float", access: "write" },
-    { name: "emissive", type: "textureView", format: "rgba16float", access: "write" }
-  ],
-  // cobalt event handling functions
-  // @params Object cobalt renderer world object
-  // @params Object options optional data passed when initing this node
-  onInit: async function(cobalt, options = {}) {
-    return init3(cobalt, options);
-  },
-  onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw3(cobalt, node, webGpuCommandEncoder);
-  },
-  onDestroy: function(cobalt, node) {
-    destroy2(node);
-  },
-  onResize: function(cobalt, node) {
-  },
-  onViewportPosition: function(cobalt, node) {
-  },
-  // optional
-  customFunctions: {
-    ...public_api_exports
-  }
-};
-async function init3(cobalt, nodeData) {
-  const { device } = cobalt;
-  const MAX_SPRITE_COUNT = 16192;
-  const numInstances = MAX_SPRITE_COUNT;
-  const translateFloatCount = 2;
-  const translateSize = Float32Array.BYTES_PER_ELEMENT * translateFloatCount;
-  const scaleFloatCount = 2;
-  const scaleSize = Float32Array.BYTES_PER_ELEMENT * scaleFloatCount;
-  const tintFloatCount = 4;
-  const tintSize = Float32Array.BYTES_PER_ELEMENT * tintFloatCount;
-  const opacityFloatCount = 4;
-  const opacitySize = Float32Array.BYTES_PER_ELEMENT * opacityFloatCount;
-  const spriteBuffer = device.createBuffer({
-    size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances,
-    // 4x4 matrix with 4 bytes per float32, per instance
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-    //mappedAtCreation: true,
-  });
-  const spritesheet = nodeData.refs.spritesheet.data;
-  const bindGroup = device.createBindGroup({
-    layout: nodeData.refs.spritesheet.data.bindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: {
-          buffer: spritesheet.uniformBuffer
-        }
-      },
-      {
-        binding: 1,
-        resource: spritesheet.colorTexture.view
-      },
-      {
-        binding: 2,
-        resource: spritesheet.colorTexture.sampler
-      },
-      {
-        binding: 3,
-        resource: {
-          buffer: spriteBuffer
-        }
-      },
-      {
-        binding: 4,
-        resource: spritesheet.emissiveTexture.view
-      }
-    ]
-  });
-  return {
-    // instancedDrawCalls is used to actually perform draw calls within the render pass
-    // layout is interleaved with baseVtxIdx (the sprite type), and instanceCount (how many sprites)
-    // [
-    //    baseVtxIdx0, instanceCount0,
-    //    baseVtxIdx1, instanceCount1,
-    //    ...
-    // ]
-    instancedDrawCalls: new Uint32Array(MAX_SPRITE_COUNT * 2),
-    instancedDrawCallCount: 0,
-    bindGroup,
-    spriteBuffer,
-    // actual sprite instance data. ordered by layer, then sprite type
-    // this is used to update the spriteBuffer.
-    spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE),
-    spriteCount: 0,
-    spriteIndices: /* @__PURE__ */ new Map(),
-    // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
-    // when a sprite is changed the renderpass is dirty, and should have it's instance data copied to the gpu
-    dirty: false
-  };
-}
-function draw3(cobalt, node, commandEncoder) {
-  const { device } = cobalt;
-  const loadOp = node.options.loadOp || "load";
-  if (node.data.dirty) {
-    _rebuildSpriteDrawCalls(node.data);
-    node.data.dirty = false;
-  }
-  if (node.data.spriteCount > 0) {
-    const writeLength = node.data.spriteCount * FLOAT32S_PER_SPRITE * Float32Array.BYTES_PER_ELEMENT;
-    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
-  }
-  const renderpass = commandEncoder.beginRenderPass({
-    label: "sprite",
-    colorAttachments: [
-      // color
-      {
-        view: node.refs.hdr.data.view,
-        clearValue: cobalt.clearValue,
-        loadOp,
-        storeOp: "store"
-      },
-      // emissive
-      {
-        view: node.refs.emissive.data.view,
-        clearValue: cobalt.clearValue,
-        loadOp: "clear",
-        storeOp: "store"
-      }
-    ]
-  });
-  renderpass.setPipeline(node.refs.spritesheet.data.pipeline);
-  renderpass.setBindGroup(0, node.data.bindGroup);
-  renderpass.setVertexBuffer(0, node.refs.spritesheet.data.quads.buffer);
-  const vertexCount = 6;
-  let baseInstanceIdx = 0;
-  for (let i = 0; i < node.data.instancedDrawCallCount; i++) {
-    const baseVertexIdx = node.data.instancedDrawCalls[i * 2] * vertexCount;
-    const instanceCount = node.data.instancedDrawCalls[i * 2 + 1];
-    renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx);
-    baseInstanceIdx += instanceCount;
-  }
-  renderpass.end();
-}
-function _rebuildSpriteDrawCalls(renderPass) {
-  let currentSpriteType = -1;
-  let instanceCount = 0;
-  renderPass.instancedDrawCallCount = 0;
-  for (let i = 0; i < renderPass.spriteCount; i++) {
-    const spriteType = renderPass.spriteData[i * FLOAT32S_PER_SPRITE + 11] & 65535;
-    if (spriteType !== currentSpriteType) {
-      if (instanceCount > 0) {
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2] = currentSpriteType;
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount;
-        renderPass.instancedDrawCallCount++;
-      }
-      currentSpriteType = spriteType;
-      instanceCount = 0;
-    }
-    instanceCount++;
-  }
-  if (instanceCount > 0) {
-    renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2] = currentSpriteType;
-    renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount;
-    renderPass.instancedDrawCallCount++;
-  }
-}
-function destroy2(node) {
-  node.data.instancedDrawCalls = null;
-  node.data.bindGroup = null;
-  node.data.spriteBuffer.destroy();
-  node.data.spriteBuffer = null;
-  node.data.spriteData = null;
-  node.data.spriteIndices.clear();
-  node.data.spriteIndices = null;
-}
-
-// src/tile/tile.js
-var tile_default = {
-  type: "cobalt:tile",
-  refs: [
-    { name: "tileAtlas", type: "textureView", format: "rgba8unorm", access: "write" }
-  ],
-  // @params Object cobalt renderer world object
-  // @params Object options optional data passed when initing this node
-  onInit: async function(cobalt, options = {}) {
-    return init4(cobalt, options);
-  },
-  onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw4(cobalt, node, webGpuCommandEncoder);
-  },
-  onDestroy: function(cobalt, node) {
-    destroy3(node);
-  },
-  onResize: function(cobalt, node) {
-  },
-  onViewportPosition: function(cobalt, node) {
-  },
-  // optional
-  customFunctions: {
-    setTexture: async function(cobalt, node, texture) {
-      const { canvas, device } = cobalt;
-      destroy3(node);
-      const format = node.options.format || "rgba8unorm";
-      let material;
-      if (canvas) {
-        node.options.textureUrl = texture;
-        material = await createTextureFromUrl(cobalt, "tile map", texture, format);
-      } else {
-        material = await createTextureFromBuffer(cobalt, "tile map", texture, format);
-      }
-      const bindGroup = device.createBindGroup({
-        layout: node.refs.tileAtlas.data.tileBindGroupLayout,
-        entries: [
-          {
-            binding: 0,
-            resource: {
-              buffer: node.data.uniformBuffer
-            }
-          },
-          {
-            binding: 1,
-            resource: material.view
-          },
-          {
-            binding: 2,
-            resource: material.sampler
-          }
-        ]
-      });
-      node.data.bindGroup = bindGroup;
-      node.data.material = material;
-    }
-  }
-};
-async function init4(cobalt, nodeData) {
-  const { canvas, device } = cobalt;
-  let material;
-  const format = nodeData.options.format || "rgba8unorm";
-  if (canvas) {
-    material = await createTextureFromUrl(cobalt, "tile map", nodeData.options.textureUrl, format);
-  } else {
-    material = await createTextureFromBuffer(cobalt, "tile map", nodeData.options.texture, format);
-  }
-  const dat = new Float32Array([nodeData.options.scrollScale, nodeData.options.scrollScale]);
-  const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
-  const descriptor = {
-    size: dat.byteLength,
-    usage,
-    // make this memory space accessible from the CPU (host visible)
-    mappedAtCreation: true
-  };
-  const uniformBuffer = device.createBuffer(descriptor);
-  new Float32Array(uniformBuffer.getMappedRange()).set(dat);
-  uniformBuffer.unmap();
-  const bindGroup = device.createBindGroup({
-    layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: {
-          buffer: uniformBuffer
-        }
-      },
-      {
-        binding: 1,
-        resource: material.view
-      },
-      {
-        binding: 2,
-        resource: material.sampler
-      }
-    ]
-  });
-  return {
-    bindGroup,
-    material,
-    uniformBuffer,
-    scrollScale: nodeData.options.scrollScale
-  };
-}
-function draw4(cobalt, nodeData, commandEncoder) {
-  if (!nodeData.data.material.texture)
-    return;
-  const { device } = cobalt;
-  const loadOp = nodeData.options.loadOp || "load";
-  const renderpass = commandEncoder.beginRenderPass({
-    label: "tile",
-    colorAttachments: [
-      {
-        view: nodeData.refs.hdr.data.view,
-        clearValue: cobalt.clearValue,
-        loadOp,
-        storeOp: "store"
-      }
-    ]
-  });
-  const tileAtlas = nodeData.refs.tileAtlas.data;
-  renderpass.setPipeline(tileAtlas.pipeline);
-  renderpass.setBindGroup(0, nodeData.data.bindGroup);
-  renderpass.setBindGroup(1, tileAtlas.atlasBindGroup);
-  renderpass.draw(3);
-  renderpass.end();
-}
-function destroy3(nodeData) {
-  nodeData.data.material.texture.destroy();
-  nodeData.data.material.texture = void 0;
-}
-
-// src/displacement/triangles-buffer.ts
-var TrianglesBuffer = class {
-  device;
-  floatsPerSprite = 6;
-  // vec2(translate) + vec2(scale) + rotation + opacity 
-  bufferGpu;
-  bufferNeedsUpdate = false;
-  sprites = /* @__PURE__ */ new Map();
-  get spriteCount() {
-    return this.sprites.size;
-  }
-  constructor(params) {
-    this.device = params.device;
-    this.bufferGpu = this.device.createBuffer({
-      size: params.maxSpriteCount * this.floatsPerSprite * Float32Array.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    });
-  }
-  destroy() {
-    this.bufferGpu.destroy;
-  }
-  update() {
-    if (this.bufferNeedsUpdate) {
-      const bufferData = [];
-      for (const sprite of this.sprites.values()) {
-        bufferData.push(...sprite);
-      }
-      ;
-      const buffer = new Float32Array(bufferData);
-      this.device.queue.writeBuffer(this.bufferGpu, 0, buffer);
-    }
-  }
-  addTriangle(triangleVertices) {
-    const triangleId = _uuid();
-    if (this.sprites.has(triangleId)) {
-      throw new Error(`Duplicate triangle "${triangleId}".`);
-    }
-    const triangleData = this.buildTriangleData(triangleVertices);
-    this.sprites.set(triangleId, triangleData);
-    this.bufferNeedsUpdate = true;
-    return triangleId;
-  }
-  removeTriangle(triangleId) {
-    if (!this.sprites.has(triangleId)) {
-      throw new Error(`Unknown triangle "${triangleId}".`);
-    }
-    this.sprites.delete(triangleId);
-    this.bufferNeedsUpdate = true;
-  }
-  setTriangle(triangleId, triangleVertices) {
-    if (!this.sprites.has(triangleId)) {
-      throw new Error(`Unknown triangle "${triangleId}".`);
-    }
-    const triangleData = this.buildTriangleData(triangleVertices);
-    this.sprites.set(triangleId, triangleData);
-    this.bufferNeedsUpdate = true;
-  }
-  buildTriangleData(triangleVertices) {
-    return [
-      triangleVertices[0][0],
-      triangleVertices[0][1],
-      triangleVertices[1][0],
-      triangleVertices[1][1],
-      triangleVertices[2][0],
-      triangleVertices[2][1]
-    ];
-  }
-};
-
-// src/displacement/displacement-parameters-buffer.ts
-var DisplacementParametersBuffer = class {
-  device;
-  bufferGpu;
-  needsUpdate = true;
-  constructor(params) {
-    this.device = params.device;
-    this.bufferGpu = this.device.createBuffer({
-      label: "DisplacementParametersBuffer buffer",
-      size: 16,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    this.setParameters(params.initialParameters);
-  }
-  setParameters(params) {
-    this.device.queue.writeBuffer(this.bufferGpu, 0, new Float32Array([params.offsetX, params.offsetY, params.scale]));
-  }
-  destroy() {
-    this.bufferGpu.destroy();
-  }
-};
-
-// src/displacement/composition.wgsl
-var composition_default = `struct DisplacementParameters{offset:vec2<f32>,scale:f32,};@group(0)@binding(0)var<uniform> uniforms:DisplacementParameters;@group(0)@binding(1)var colorTexture:texture_2d<f32>;@group(0)@binding(2)var colorSampler:sampler;@group(0)@binding(3)var noiseTexture:texture_2d<f32>;@group(0)@binding(4)var noiseSampler:sampler;@group(0)@binding(5)var displacementTexture:texture_2d<f32>;struct VertexIn{@builtin(vertex_index)vertexIndex:u32,};struct VertexOut{@builtin(position)position:vec4<f32>,@location(0)uv:vec2<f32>,};@vertex fn main_vertex(in:VertexIn)->VertexOut{const corners=array<vec2<f32>,4>(vec2<f32>(-1,-1),vec2<f32>(1,-1),vec2<f32>(-1,1),vec2<f32>(1,1),);let screenPosition=corners[in.vertexIndex];var out:VertexOut;out.position=vec4<f32>(screenPosition,0,1);out.uv=(0.5+0.5*screenPosition*vec2<f32>(1,-1));return out;}struct FragmentOut{@location(0)color:vec4<f32>,};@fragment fn main_fragment(in:VertexOut)->FragmentOut{let noiseTextureDimensions=vec2<f32>(textureDimensions(noiseTexture,0));let noiseUv=in.uv+uniforms.offset/noiseTextureDimensions;var noise=textureSample(noiseTexture,noiseSampler,noiseUv).rg;noise-=0.5;noise*=uniforms.scale/noiseTextureDimensions;let displacement=textureSample(displacementTexture,colorSampler,in.uv).r;noise*=displacement;let colorUv=in.uv+noise;var out:FragmentOut;out.color=textureSample(colorTexture,colorSampler,colorUv);return out;}`;
-
-// src/displacement/displacement-composition.ts
-var DisplacementComposition = class {
-  device;
-  targetFormat;
-  renderPipeline;
-  colorSampler;
-  noiseSampler;
-  displacementParametersBuffer;
-  renderBundle = null;
-  colorTextureView;
-  noiseMapTextureView;
-  displacementTextureView;
-  constructor(params) {
-    this.device = params.device;
-    this.targetFormat = params.targetFormat;
-    this.colorTextureView = params.colorTextureView;
-    this.noiseMapTextureView = params.noiseMapTextureView;
-    this.displacementTextureView = params.displacementTextureView;
-    this.displacementParametersBuffer = params.displacementParametersBuffer;
-    const shaderModule = this.device.createShaderModule({
-      label: "DisplacementComposition shader module",
-      code: composition_default
-    });
-    this.renderPipeline = this.device.createRenderPipeline({
-      label: "DisplacementComposition renderpipeline",
-      layout: "auto",
-      vertex: {
-        module: shaderModule,
-        entryPoint: "main_vertex"
-      },
-      fragment: {
-        module: shaderModule,
-        entryPoint: "main_fragment",
-        targets: [{
-          format: params.targetFormat
-        }]
-      },
-      primitive: {
-        cullMode: "none",
-        topology: "triangle-strip"
-      }
-    });
-    this.noiseSampler = this.device.createSampler({
-      label: "DisplacementComposition noisesampler",
-      addressModeU: "repeat",
-      addressModeV: "repeat",
-      addressModeW: "repeat",
-      magFilter: "linear",
-      minFilter: "linear",
-      mipmapFilter: "linear"
-    });
-    this.colorSampler = this.device.createSampler({
-      label: "DisplacementComposition colorSampler",
-      addressModeU: "clamp-to-edge",
-      addressModeV: "clamp-to-edge",
-      addressModeW: "clamp-to-edge",
-      magFilter: "linear",
-      minFilter: "linear",
-      mipmapFilter: "linear"
-    });
-  }
-  getRenderBundle() {
-    if (!this.renderBundle) {
-      this.renderBundle = this.buildRenderBundle();
-    }
-    return this.renderBundle;
-  }
-  destroy() {
-  }
-  setColorTextureView(textureView) {
-    this.colorTextureView = textureView;
-    this.renderBundle = null;
-  }
-  setNoiseMapTextureView(textureView) {
-    this.noiseMapTextureView = textureView;
-    this.renderBundle = null;
-  }
-  setDisplacementTextureView(textureView) {
-    this.displacementTextureView = textureView;
-    this.renderBundle = null;
-  }
-  buildRenderBundle() {
-    const bindgroup = this.device.createBindGroup({
-      label: "DisplacementComposition bindgroup 0",
-      layout: this.renderPipeline.getBindGroupLayout(0),
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: this.displacementParametersBuffer.bufferGpu }
-        },
-        {
-          binding: 1,
-          resource: this.colorTextureView
-        },
-        {
-          binding: 2,
-          resource: this.colorSampler
-        },
-        {
-          binding: 3,
-          resource: this.noiseMapTextureView
-        },
-        {
-          binding: 4,
-          resource: this.noiseSampler
-        },
-        {
-          binding: 5,
-          resource: this.displacementTextureView
-        }
-      ]
-    });
-    const renderBundleEncoder = this.device.createRenderBundleEncoder({
-      label: "DisplacementComposition renderbundle encoder",
-      colorFormats: [this.targetFormat]
-    });
-    renderBundleEncoder.setPipeline(this.renderPipeline);
-    renderBundleEncoder.setBindGroup(0, bindgroup);
-    renderBundleEncoder.draw(4);
-    return renderBundleEncoder.finish({ label: "DisplacementComposition renderbundle" });
-  }
-};
-
-// src/displacement/displacement.wgsl
-var displacement_default = `struct TransformData{mvpMatrix:mat4x4<f32>,};@group(0)@binding(0)var<uniform> transformUBO:TransformData;struct VertexIn{@location(0)position:vec2<f32>,};struct VertexOut{@builtin(position)position:vec4<f32>,};@vertex fn main_vertex(in:VertexIn)->VertexOut{var output:VertexOut;output.position=transformUBO.mvpMatrix*vec4<f32>(in.position,0.0,1.0);return output;}struct FragmentOut{@location(0)color:vec4<f32>,};@fragment fn main_fragment()->FragmentOut{var out:FragmentOut;out.color=vec4<f32>(1.0,1.0,1.0,1.0);return out;}`;
 
 // node_modules/wgpu-matrix/dist/3.x/wgpu-matrix.module.js
 function wrapConstructor(OriginalConstructor, modifier) {
@@ -12059,6 +11373,754 @@ var {
   vec4: vec4n
 } = wgpuMatrixAPI(ZeroArray, Array, Array, Array, Array, Array);
 
+// src/sprite-hdr/public-api.js
+function addSprite(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
+  const { idByName } = renderPass.refs.spritesheet.data;
+  renderPass.data.sprites.push({
+    position: vec2.clone(position),
+    sizeX: 1,
+    sizeY: 1,
+    scale: vec2.clone(scale),
+    rotation,
+    opacity,
+    tint: vec4.clone(tint),
+    spriteID: idByName.get(name),
+    id: _uuid()
+  });
+  return renderPass.data.sprites.at(-1).id;
+}
+function removeSprite(cobalt, renderPass, id) {
+  for (let i = 0; i < renderPass.data.sprites.length; i++) {
+    if (renderPass.data.sprites[i].id === id) {
+      renderPass.data.sprites.splice(i, 1);
+      return;
+    }
+  }
+}
+function clear(cobalt, renderPass) {
+  renderPass.data.sprites.length = 0;
+}
+function setSpriteName(cobalt, renderPass, id, name) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  const { idByName } = renderPass.refs.spritesheet.data;
+  sprite.spriteID = idByName.get(name);
+}
+function setSpritePosition(cobalt, renderPass, id, position) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(position, sprite.position);
+}
+function setSpriteTint(cobalt, renderPass, id, tint) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec4.copy(tint, sprite.tint);
+}
+function setSpriteOpacity(cobalt, renderPass, id, opacity) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.opacity = opacity;
+}
+function setSpriteRotation(cobalt, renderPass, id, rotation) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.rotation = rotation;
+}
+function setSpriteScale(cobalt, renderPass, id, scale) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(scale, sprite.scale);
+}
+
+// src/sprite-hdr/sprite.wgsl
+var sprite_default = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;@group(0)@binding(4)var emissiveTexture:texture_2d<f32>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,@location(6)i_rotation:f32)->VSOut{let rot=i_rotation;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size*i_scale;var local=corner*sizePx;local+=d.centerOffset*i_scale;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->GBufferOutput{var output:GBufferOutput;let texel=textureSample(uTex,uSampler,in.uv);output.color=vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);let emissive=textureSample(emissiveTexture,uSampler,in.uv);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
+
+// node_modules/round-half-up-symmetric/index.js
+function round(value) {
+  if (value >= 0)
+    return Math.round(value);
+  return value % 0.5 === 0 ? Math.floor(value) : Math.round(value);
+}
+
+// src/sprite-hdr/sprite.js
+var _tmpVec3 = vec3.create(0, 0, 0);
+var INSTANCE_STRIDE = 64;
+var OFF_POS = 0;
+var OFF_SIZE = 8;
+var OFF_SCALE = 16;
+var OFF_TINT = 24;
+var OFF_SPRITEID = 40;
+var OFF_OPACITY = 44;
+var OFF_ROT = 48;
+var sprite_default2 = {
+  type: "cobalt:spriteHDR",
+  refs: [
+    { name: "spritesheet", type: "customResource", access: "read" },
+    {
+      name: "color",
+      type: "textureView",
+      format: "rgba16float",
+      access: "write"
+    },
+    {
+      name: "emissive",
+      type: "textureView",
+      format: "rgba16float",
+      access: "write"
+    }
+  ],
+  // cobalt event handling functions
+  // @params Object cobalt renderer world object
+  // @params Object options optional data passed when initing this node
+  onInit: async function(cobalt, options = {}) {
+    return init3(cobalt, options);
+  },
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw3(cobalt, node, webGpuCommandEncoder);
+  },
+  // Clean up GPU resources. Most WebGPU objects are GC-managed and don't
+  // expose destroy(); buffers/textures/query-sets do.
+  onDestroy: function(cobalt, node) {
+    try {
+      node.data.instanceBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.spriteBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.uniformBuffer?.destroy();
+    } catch {
+    }
+    node.data.pipeline = null;
+    node.data.bindGroup = null;
+    node.data.bindGroupLayout = null;
+    node.data.instanceStaging = null;
+    node.data.instanceView = null;
+    node.data.sprites.length = 0;
+    node.data.visible.length = 0;
+  },
+  onResize: function(cobalt, node) {
+    _writeSpriteBuffer(cobalt, node);
+  },
+  onViewportPosition: function(cobalt, node) {
+    _writeSpriteBuffer(cobalt, node);
+  },
+  // optional
+  customFunctions: {
+    ...public_api_exports
+  }
+};
+async function init3(cobalt, nodeData) {
+  const { device } = cobalt;
+  const { descs, names } = nodeData.refs.spritesheet.data.spritesheet;
+  const uniformBuffer = device.createBuffer({
+    size: 64 * 2,
+    // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+  });
+  const BYTES_PER_DESC = 8 * 4;
+  const buf = new ArrayBuffer(BYTES_PER_DESC * descs.length);
+  const f32 = new Float32Array(buf);
+  for (let i = 0; i < descs.length; i++) {
+    const d = descs[i];
+    const base = i * 8;
+    f32[base + 0] = d.UvOrigin[0];
+    f32[base + 1] = d.UvOrigin[1];
+    f32[base + 2] = d.UvSpan[0];
+    f32[base + 3] = d.UvSpan[1];
+    f32[base + 4] = d.FrameSize[0];
+    f32[base + 5] = d.FrameSize[1];
+    f32[base + 6] = d.CenterOffset[0];
+    f32[base + 7] = d.CenterOffset[1];
+  }
+  const spriteBuf = device.createBuffer({
+    label: "spriteHDR desc table",
+    size: Math.max(16, buf.byteLength),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(spriteBuf, 0, buf);
+  const instanceCap = 1024;
+  const instanceBuf = device.createBuffer({
+    label: "spriteHDR instances",
+    size: INSTANCE_STRIDE * instanceCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  const instanceStaging = new ArrayBuffer(INSTANCE_STRIDE * instanceCap);
+  const instanceView = new DataView(instanceStaging);
+  const shader = device.createShaderModule({ code: sprite_default });
+  const bgl = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "uniform" }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: { type: "filtering" }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "read-only-storage" }
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      }
+    ]
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgl]
+  });
+  const instLayout = {
+    arrayStride: INSTANCE_STRIDE,
+    stepMode: "instance",
+    attributes: [
+      { shaderLocation: 0, offset: OFF_POS, format: "float32x2" },
+      { shaderLocation: 1, offset: OFF_SIZE, format: "float32x2" },
+      { shaderLocation: 2, offset: OFF_SCALE, format: "float32x2" },
+      { shaderLocation: 3, offset: OFF_TINT, format: "float32x4" },
+      { shaderLocation: 4, offset: OFF_SPRITEID, format: "uint32" },
+      { shaderLocation: 5, offset: OFF_OPACITY, format: "float32" },
+      { shaderLocation: 6, offset: OFF_ROT, format: "float32" }
+    ]
+  };
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: {
+      module: shader,
+      entryPoint: "vs_main",
+      buffers: [instLayout]
+    },
+    fragment: {
+      module: shader,
+      entryPoint: "fs_main",
+      targets: [
+        // color
+        {
+          format: "rgba16float",
+          blend: {
+            color: {
+              srcFactor: "src-alpha",
+              dstFactor: "one-minus-src-alpha"
+            },
+            alpha: {
+              srcFactor: "zero",
+              dstFactor: "one"
+            }
+          }
+        },
+        // emissive
+        {
+          format: "rgba16float"
+        }
+      ]
+    },
+    primitive: { topology: "triangle-strip", cullMode: "none" },
+    multisample: { count: 1 }
+  });
+  const bindGroupLayout = bgl;
+  const bindGroup = device.createBindGroup({
+    layout: bgl,
+    entries: [
+      // Uniform buffer (view + proj matrices)
+      { binding: 0, resource: { buffer: uniformBuffer } },
+      { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
+      { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
+      { binding: 3, resource: { buffer: spriteBuf } },
+      { binding: 4, resource: nodeData.refs.spritesheet.data.emissiveTexture.view }
+    ]
+  });
+  return {
+    sprites: [],
+    visible: [],
+    visibleCount: 0,
+    viewRect: { x: 0, y: 0, w: 0, h: 0 },
+    spriteBuf,
+    uniformBuffer,
+    instanceCap,
+    instanceView,
+    instanceBuf,
+    instanceStaging,
+    pipeline,
+    bindGroup
+  };
+}
+function ensureCapacity(cobalt, node, nInstances) {
+  const { instanceCap } = node.data;
+  if (nInstances <= instanceCap)
+    return;
+  let newCap = instanceCap;
+  if (newCap === 0)
+    newCap = 1024;
+  while (newCap < nInstances)
+    newCap *= 2;
+  node.data.instanceBuf.destroy();
+  node.data.instanceBuf = cobalt.device.createBuffer({
+    size: INSTANCE_STRIDE * newCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  node.data.instanceStaging = new ArrayBuffer(INSTANCE_STRIDE * newCap);
+  node.data.instanceView = new DataView(node.data.instanceStaging);
+  node.data.instanceCap = newCap;
+}
+function draw3(cobalt, node, commandEncoder) {
+  const { device, context } = cobalt;
+  const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data;
+  const { descs } = node.refs.spritesheet.data.spritesheet;
+  const viewRect = node.data.viewRect;
+  viewRect.x = cobalt.viewport.position[0];
+  viewRect.y = cobalt.viewport.position[1];
+  viewRect.w = cobalt.viewport.width;
+  viewRect.h = cobalt.viewport.height;
+  node.data.visibleCount = 0;
+  for (const s of node.data.sprites) {
+    const d = descs[s.spriteID];
+    if (!d)
+      continue;
+    if (!node.options.isScreenSpace) {
+      const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+      const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
+      const rad = Math.hypot(sx, sy);
+      const x = s.position[0], y = s.position[1];
+      if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+        continue;
+    }
+    node.data.visible[node.data.visibleCount] = s;
+    node.data.visibleCount++;
+  }
+  ensureCapacity(cobalt, node, node.data.visibleCount);
+  for (let i = 0; i < node.data.visibleCount; i++) {
+    const base = i * INSTANCE_STRIDE;
+    const s = node.data.visible[i];
+    const tint = s.tint;
+    instanceView.setFloat32(base + OFF_POS + 0, s.position[0], true);
+    instanceView.setFloat32(base + OFF_POS + 4, s.position[1], true);
+    instanceView.setFloat32(base + OFF_SIZE + 0, s.sizeX, true);
+    instanceView.setFloat32(base + OFF_SIZE + 4, s.sizeY, true);
+    instanceView.setFloat32(base + OFF_SCALE + 0, s.scale[0], true);
+    instanceView.setFloat32(base + OFF_SCALE + 4, s.scale[1], true);
+    instanceView.setFloat32(base + OFF_TINT + 0, tint[0], true);
+    instanceView.setFloat32(base + OFF_TINT + 4, tint[1], true);
+    instanceView.setFloat32(base + OFF_TINT + 8, tint[2], true);
+    instanceView.setFloat32(base + OFF_TINT + 12, tint[3], true);
+    instanceView.setUint32(base + OFF_SPRITEID, s.spriteID >>> 0, true);
+    instanceView.setFloat32(base + OFF_OPACITY, s.opacity, true);
+    instanceView.setFloat32(base + OFF_ROT, s.rotation, true);
+  }
+  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, node.data.visibleCount * INSTANCE_STRIDE);
+  const loadOp = node.options.loadOp || "load";
+  const pass = commandEncoder.beginRenderPass({
+    label: "spriteHDR renderpass",
+    colorAttachments: [
+      // color
+      {
+        view: node.refs.color.data.view,
+        clearValue: cobalt.clearValue,
+        loadOp,
+        storeOp: "store"
+      },
+      // emissive
+      {
+        view: node.refs.emissive.data.view,
+        clearValue: cobalt.clearValue,
+        loadOp: "clear",
+        storeOp: "store"
+      }
+    ]
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.setVertexBuffer(0, instanceBuf);
+  if (node.data.visibleCount)
+    pass.draw(4, node.data.visibleCount, 0, 0);
+  pass.end();
+}
+function _writeSpriteBuffer(cobalt, node) {
+  const { device, viewport } = cobalt;
+  const GAME_WIDTH = viewport.width / viewport.zoom;
+  const GAME_HEIGHT = viewport.height / viewport.zoom;
+  const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
+  if (!!node.options.isScreenSpace) {
+    vec3.set(0, 0, 0, _tmpVec3);
+  } else {
+    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec3);
+  }
+  const view = mat4.translation(_tmpVec3);
+  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
+}
+
+// src/tile-hdr/tile.js
+var tile_default = {
+  type: "cobalt:tileHDR",
+  refs: [
+    { name: "tileAtlas", type: "textureView", format: "rgba8unorm", access: "read" },
+    { name: "hdr", type: "textureView", format: "rgba16float", access: "write" }
+  ],
+  // @params Object cobalt renderer world object
+  // @params Object options optional data passed when initing this node
+  onInit: async function(cobalt, options = {}) {
+    return init4(cobalt, options);
+  },
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw4(cobalt, node, webGpuCommandEncoder);
+  },
+  onDestroy: function(cobalt, node) {
+    destroy2(node);
+  },
+  onResize: function(cobalt, node) {
+  },
+  onViewportPosition: function(cobalt, node) {
+  },
+  // optional
+  customFunctions: {
+    setTexture: async function(cobalt, node, texture) {
+      const { canvas, device } = cobalt;
+      destroy2(node);
+      const format = node.options.format || getPreferredFormat(cobalt);
+      let material;
+      if (canvas) {
+        node.options.textureUrl = texture;
+        material = await createTextureFromUrl(cobalt, "tile map", texture, format);
+      } else {
+        material = await createTextureFromBuffer(cobalt, "tile map", texture, format);
+      }
+      const bindGroup = device.createBindGroup({
+        layout: node.refs.tileAtlas.data.tileBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: node.data.uniformBuffer
+            }
+          },
+          {
+            binding: 1,
+            resource: material.view
+          },
+          {
+            binding: 2,
+            resource: material.sampler
+          }
+        ]
+      });
+      node.data.bindGroup = bindGroup;
+      node.data.material = material;
+    }
+  }
+};
+async function init4(cobalt, nodeData) {
+  const { canvas, device } = cobalt;
+  let material;
+  const format = nodeData.options.format || getPreferredFormat(cobalt);
+  if (canvas) {
+    material = await createTextureFromUrl(cobalt, "tile map", nodeData.options.textureUrl, format);
+  } else {
+    material = await createTextureFromBuffer(cobalt, "tile map", nodeData.options.texture, format);
+  }
+  const dat = new Float32Array([nodeData.options.scrollScale, nodeData.options.scrollScale]);
+  const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+  const descriptor = {
+    size: dat.byteLength,
+    usage,
+    // make this memory space accessible from the CPU (host visible)
+    mappedAtCreation: true
+  };
+  const uniformBuffer = device.createBuffer(descriptor);
+  new Float32Array(uniformBuffer.getMappedRange()).set(dat);
+  uniformBuffer.unmap();
+  const bindGroup = device.createBindGroup({
+    layout: nodeData.refs.tileAtlas.data.tileBindGroupLayout,
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: uniformBuffer
+        }
+      },
+      {
+        binding: 1,
+        resource: material.view
+      },
+      {
+        binding: 2,
+        resource: material.sampler
+      }
+    ]
+  });
+  return {
+    bindGroup,
+    material,
+    uniformBuffer,
+    scrollScale: nodeData.options.scrollScale
+  };
+}
+function draw4(cobalt, nodeData, commandEncoder) {
+  if (!nodeData.data.material.texture)
+    return;
+  const { device } = cobalt;
+  const loadOp = nodeData.options.loadOp || "load";
+  const renderpass = commandEncoder.beginRenderPass({
+    label: "tile",
+    colorAttachments: [
+      {
+        //    hdr is passsed as a node     ||  FRAME_TEXTURE_VIEW
+        view: nodeData.refs.hdr.data?.view || nodeData.refs.hdr,
+        clearValue: cobalt.clearValue,
+        loadOp,
+        storeOp: "store"
+      }
+    ]
+  });
+  const tileAtlas = nodeData.refs.tileAtlas.data;
+  renderpass.setPipeline(tileAtlas.pipeline);
+  renderpass.setBindGroup(0, nodeData.data.bindGroup);
+  renderpass.setBindGroup(1, tileAtlas.atlasBindGroup);
+  renderpass.draw(3);
+  renderpass.end();
+}
+function destroy2(nodeData) {
+  nodeData.data.material.texture.destroy();
+  nodeData.data.material.texture = void 0;
+}
+
+// src/displacement/triangles-buffer.ts
+var TrianglesBuffer = class {
+  device;
+  floatsPerSprite = 6;
+  // vec2(translate) + vec2(scale) + rotation + opacity 
+  bufferGpu;
+  bufferNeedsUpdate = false;
+  sprites = /* @__PURE__ */ new Map();
+  get spriteCount() {
+    return this.sprites.size;
+  }
+  constructor(params) {
+    this.device = params.device;
+    this.bufferGpu = this.device.createBuffer({
+      size: params.maxSpriteCount * this.floatsPerSprite * Float32Array.BYTES_PER_ELEMENT,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+  }
+  destroy() {
+    this.bufferGpu.destroy;
+  }
+  update() {
+    if (this.bufferNeedsUpdate) {
+      const bufferData = [];
+      for (const sprite of this.sprites.values()) {
+        bufferData.push(...sprite);
+      }
+      ;
+      const buffer = new Float32Array(bufferData);
+      this.device.queue.writeBuffer(this.bufferGpu, 0, buffer);
+    }
+  }
+  addTriangle(triangleVertices) {
+    const triangleId = _uuid();
+    if (this.sprites.has(triangleId)) {
+      throw new Error(`Duplicate triangle "${triangleId}".`);
+    }
+    const triangleData = this.buildTriangleData(triangleVertices);
+    this.sprites.set(triangleId, triangleData);
+    this.bufferNeedsUpdate = true;
+    return triangleId;
+  }
+  removeTriangle(triangleId) {
+    if (!this.sprites.has(triangleId)) {
+      throw new Error(`Unknown triangle "${triangleId}".`);
+    }
+    this.sprites.delete(triangleId);
+    this.bufferNeedsUpdate = true;
+  }
+  setTriangle(triangleId, triangleVertices) {
+    if (!this.sprites.has(triangleId)) {
+      throw new Error(`Unknown triangle "${triangleId}".`);
+    }
+    const triangleData = this.buildTriangleData(triangleVertices);
+    this.sprites.set(triangleId, triangleData);
+    this.bufferNeedsUpdate = true;
+  }
+  buildTriangleData(triangleVertices) {
+    return [
+      triangleVertices[0][0],
+      triangleVertices[0][1],
+      triangleVertices[1][0],
+      triangleVertices[1][1],
+      triangleVertices[2][0],
+      triangleVertices[2][1]
+    ];
+  }
+};
+
+// src/displacement/displacement-parameters-buffer.ts
+var DisplacementParametersBuffer = class {
+  device;
+  bufferGpu;
+  needsUpdate = true;
+  constructor(params) {
+    this.device = params.device;
+    this.bufferGpu = this.device.createBuffer({
+      label: "DisplacementParametersBuffer buffer",
+      size: 16,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    this.setParameters(params.initialParameters);
+  }
+  setParameters(params) {
+    this.device.queue.writeBuffer(this.bufferGpu, 0, new Float32Array([params.offsetX, params.offsetY, params.scale]));
+  }
+  destroy() {
+    this.bufferGpu.destroy();
+  }
+};
+
+// src/displacement/composition.wgsl
+var composition_default = `struct DisplacementParameters{offset:vec2<f32>,scale:f32,};@group(0)@binding(0)var<uniform> uniforms:DisplacementParameters;@group(0)@binding(1)var colorTexture:texture_2d<f32>;@group(0)@binding(2)var colorSampler:sampler;@group(0)@binding(3)var noiseTexture:texture_2d<f32>;@group(0)@binding(4)var noiseSampler:sampler;@group(0)@binding(5)var displacementTexture:texture_2d<f32>;struct VertexIn{@builtin(vertex_index)vertexIndex:u32,};struct VertexOut{@builtin(position)position:vec4<f32>,@location(0)uv:vec2<f32>,};@vertex fn main_vertex(in:VertexIn)->VertexOut{const corners=array<vec2<f32>,4>(vec2<f32>(-1,-1),vec2<f32>(1,-1),vec2<f32>(-1,1),vec2<f32>(1,1),);let screenPosition=corners[in.vertexIndex];var out:VertexOut;out.position=vec4<f32>(screenPosition,0,1);out.uv=(0.5+0.5*screenPosition*vec2<f32>(1,-1));return out;}struct FragmentOut{@location(0)color:vec4<f32>,};@fragment fn main_fragment(in:VertexOut)->FragmentOut{let noiseTextureDimensions=vec2<f32>(textureDimensions(noiseTexture,0));let noiseUv=in.uv+uniforms.offset/noiseTextureDimensions;var noise=textureSample(noiseTexture,noiseSampler,noiseUv).rg;noise-=0.5;noise*=uniforms.scale/noiseTextureDimensions;let displacement=textureSample(displacementTexture,colorSampler,in.uv).r;noise*=displacement;let colorUv=in.uv+noise;var out:FragmentOut;out.color=textureSample(colorTexture,colorSampler,colorUv);return out;}`;
+
+// src/displacement/displacement-composition.ts
+var DisplacementComposition = class {
+  device;
+  targetFormat;
+  renderPipeline;
+  colorSampler;
+  noiseSampler;
+  displacementParametersBuffer;
+  renderBundle = null;
+  colorTextureView;
+  noiseMapTextureView;
+  displacementTextureView;
+  constructor(params) {
+    this.device = params.device;
+    this.targetFormat = params.targetFormat;
+    this.colorTextureView = params.colorTextureView;
+    this.noiseMapTextureView = params.noiseMapTextureView;
+    this.displacementTextureView = params.displacementTextureView;
+    this.displacementParametersBuffer = params.displacementParametersBuffer;
+    const shaderModule = this.device.createShaderModule({
+      label: "DisplacementComposition shader module",
+      code: composition_default
+    });
+    this.renderPipeline = this.device.createRenderPipeline({
+      label: "DisplacementComposition renderpipeline",
+      layout: "auto",
+      vertex: {
+        module: shaderModule,
+        entryPoint: "main_vertex"
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: "main_fragment",
+        targets: [{
+          format: params.targetFormat
+        }]
+      },
+      primitive: {
+        cullMode: "none",
+        topology: "triangle-strip"
+      }
+    });
+    this.noiseSampler = this.device.createSampler({
+      label: "DisplacementComposition noisesampler",
+      addressModeU: "repeat",
+      addressModeV: "repeat",
+      addressModeW: "repeat",
+      magFilter: "linear",
+      minFilter: "linear",
+      mipmapFilter: "linear"
+    });
+    this.colorSampler = this.device.createSampler({
+      label: "DisplacementComposition colorSampler",
+      addressModeU: "clamp-to-edge",
+      addressModeV: "clamp-to-edge",
+      addressModeW: "clamp-to-edge",
+      magFilter: "linear",
+      minFilter: "linear",
+      mipmapFilter: "linear"
+    });
+  }
+  getRenderBundle() {
+    if (!this.renderBundle) {
+      this.renderBundle = this.buildRenderBundle();
+    }
+    return this.renderBundle;
+  }
+  destroy() {
+  }
+  setColorTextureView(textureView) {
+    this.colorTextureView = textureView;
+    this.renderBundle = null;
+  }
+  setNoiseMapTextureView(textureView) {
+    this.noiseMapTextureView = textureView;
+    this.renderBundle = null;
+  }
+  setDisplacementTextureView(textureView) {
+    this.displacementTextureView = textureView;
+    this.renderBundle = null;
+  }
+  buildRenderBundle() {
+    const bindgroup = this.device.createBindGroup({
+      label: "DisplacementComposition bindgroup 0",
+      layout: this.renderPipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: this.displacementParametersBuffer.bufferGpu }
+        },
+        {
+          binding: 1,
+          resource: this.colorTextureView
+        },
+        {
+          binding: 2,
+          resource: this.colorSampler
+        },
+        {
+          binding: 3,
+          resource: this.noiseMapTextureView
+        },
+        {
+          binding: 4,
+          resource: this.noiseSampler
+        },
+        {
+          binding: 5,
+          resource: this.displacementTextureView
+        }
+      ]
+    });
+    const renderBundleEncoder = this.device.createRenderBundleEncoder({
+      label: "DisplacementComposition renderbundle encoder",
+      colorFormats: [this.targetFormat]
+    });
+    renderBundleEncoder.setPipeline(this.renderPipeline);
+    renderBundleEncoder.setBindGroup(0, bindgroup);
+    renderBundleEncoder.draw(4);
+    return renderBundleEncoder.finish({ label: "DisplacementComposition renderbundle" });
+  }
+};
+
+// src/displacement/displacement.wgsl
+var displacement_default = `struct TransformData{mvpMatrix:mat4x4<f32>,};@group(0)@binding(0)var<uniform> transformUBO:TransformData;struct VertexIn{@location(0)position:vec2<f32>,};struct VertexOut{@builtin(position)position:vec4<f32>,};@vertex fn main_vertex(in:VertexIn)->VertexOut{var output:VertexOut;output.position=transformUBO.mvpMatrix*vec4<f32>(in.position,0.0,1.0);return output;}struct FragmentOut{@location(0)color:vec4<f32>,};@fragment fn main_fragment()->FragmentOut{var out:FragmentOut;out.color=vec4<f32>(1.0,1.0,1.0,1.0);return out;}`;
+
 // src/displacement/displacement-texture.ts
 var DisplacementTexture = class {
   device;
@@ -12239,7 +12301,7 @@ var displacement_default2 = {
     draw5(cobalt, node, webGpuCommandEncoder);
   },
   onDestroy: function(cobalt, node) {
-    destroy4(node);
+    destroy3(node);
   },
   onResize: function(cobalt, node) {
     node.data.displacementTexture.resize(cobalt.viewport.width, cobalt.viewport.height);
@@ -12320,7 +12382,7 @@ function draw5(cobalt, node, commandEncoder) {
   renderpass.executeBundles([node.data.displacementComposition.getRenderBundle()]);
   renderpass.end();
 }
-function destroy4(node) {
+function destroy3(node) {
   node.data.trianglesBuffer.destroy();
   node.data.trianglesBuffer = null;
   node.data.displacementParameters.destroy();
@@ -12329,297 +12391,6 @@ function destroy4(node) {
   node.data.displacementTexture = null;
   node.data.displacementComposition.destroy();
   node.data.displacementComposition = null;
-}
-
-// src/sprite/create-sprite-quads.js
-function createSpriteQuads(device, spritesheet) {
-  const vertices = spritesheet.vertices;
-  const usage = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
-  const descriptor = {
-    size: vertices.byteLength,
-    usage,
-    // make this memory space accessible from the CPU (host visible)
-    mappedAtCreation: true
-  };
-  const buffer = device.createBuffer(descriptor);
-  new Float32Array(buffer.getMappedRange()).set(vertices);
-  buffer.unmap();
-  const bufferLayout = {
-    arrayStride: 16,
-    stepMode: "vertex",
-    attributes: [
-      // position
-      {
-        shaderLocation: 0,
-        format: "float32x2",
-        offset: 0
-      },
-      // uv
-      {
-        shaderLocation: 1,
-        format: "float32x2",
-        offset: 8
-      }
-    ]
-  };
-  return {
-    buffer,
-    bufferLayout
-  };
-}
-
-// src/overlay/overlay.wgsl
-var overlay_default = `struct TransformData{view:mat4x4<f32>,projection:mat4x4<f32>};struct Sprite{translate:vec2<f32>,scale:vec2<f32>,tint:vec4<f32>,opacity:f32,rotation:f32,};struct SpritesBuffer{models:array<Sprite>,};@binding(0)@group(0)var<uniform> transformUBO:TransformData;@binding(1)@group(0)var myTexture:texture_2d<f32>;@binding(2)@group(0)var mySampler:sampler;@binding(3)@group(0)var<storage,read>sprites:SpritesBuffer;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32,};@vertex fn vs_main(@builtin(instance_index)i_id:u32,@location(0)vertexPosition:vec2<f32>,@location(1)vertexTexCoord:vec2<f32>)->Fragment{var output:Fragment;var sx:f32=sprites.models[i_id].scale.x;var sy:f32=sprites.models[i_id].scale.y;var sz:f32=1.0;var rot:f32=sprites.models[i_id].rotation;var tx:f32=sprites.models[i_id].translate.x;var ty:f32=sprites.models[i_id].translate.y;var tz:f32=0;var s=sin(rot);var c=cos(rot);var scaleM:mat4x4<f32>=mat4x4<f32>(sx,0.0,0.0,0.0,0.0,sy,0.0,0.0,0.0,0.0,sz,0.0,0,0,0,1.0);var modelM:mat4x4<f32>=mat4x4<f32>(c,s,0.0,0.0,-s,c,0.0,0.0,0.0,0.0,1.0,0.0,tx,ty,tz,1.0)*scaleM;output.Position=transformUBO.projection*transformUBO.view*modelM*vec4<f32>(vertexPosition,0.0,1.0);output.TexCoord=vertexTexCoord;output.Tint=sprites.models[i_id].tint;output.Opacity=sprites.models[i_id].opacity;return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32)->@location(0)vec4<f32>{var outColor:vec4<f32>=textureSample(myTexture,mySampler,TexCoord);var output=vec4<f32>(outColor.rgb*(1.0-Tint.a)+(Tint.rgb*Tint.a),outColor.a*Opacity);return output;}`;
-
-// src/overlay/constants.js
-var FLOAT32S_PER_SPRITE2 = 12;
-
-// src/overlay/overlay.js
-var _tmpVec4 = vec4.create();
-var _tmpVec3 = vec3.create();
-var overlay_default2 = {
-  type: "cobalt:overlay",
-  refs: [
-    { name: "spritesheet", type: "customResource", access: "read" },
-    { name: "color", type: "textView", format: "rgba8unorm", access: "write" }
-  ],
-  // cobalt event handling functions
-  // @params Object cobalt renderer world object
-  // @params Object options optional data passed when initing this node
-  onInit: async function(cobalt, options = {}) {
-    return init6(cobalt, options);
-  },
-  onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw6(cobalt, node, webGpuCommandEncoder);
-  },
-  onDestroy: function(cobalt, node) {
-    destroy5(node);
-  },
-  onResize: function(cobalt, node) {
-    _writeOverlayBuffer(cobalt, node);
-  },
-  onViewportPosition: function(cobalt, node) {
-    _writeOverlayBuffer(cobalt, node);
-  },
-  // optional
-  customFunctions: { ...public_api_exports }
-};
-async function init6(cobalt, nodeData) {
-  const { device } = cobalt;
-  const MAX_SPRITE_COUNT = 16192;
-  const numInstances = MAX_SPRITE_COUNT;
-  const translateFloatCount = 2;
-  const translateSize = Float32Array.BYTES_PER_ELEMENT * translateFloatCount;
-  const scaleFloatCount = 2;
-  const scaleSize = Float32Array.BYTES_PER_ELEMENT * scaleFloatCount;
-  const tintFloatCount = 4;
-  const tintSize = Float32Array.BYTES_PER_ELEMENT * tintFloatCount;
-  const opacityFloatCount = 4;
-  const opacitySize = Float32Array.BYTES_PER_ELEMENT * opacityFloatCount;
-  const spriteBuffer = device.createBuffer({
-    size: (translateSize + scaleSize + tintSize + opacitySize) * numInstances,
-    // 4x4 matrix with 4 bytes per float32, per instance
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-  });
-  const uniformBuffer = device.createBuffer({
-    size: 64 * 2,
-    // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-  });
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: {}
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.FRAGMENT,
-        texture: {}
-      },
-      {
-        binding: 2,
-        visibility: GPUShaderStage.FRAGMENT,
-        sampler: {}
-      },
-      {
-        binding: 3,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: {
-          type: "read-only-storage"
-        }
-      }
-    ]
-  });
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: {
-          buffer: uniformBuffer
-        }
-      },
-      {
-        binding: 1,
-        resource: nodeData.refs.spritesheet.data.colorTexture.view
-      },
-      {
-        binding: 2,
-        resource: nodeData.refs.spritesheet.data.colorTexture.sampler
-      },
-      {
-        binding: 3,
-        resource: {
-          buffer: spriteBuffer
-        }
-      }
-    ]
-  });
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout]
-  });
-  const pipeline = device.createRenderPipeline({
-    label: "overlaysprite",
-    vertex: {
-      module: device.createShaderModule({
-        code: overlay_default
-      }),
-      entryPoint: "vs_main",
-      buffers: [nodeData.refs.spritesheet.data.quads.bufferLayout]
-    },
-    fragment: {
-      module: device.createShaderModule({
-        code: overlay_default
-      }),
-      entryPoint: "fs_main",
-      targets: [
-        // color
-        {
-          format: getPreferredFormat(cobalt),
-          blend: {
-            color: {
-              srcFactor: "src-alpha",
-              dstFactor: "one-minus-src-alpha"
-            },
-            alpha: {
-              srcFactor: "zero",
-              dstFactor: "one"
-            }
-          }
-        }
-      ]
-    },
-    primitive: {
-      topology: "triangle-list"
-    },
-    layout: pipelineLayout
-  });
-  return {
-    // instancedDrawCalls is used to actually perform draw calls within the render pass
-    // layout is interleaved with baseVtxIdx (the sprite type), and instanceCount (how many sprites)
-    // [
-    //    baseVtxIdx0, instanceCount0,
-    //    baseVtxIdx1, instanceCount1,
-    //    ...
-    // ]
-    instancedDrawCalls: new Uint32Array(MAX_SPRITE_COUNT * 2),
-    instancedDrawCallCount: 0,
-    spriteBuffer,
-    uniformBuffer,
-    pipeline,
-    bindGroupLayout,
-    bindGroup,
-    // actual sprite instance data. ordered by layer, then sprite type
-    // this is used to update the spriteBuffer.
-    spriteData: new Float32Array(MAX_SPRITE_COUNT * FLOAT32S_PER_SPRITE2),
-    spriteCount: 0,
-    spriteIndices: /* @__PURE__ */ new Map(),
-    // key is spriteId, value is insert index of the sprite. e.g., 0 means 1st sprite , 1 means 2nd sprite, etc.
-    // when a sprite is changed the renderpass is dirty, and should have it's instance data copied to the gpu
-    dirty: false
-  };
-}
-function draw6(cobalt, node, commandEncoder) {
-  const { device } = cobalt;
-  const loadOp = node.options.loadOp || "load";
-  if (node.data.dirty) {
-    _rebuildSpriteDrawCalls2(node.data);
-    node.data.dirty = false;
-  }
-  if (node.data.spriteCount > 0) {
-    const writeLength = node.data.spriteCount * FLOAT32S_PER_SPRITE2 * Float32Array.BYTES_PER_ELEMENT;
-    device.queue.writeBuffer(node.data.spriteBuffer, 0, node.data.spriteData.buffer, 0, writeLength);
-  }
-  const renderpass = commandEncoder.beginRenderPass({
-    label: "overlay",
-    colorAttachments: [
-      // color
-      {
-        view: node.refs.color,
-        clearValue: cobalt.clearValue,
-        loadOp,
-        storeOp: "store"
-      }
-    ]
-  });
-  renderpass.setPipeline(node.data.pipeline);
-  renderpass.setBindGroup(0, node.data.bindGroup);
-  renderpass.setVertexBuffer(0, node.refs.spritesheet.data.quads.buffer);
-  const vertexCount = 6;
-  let baseInstanceIdx = 0;
-  for (let i = 0; i < node.data.instancedDrawCallCount; i++) {
-    const baseVertexIdx = node.data.instancedDrawCalls[i * 2] * vertexCount;
-    const instanceCount = node.data.instancedDrawCalls[i * 2 + 1];
-    renderpass.draw(vertexCount, instanceCount, baseVertexIdx, baseInstanceIdx);
-    baseInstanceIdx += instanceCount;
-  }
-  renderpass.end();
-}
-function _rebuildSpriteDrawCalls2(renderPass) {
-  let currentSpriteType = -1;
-  let instanceCount = 0;
-  renderPass.instancedDrawCallCount = 0;
-  for (let i = 0; i < renderPass.spriteCount; i++) {
-    const spriteType = renderPass.spriteData[i * FLOAT32S_PER_SPRITE2 + 11] & 65535;
-    if (spriteType !== currentSpriteType) {
-      if (instanceCount > 0) {
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2] = currentSpriteType;
-        renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount;
-        renderPass.instancedDrawCallCount++;
-      }
-      currentSpriteType = spriteType;
-      instanceCount = 0;
-    }
-    instanceCount++;
-  }
-  if (instanceCount > 0) {
-    renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2] = currentSpriteType;
-    renderPass.instancedDrawCalls[renderPass.instancedDrawCallCount * 2 + 1] = instanceCount;
-    renderPass.instancedDrawCallCount++;
-  }
-}
-function _writeOverlayBuffer(cobalt, nodeData) {
-  const zoom = 1;
-  const GAME_WIDTH = Math.round(cobalt.viewport.width / zoom);
-  const GAME_HEIGHT = Math.round(cobalt.viewport.height / zoom);
-  const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
-  vec3.set(0, 0, 0, _tmpVec3);
-  const view = mat4.translation(_tmpVec3);
-  cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 0, view.buffer);
-  cobalt.device.queue.writeBuffer(nodeData.data.uniformBuffer, 64, projection.buffer);
-}
-function destroy5(nodeData) {
-  nodeData.data.instancedDrawCalls = null;
-  nodeData.data.bindGroup = null;
-  nodeData.data.spriteBuffer.destroy();
-  nodeData.data.spriteBuffer = null;
-  nodeData.data.uniformBuffer.destroy();
-  nodeData.data.uniformBuffer = null;
-  nodeData.data.spriteData = null;
-  nodeData.data.spriteIndices.clear();
-  nodeData.data.spriteIndices = null;
 }
 
 // src/fb-blit/fb-blit.wgsl
@@ -12635,10 +12406,10 @@ var fb_blit_default2 = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init7(cobalt, options);
+    return init6(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw7(cobalt, node, webGpuCommandEncoder);
+    draw6(cobalt, node, webGpuCommandEncoder);
   },
   onDestroy: function(cobalt, node) {
   },
@@ -12648,7 +12419,7 @@ var fb_blit_default2 = {
   onViewportPosition: function(cobalt, node) {
   }
 };
-async function init7(cobalt, node) {
+async function init6(cobalt, node) {
   const { device } = cobalt;
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -12723,7 +12494,7 @@ async function init7(cobalt, node) {
     pipeline
   };
 }
-function draw7(cobalt, node, commandEncoder) {
+function draw6(cobalt, node, commandEncoder) {
   const { device } = cobalt;
   const renderpass = commandEncoder.beginRenderPass({
     label: "fb-blit",
@@ -13060,13 +12831,6 @@ function perpendicularComponent(inp) {
   return [-inp[1], inp[0]];
 }
 
-// node_modules/round-half-up-symmetric/index.js
-function round(value) {
-  if (value >= 0)
-    return Math.round(value);
-  return value % 0.5 === 0 ? Math.floor(value) : Math.round(value);
-}
-
 // src/primitives/primitives.js
 var _tmpVec32 = vec3.create(0, 0, 0);
 var primitives_default2 = {
@@ -13078,13 +12842,13 @@ var primitives_default2 = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init8(cobalt, options);
+    return init7(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw8(cobalt, node, webGpuCommandEncoder);
+    draw7(cobalt, node, webGpuCommandEncoder);
   },
   onDestroy: function(cobalt, node) {
-    destroy6(node);
+    destroy4(node);
   },
   onResize: function(cobalt, node) {
     _writeMatricesBuffer(cobalt, node);
@@ -13095,7 +12859,7 @@ var primitives_default2 = {
   // optional
   customFunctions: public_api_default
 };
-async function init8(cobalt, node) {
+async function init7(cobalt, node) {
   const { device } = cobalt;
   const vertices = new Float32Array(1024);
   const vertexBuffer = device.createBuffer({
@@ -13201,7 +12965,7 @@ async function init8(cobalt, node) {
     transforms: [mat3.identity()]
   };
 }
-function draw8(cobalt, node, commandEncoder) {
+function draw7(cobalt, node, commandEncoder) {
   if (node.data.vertexCount === 0)
     return;
   const { device } = cobalt;
@@ -13242,7 +13006,7 @@ function draw8(cobalt, node, commandEncoder) {
   renderpass.draw(node.data.vertexCount);
   renderpass.end();
 }
-function destroy6(node) {
+function destroy4(node) {
   node.data.vertexBuffer.destroy();
   node.data.vertexBuffer = null;
   node.data.uniformBuffer.destroy();
@@ -14140,13 +13904,13 @@ var light_default = {
   // @params Object cobalt renderer world object
   // @params Object options optional data passed when initing this node
   onInit: async function(cobalt, options = {}) {
-    return init9(cobalt, options);
+    return init8(cobalt, options);
   },
   onRun: function(cobalt, node, webGpuCommandEncoder) {
-    draw9(cobalt, node, webGpuCommandEncoder);
+    draw8(cobalt, node, webGpuCommandEncoder);
   },
   onDestroy: function(cobalt, node) {
-    destroy7(node);
+    destroy5(node);
   },
   onResize: function(cobalt, node) {
     resize4(cobalt, node);
@@ -14159,7 +13923,7 @@ var light_default = {
     ...public_api_exports2
   }
 };
-async function init9(cobalt, node) {
+async function init8(cobalt, node) {
   const { device } = cobalt;
   const MAX_LIGHT_COUNT = 256;
   const MAX_LIGHT_SIZE = 256;
@@ -14197,7 +13961,7 @@ async function init9(cobalt, node) {
     lights: []
   };
 }
-function draw9(cobalt, node, commandEncoder) {
+function draw8(cobalt, node, commandEncoder) {
   if (node.data.lightsBufferNeedsUpdate) {
     const lightsBuffer = node.data.lightsBuffer;
     lightsBuffer.setLights(node.data.lights);
@@ -14225,7 +13989,7 @@ function draw9(cobalt, node, commandEncoder) {
   lightsRenderer.render(renderpass, invertVpMatrix);
   renderpass.end();
 }
-function destroy7(node) {
+function destroy5(node) {
   node.data.lightsBuffer.destroy();
   node.data.lightsRenderer.destroy();
 }
@@ -14237,10 +14001,386 @@ function resize4(cobalt, node) {
   node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
 }
 
-// src/tile/tile.wgsl
+// src/sprite/public-api.js
+var public_api_exports3 = {};
+__export(public_api_exports3, {
+  addSprite: () => addSprite2,
+  clear: () => clear2,
+  removeSprite: () => removeSprite2,
+  setSpriteName: () => setSpriteName2,
+  setSpriteOpacity: () => setSpriteOpacity2,
+  setSpritePosition: () => setSpritePosition2,
+  setSpriteRotation: () => setSpriteRotation2,
+  setSpriteScale: () => setSpriteScale2,
+  setSpriteTint: () => setSpriteTint2
+});
+function addSprite2(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
+  const { idByName } = renderPass.refs.spritesheet.data;
+  renderPass.data.sprites.push({
+    position: vec2.clone(position),
+    sizeX: 1,
+    sizeY: 1,
+    scale: vec2.clone(scale),
+    rotation,
+    opacity,
+    tint: vec4.clone(tint),
+    spriteID: idByName.get(name),
+    id: _uuid()
+  });
+  return renderPass.data.sprites.at(-1).id;
+}
+function removeSprite2(cobalt, renderPass, id) {
+  for (let i = 0; i < renderPass.data.sprites.length; i++) {
+    if (renderPass.data.sprites[i].id === id) {
+      renderPass.data.sprites.splice(i, 1);
+      return;
+    }
+  }
+}
+function clear2(cobalt, renderPass) {
+  renderPass.data.sprites.length = 0;
+}
+function setSpriteName2(cobalt, renderPass, id, name) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  const { idByName } = renderPass.refs.spritesheet.data;
+  sprite.spriteID = idByName.get(name);
+}
+function setSpritePosition2(cobalt, renderPass, id, position) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(position, sprite.position);
+}
+function setSpriteTint2(cobalt, renderPass, id, tint) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec4.copy(tint, sprite.tint);
+}
+function setSpriteOpacity2(cobalt, renderPass, id, opacity) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.opacity = opacity;
+}
+function setSpriteRotation2(cobalt, renderPass, id, rotation) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  sprite.rotation = rotation;
+}
+function setSpriteScale2(cobalt, renderPass, id, scale) {
+  const sprite = renderPass.data.sprites.find((s) => s.id === id);
+  if (!sprite)
+    return;
+  vec2.copy(scale, sprite.scale);
+}
+
+// src/sprite/sprite.wgsl
+var sprite_default3 = `struct ViewParams{view:mat4x4<f32>,proj:mat4x4<f32>};@group(0)@binding(0)var<uniform> uView:ViewParams;@group(0)@binding(1)var uSampler:sampler;@group(0)@binding(2)var uTex:texture_2d<f32>;struct SpriteDesc{uvOrigin:vec2<f32>,uvSpan:vec2<f32>,frameSize:vec2<f32>,centerOffset:vec2<f32>,};@group(0)@binding(3)var<storage,read>Sprites:array<SpriteDesc>;struct VSOut{@builtin(position)pos:vec4<f32>,@location(0)uv:vec2<f32>,@location(1)tint:vec4<f32>,@location(2)opacity:f32,};const corners=array<vec2<f32>,4>(vec2<f32>(-0.5,-0.5),vec2<f32>(0.5,-0.5),vec2<f32>(-0.5,0.5),vec2<f32>(0.5,0.5),);const uvBase=array<vec2<f32>,4>(vec2<f32>(0.0,0.0),vec2<f32>(1.0,0.0),vec2<f32>(0.0,1.0),vec2<f32>(1.0,1.0),);@vertex fn vs_main(@builtin(vertex_index)vid:u32,@location(0)i_pos:vec2<f32>,@location(1)i_size:vec2<f32>,@location(2)i_scale:vec2<f32>,@location(3)i_tint:vec4<f32>,@location(4)i_spriteId:u32,@location(5)i_opacity:f32,@location(6)i_rotation:f32)->VSOut{let rot=i_rotation;let c=cos(rot);let s=sin(rot);let d=Sprites[i_spriteId];let corner=corners[vid];let sizePx=d.frameSize*i_size*i_scale;var local=corner*sizePx;local+=d.centerOffset*i_scale;let rotated=vec2<f32>(local.x*c-local.y*s,local.x*s+local.y*c);let world=vec4<f32>(rotated+i_pos,0.0,1.0);var out:VSOut;out.pos=uView.proj*uView.view*world;out.uv=d.uvOrigin+d.uvSpan*uvBase[vid];out.tint=i_tint;out.opacity=i_opacity;return out;}@fragment fn fs_main(in:VSOut)->@location(0)vec4<f32>{let texel=textureSample(uTex,uSampler,in.uv);return vec4<f32>(texel.rgb*(1.0-in.tint.a)+(in.tint.rgb*in.tint.a),texel.a*in.opacity);}`;
+
+// src/sprite/sprite.js
+var _tmpVec33 = vec3.create(0, 0, 0);
+var INSTANCE_STRIDE2 = 64;
+var OFF_POS2 = 0;
+var OFF_SIZE2 = 8;
+var OFF_SCALE2 = 16;
+var OFF_TINT2 = 24;
+var OFF_SPRITEID2 = 40;
+var OFF_OPACITY2 = 44;
+var OFF_ROT2 = 48;
+var sprite_default4 = {
+  type: "cobalt:sprite",
+  refs: [
+    { name: "spritesheet", type: "customResource", access: "read" },
+    {
+      name: "color",
+      type: "textureView",
+      format: "rgba8unorm",
+      access: "write"
+    }
+  ],
+  // cobalt event handling functions
+  // @params Object cobalt renderer world object
+  // @params Object options optional data passed when initing this node
+  onInit: async function(cobalt, options = {}) {
+    return init9(cobalt, options);
+  },
+  onRun: function(cobalt, node, webGpuCommandEncoder) {
+    draw9(cobalt, node, webGpuCommandEncoder);
+  },
+  // Clean up GPU resources. Most WebGPU objects are GC-managed and don't
+  // expose destroy(); buffers/textures/query-sets do.
+  onDestroy: function(cobalt, node) {
+    try {
+      node.data.instanceBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.spriteBuf?.destroy();
+    } catch {
+    }
+    try {
+      node.data.uniformBuffer?.destroy();
+    } catch {
+    }
+    node.data.pipeline = null;
+    node.data.bindGroup = null;
+    node.data.bindGroupLayout = null;
+    node.data.instanceStaging = null;
+    node.data.instanceView = null;
+    node.data.sprites.length = 0;
+    node.data.visible.length = 0;
+  },
+  onResize: function(cobalt, node) {
+    _writeSpriteBuffer2(cobalt, node);
+  },
+  onViewportPosition: function(cobalt, node) {
+    _writeSpriteBuffer2(cobalt, node);
+  },
+  // optional
+  customFunctions: {
+    ...public_api_exports3
+  }
+};
+async function init9(cobalt, nodeData) {
+  const { device } = cobalt;
+  const { descs, names } = nodeData.refs.spritesheet.data.spritesheet;
+  const uniformBuffer = device.createBuffer({
+    size: 64 * 2,
+    // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+  });
+  const BYTES_PER_DESC = 8 * 4;
+  const buf = new ArrayBuffer(BYTES_PER_DESC * descs.length);
+  const f32 = new Float32Array(buf);
+  for (let i = 0; i < descs.length; i++) {
+    const d = descs[i];
+    const base = i * 8;
+    f32[base + 0] = d.UvOrigin[0];
+    f32[base + 1] = d.UvOrigin[1];
+    f32[base + 2] = d.UvSpan[0];
+    f32[base + 3] = d.UvSpan[1];
+    f32[base + 4] = d.FrameSize[0];
+    f32[base + 5] = d.FrameSize[1];
+    f32[base + 6] = d.CenterOffset[0];
+    f32[base + 7] = d.CenterOffset[1];
+  }
+  const spriteBuf = device.createBuffer({
+    label: "sprite desc table",
+    size: Math.max(16, buf.byteLength),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+  });
+  device.queue.writeBuffer(spriteBuf, 0, buf);
+  const instanceCap = 1024;
+  const instanceBuf = device.createBuffer({
+    label: "sprite instances",
+    size: INSTANCE_STRIDE2 * instanceCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  const instanceStaging = new ArrayBuffer(INSTANCE_STRIDE2 * instanceCap);
+  const instanceView = new DataView(instanceStaging);
+  const shader = device.createShaderModule({ code: sprite_default3 });
+  const bgl = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "uniform" }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: { type: "filtering" }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "float" }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: "read-only-storage" }
+      }
+    ]
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bgl]
+  });
+  const instLayout = {
+    arrayStride: INSTANCE_STRIDE2,
+    stepMode: "instance",
+    attributes: [
+      { shaderLocation: 0, offset: OFF_POS2, format: "float32x2" },
+      { shaderLocation: 1, offset: OFF_SIZE2, format: "float32x2" },
+      { shaderLocation: 2, offset: OFF_SCALE2, format: "float32x2" },
+      { shaderLocation: 3, offset: OFF_TINT2, format: "float32x4" },
+      { shaderLocation: 4, offset: OFF_SPRITEID2, format: "uint32" },
+      { shaderLocation: 5, offset: OFF_OPACITY2, format: "float32" },
+      { shaderLocation: 6, offset: OFF_ROT2, format: "float32" }
+    ]
+  };
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: {
+      module: shader,
+      entryPoint: "vs_main",
+      buffers: [instLayout]
+    },
+    fragment: {
+      module: shader,
+      entryPoint: "fs_main",
+      targets: [
+        // color
+        {
+          format: getPreferredFormat(cobalt),
+          blend: {
+            color: {
+              srcFactor: "src-alpha",
+              dstFactor: "one-minus-src-alpha"
+            },
+            alpha: {
+              srcFactor: "zero",
+              dstFactor: "one"
+            }
+          }
+        }
+      ]
+    },
+    primitive: { topology: "triangle-strip", cullMode: "none" },
+    multisample: { count: 1 }
+  });
+  const bindGroupLayout = bgl;
+  const bindGroup = device.createBindGroup({
+    layout: bgl,
+    entries: [
+      // Uniform buffer (view + proj matrices)
+      { binding: 0, resource: { buffer: uniformBuffer } },
+      { binding: 1, resource: nodeData.refs.spritesheet.data.colorTexture.sampler },
+      { binding: 2, resource: nodeData.refs.spritesheet.data.colorTexture.view },
+      { binding: 3, resource: { buffer: spriteBuf } }
+    ]
+  });
+  return {
+    sprites: [],
+    visible: [],
+    visibleCount: 0,
+    viewRect: { x: 0, y: 0, w: 0, h: 0 },
+    spriteBuf,
+    uniformBuffer,
+    instanceCap,
+    instanceView,
+    instanceBuf,
+    instanceStaging,
+    pipeline,
+    bindGroup
+  };
+}
+function ensureCapacity2(cobalt, node, nInstances) {
+  const { instanceCap } = node.data;
+  if (nInstances <= instanceCap)
+    return;
+  let newCap = instanceCap;
+  if (newCap === 0)
+    newCap = 1024;
+  while (newCap < nInstances)
+    newCap *= 2;
+  node.data.instanceBuf.destroy();
+  node.data.instanceBuf = cobalt.device.createBuffer({
+    size: INSTANCE_STRIDE2 * newCap,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+  });
+  node.data.instanceStaging = new ArrayBuffer(INSTANCE_STRIDE2 * newCap);
+  node.data.instanceView = new DataView(node.data.instanceStaging);
+  node.data.instanceCap = newCap;
+}
+function draw9(cobalt, node, commandEncoder) {
+  const { device, context } = cobalt;
+  const { instanceView, instanceBuf, instanceStaging, pipeline, bindGroup } = node.data;
+  const { descs } = node.refs.spritesheet.data.spritesheet;
+  const viewRect = node.data.viewRect;
+  viewRect.x = cobalt.viewport.position[0];
+  viewRect.y = cobalt.viewport.position[1];
+  viewRect.w = cobalt.viewport.width;
+  viewRect.h = cobalt.viewport.height;
+  node.data.visibleCount = 0;
+  for (const s of node.data.sprites) {
+    const d = descs[s.spriteID];
+    if (!d)
+      continue;
+    if (!node.options.isScreenSpace) {
+      const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+      const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
+      const rad = Math.hypot(sx, sy);
+      const x = s.position[0], y = s.position[1];
+      if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+        continue;
+    }
+    node.data.visible[node.data.visibleCount] = s;
+    node.data.visibleCount++;
+  }
+  ensureCapacity2(cobalt, node, node.data.visibleCount);
+  for (let i = 0; i < node.data.visibleCount; i++) {
+    const base = i * INSTANCE_STRIDE2;
+    const s = node.data.visible[i];
+    const tint = s.tint;
+    instanceView.setFloat32(base + OFF_POS2 + 0, s.position[0], true);
+    instanceView.setFloat32(base + OFF_POS2 + 4, s.position[1], true);
+    instanceView.setFloat32(base + OFF_SIZE2 + 0, s.sizeX, true);
+    instanceView.setFloat32(base + OFF_SIZE2 + 4, s.sizeY, true);
+    instanceView.setFloat32(base + OFF_SCALE2 + 0, s.scale[0], true);
+    instanceView.setFloat32(base + OFF_SCALE2 + 4, s.scale[1], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 0, tint[0], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 4, tint[1], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 8, tint[2], true);
+    instanceView.setFloat32(base + OFF_TINT2 + 12, tint[3], true);
+    instanceView.setUint32(base + OFF_SPRITEID2, s.spriteID >>> 0, true);
+    instanceView.setFloat32(base + OFF_OPACITY2, s.opacity, true);
+    instanceView.setFloat32(base + OFF_ROT2, s.rotation, true);
+  }
+  device.queue.writeBuffer(instanceBuf, 0, instanceStaging, 0, node.data.visibleCount * INSTANCE_STRIDE2);
+  const loadOp = node.options.loadOp || "load";
+  const pass = commandEncoder.beginRenderPass({
+    label: "sprite renderpass",
+    colorAttachments: [
+      // color
+      {
+        view: node.refs.color,
+        clearValue: cobalt.clearValue,
+        loadOp,
+        storeOp: "store"
+      }
+    ]
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.setVertexBuffer(0, instanceBuf);
+  if (node.data.visibleCount)
+    pass.draw(4, node.data.visibleCount, 0, 0);
+  pass.end();
+}
+function _writeSpriteBuffer2(cobalt, node) {
+  const { device, viewport } = cobalt;
+  const GAME_WIDTH = viewport.width / viewport.zoom;
+  const GAME_HEIGHT = viewport.height / viewport.zoom;
+  const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
+  if (!!node.options.isScreenSpace) {
+    vec3.set(0, 0, 0, _tmpVec33);
+  } else {
+    vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec33);
+  }
+  const view = mat4.translation(_tmpVec33);
+  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
+  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
+}
+
+// src/tile-hdr/tile.wgsl
 var tile_default2 = `struct TransformData{viewOffset:vec2<f32>,viewportSize:vec2<f32>,inverseAtlasTextureSize:vec2<f32>,tileSize:f32,inverseTileSize:f32,};struct TileScroll{scrollScale:vec2<f32>};const positions=array<vec2<f32>,3>(vec2<f32>(-1.0,-3.0),vec2<f32>(3.0,1.0),vec2<f32>(-1.0,1.0));const uvs=array<vec2<f32>,3>(vec2<f32>(0.0,2.0),vec2<f32>(2.0,0.0),vec2<f32>(0.0,0.0));@binding(0)@group(0)var<uniform> myScroll:TileScroll;@binding(1)@group(0)var tileTexture:texture_2d<f32>;@binding(2)@group(0)var tileSampler:sampler;@binding(0)@group(1)var<uniform> transformUBO:TransformData;@binding(1)@group(1)var atlasTexture:texture_2d<f32>;@binding(2)@group(1)var atlasSampler:sampler;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>};@vertex fn vs_main(@builtin(instance_index)i_id:u32,@builtin(vertex_index)VertexIndex:u32)->Fragment{var vertexPosition=vec2<f32>(positions[VertexIndex]);var vertexTexCoord=vec2<f32>(uvs[VertexIndex]);var output:Fragment;let inverseTileTextureSize=1/vec2<f32>(textureDimensions(tileTexture,0));var scrollScale=myScroll.scrollScale;var viewOffset:vec2<f32>=transformUBO.viewOffset*scrollScale;let PixelCoord=(vertexTexCoord*transformUBO.viewportSize)+viewOffset;output.TexCoord=PixelCoord/transformUBO.tileSize;output.Position=vec4<f32>(vertexPosition,0.0,1.0);return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>)->@location(0)vec4<f32>{var tilemapCoord=floor(TexCoord);var u_tilemapSize=vec2<f32>(textureDimensions(tileTexture,0));var tileFoo=fract((tilemapCoord+vec2<f32>(0.5,0.5))/u_tilemapSize);var tile=floor(textureSample(tileTexture,tileSampler,tileFoo)*255.0);if(tile.x==255&&tile.y==255){discard;}var u_tilesetSize=vec2<f32>(textureDimensions(atlasTexture,0))/transformUBO.tileSize;let u_tileUVMinBounds=vec2<f32>(0.5/transformUBO.tileSize,0.5/transformUBO.tileSize);let u_tileUVMaxBounds=vec2<f32>((transformUBO.tileSize-0.5)/transformUBO.tileSize,(transformUBO.tileSize-0.5)/transformUBO.tileSize);var texcoord=clamp(fract(TexCoord),u_tileUVMinBounds,u_tileUVMaxBounds);var tileCoord=(tile.xy+texcoord)/u_tilesetSize;var color=textureSample(atlasTexture,atlasSampler,tileCoord);if(color.a<=0.1){discard;}return color;}`;
 
-// src/tile/atlas.js
+// src/tile-hdr/atlas.js
 var _buf = new Float32Array(8);
 var atlas_default = {
   type: "cobalt:tileAtlas",
@@ -14253,7 +14393,7 @@ var atlas_default = {
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
   onDestroy: function(cobalt, node) {
-    destroy8(data);
+    destroy6(data);
   },
   onResize: function(cobalt, node) {
     _writeTileBuffer(cobalt, node);
@@ -14352,7 +14492,7 @@ async function init10(cobalt, nodeData) {
       entryPoint: "fs_main",
       targets: [
         {
-          format: "rgba16float",
+          format: nodeData.options.outputFormat || getPreferredFormat(cobalt),
           blend: {
             color: {
               srcFactor: "src-alpha",
@@ -14382,13 +14522,13 @@ async function init10(cobalt, nodeData) {
     tileScale: nodeData.options.tileScale
   };
 }
-function destroy8(data2) {
+function destroy6(data2) {
   data2.atlasMaterial.texture.destroy();
   data2.atlasMaterial.texture = void 0;
 }
 function _writeTileBuffer(c, nodeData) {
-  _buf[0] = c.viewport.position[0];
-  _buf[1] = c.viewport.position[1];
+  _buf[0] = round(c.viewport.position[0]);
+  _buf[1] = round(c.viewport.position[1]);
   const tile = nodeData.data;
   const { tileScale, tileSize } = tile;
   const GAME_WIDTH = c.viewport.width / c.viewport.zoom;
@@ -14402,61 +14542,32 @@ function _writeTileBuffer(c, nodeData) {
   c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, 8);
 }
 
-// src/sprite/read-spritesheet.js
-function readSpriteSheet(spritesheetJson) {
-  const spriteFloatCount = 4 * 6;
-  const spriteCount = Object.keys(spritesheetJson.frames).length;
-  const vertices = new Float32Array(spriteCount * spriteFloatCount);
-  const locations = [];
-  const spriteMeta = {};
-  let i = 0;
-  for (const frameName in spritesheetJson.frames) {
-    const frame = spritesheetJson.frames[frameName];
-    locations.push(frameName);
-    spriteMeta[frameName] = frame.sourceSize;
-    const minX = -0.5 + frame.spriteSourceSize.x / frame.sourceSize.w;
-    const minY = -0.5 + frame.spriteSourceSize.y / frame.sourceSize.h;
-    const maxX = -0.5 + (frame.spriteSourceSize.x + frame.spriteSourceSize.w) / frame.sourceSize.w;
-    const maxY = -0.5 + (frame.spriteSourceSize.y + frame.spriteSourceSize.h) / frame.sourceSize.h;
-    const p0 = [minX, minY];
-    const p1 = [minX, maxY];
-    const p2 = [maxX, maxY];
-    const p3 = [maxX, minY];
-    const minU = 0 + frame.frame.x / spritesheetJson.meta.size.w;
-    const minV = 0 + frame.frame.y / spritesheetJson.meta.size.h;
-    const maxU = 0 + (frame.frame.x + frame.frame.w) / spritesheetJson.meta.size.w;
-    const maxV = 0 + (frame.frame.y + frame.frame.h) / spritesheetJson.meta.size.h;
-    const uv0 = [minU, minV];
-    const uv1 = [minU, maxV];
-    const uv2 = [maxU, maxV];
-    const uv3 = [maxU, minV];
-    vertices.set(p0, i);
-    vertices.set(uv0, i + 2);
-    vertices.set(p1, i + 4);
-    vertices.set(uv1, i + 6);
-    vertices.set(p2, i + 8);
-    vertices.set(uv2, i + 10);
-    vertices.set(p0, i + 12);
-    vertices.set(uv0, i + 14);
-    vertices.set(p2, i + 16);
-    vertices.set(uv2, i + 18);
-    vertices.set(p3, i + 20);
-    vertices.set(uv3, i + 22);
-    i += spriteFloatCount;
+// src/spritesheet/read-spritesheet.js
+function buildSpriteTableFromTexturePacker(doc) {
+  const atlasW = doc.meta.size.w;
+  const atlasH = doc.meta.size.h;
+  const names = Object.keys(doc.frames).sort();
+  const descs = new Array(names.length);
+  for (let i = 0; i < names.length; i++) {
+    const fr = doc.frames[names[i]];
+    const fx = fr.frame.x, fy = fr.frame.y, fw = fr.frame.w, fh = fr.frame.h;
+    const offX = fx / atlasW, offY = fy / atlasH;
+    const spanX = fw / atlasW, spanY = fh / atlasH;
+    const sw = fr.sourceSize.w, sh = fr.sourceSize.h;
+    const ox = fr.spriteSourceSize.x, oy = fr.spriteSourceSize.y;
+    const cx = ox + fw * 0.5 - sw * 0.5;
+    const cy = oy + fh * 0.5 - sh * 0.5;
+    descs[i] = {
+      UvOrigin: [offX, offY],
+      UvSpan: [spanX, spanY],
+      FrameSize: [fw, fh],
+      CenterOffset: [cx, cy]
+    };
   }
-  return {
-    /*spriteCount, */
-    spriteMeta,
-    locations,
-    vertices
-  };
+  return { descs, names };
 }
 
-// src/sprite/sprite.wgsl
-var sprite_default2 = `struct TransformData{view:mat4x4<f32>,projection:mat4x4<f32>};struct Sprite{translate:vec2<f32>,scale:vec2<f32>,tint:vec4<f32>,opacity:f32,rotation:f32,emissiveIntensity:f32,sortValue:f32,};struct SpritesBuffer{models:array<Sprite>,};@binding(0)@group(0)var<uniform> transformUBO:TransformData;@binding(1)@group(0)var myTexture:texture_2d<f32>;@binding(2)@group(0)var mySampler:sampler;@binding(3)@group(0)var<storage,read>sprites:SpritesBuffer;@binding(4)@group(0)var emissiveTexture:texture_2d<f32>;struct Fragment{@builtin(position)Position:vec4<f32>,@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32,};struct GBufferOutput{@location(0)color:vec4<f32>,@location(1)emissive:vec4<f32>,}@vertex fn vs_main(@builtin(instance_index)i_id:u32,@location(0)vertexPosition:vec2<f32>,@location(1)vertexTexCoord:vec2<f32>)->Fragment{var output:Fragment;var sx:f32=sprites.models[i_id].scale.x;var sy:f32=sprites.models[i_id].scale.y;var sz:f32=1.0;var rot:f32=sprites.models[i_id].rotation;var tx:f32=sprites.models[i_id].translate.x;var ty:f32=sprites.models[i_id].translate.y;var tz:f32=0;var s=sin(rot);var c=cos(rot);var scaleM:mat4x4<f32>=mat4x4<f32>(sx,0.0,0.0,0.0,0.0,sy,0.0,0.0,0.0,0.0,sz,0.0,0,0,0,1.0);var modelM:mat4x4<f32>=mat4x4<f32>(c,s,0.0,0.0,-s,c,0.0,0.0,0.0,0.0,1.0,0.0,tx,ty,tz,1.0)*scaleM;output.Position=transformUBO.projection*transformUBO.view*modelM*vec4<f32>(vertexPosition,0.0,1.0);output.TexCoord=vertexTexCoord;output.Tint=sprites.models[i_id].tint;output.Opacity=sprites.models[i_id].opacity;return output;}@fragment fn fs_main(@location(0)TexCoord:vec2<f32>,@location(1)Tint:vec4<f32>,@location(2)Opacity:f32)->GBufferOutput{var output:GBufferOutput;var outColor:vec4<f32>=textureSample(myTexture,mySampler,TexCoord);output.color=vec4<f32>(outColor.rgb*(1.0-Tint.a)+(Tint.rgb*Tint.a),outColor.a*Opacity);let emissive=textureSample(emissiveTexture,mySampler,TexCoord);output.emissive=vec4(emissive.rgb,1.0)*emissive.a;return output;}`;
-
-// src/sprite/spritesheet.js
-var _tmpVec33 = vec3.create(0, 0, 0);
+// src/spritesheet/spritesheet.js
 var spritesheet_default = {
   type: "cobalt:spritesheet",
   refs: [],
@@ -14468,13 +14579,11 @@ var spritesheet_default = {
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
   onDestroy: function(cobalt, node) {
-    destroy9(node);
+    destroy7(node);
   },
   onResize: function(cobalt, node) {
-    _writeSpriteBuffer(cobalt, node);
   },
   onViewportPosition: function(cobalt, node) {
-    _writeSpriteBuffer(cobalt, node);
   }
 };
 async function init11(cobalt, node) {
@@ -14482,126 +14591,29 @@ async function init11(cobalt, node) {
   let spritesheet, colorTexture, emissiveTexture;
   const format = node.options.format || "rgba8unorm";
   if (canvas) {
-    spritesheet = await fetchJson(node.options.spriteSheetJsonUrl);
-    spritesheet = readSpriteSheet(spritesheet);
+    spritesheet = await fetch(node.options.spriteSheetJsonUrl);
+    spritesheet = await spritesheet.json();
+    spritesheet = buildSpriteTableFromTexturePacker(spritesheet);
     colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, format);
     emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, format);
     canvas.style.imageRendering = "pixelated";
   } else {
-    spritesheet = readSpriteSheet(node.options.spriteSheetJson);
+    spritesheet = buildSpriteTableFromTexturePacker(node.options.spriteSheetJson);
     colorTexture = await createTextureFromBuffer(cobalt, "sprite", node.options.colorTexture, format);
     emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node.options.emissiveTexture, format);
   }
-  const quads = createSpriteQuads(device, spritesheet);
-  const uniformBuffer = device.createBuffer({
-    size: 64 * 2,
-    // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-  });
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: {}
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.FRAGMENT,
-        texture: {}
-      },
-      {
-        binding: 2,
-        visibility: GPUShaderStage.FRAGMENT,
-        sampler: {}
-      },
-      {
-        binding: 3,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: {
-          type: "read-only-storage"
-        }
-      },
-      {
-        binding: 4,
-        visibility: GPUShaderStage.FRAGMENT,
-        texture: {}
-      }
-    ]
-  });
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout]
-  });
-  const pipeline = device.createRenderPipeline({
-    label: "spritesheet",
-    vertex: {
-      module: device.createShaderModule({
-        code: sprite_default2
-      }),
-      entryPoint: "vs_main",
-      buffers: [quads.bufferLayout]
-    },
-    fragment: {
-      module: device.createShaderModule({
-        code: sprite_default2
-      }),
-      entryPoint: "fs_main",
-      targets: [
-        // color
-        {
-          format: "rgba16float",
-          blend: {
-            color: {
-              srcFactor: "src-alpha",
-              dstFactor: "one-minus-src-alpha"
-            },
-            alpha: {
-              srcFactor: "zero",
-              dstFactor: "one"
-            }
-          }
-        },
-        // emissive
-        {
-          format: "rgba16float"
-        }
-      ]
-    },
-    primitive: {
-      topology: "triangle-list"
-    },
-    layout: pipelineLayout
-  });
+  const idByName = new Map(spritesheet.names.map((n, i) => [n, i]));
   return {
-    pipeline,
-    uniformBuffer,
-    // perspective and view matrices for the camera
-    quads,
     colorTexture,
     emissiveTexture,
-    bindGroupLayout,
-    spritesheet
+    spritesheet,
+    idByName
   };
 }
-function destroy9(node) {
+function destroy7(node) {
   node.data.quads.buffer.destroy();
   node.data.colorTexture.buffer.destroy();
-  node.data.uniformBuffer.destroy();
   node.data.emissiveTexture.texture.destroy();
-}
-async function fetchJson(url) {
-  const raw = await fetch(url);
-  return raw.json();
-}
-function _writeSpriteBuffer(cobalt, node) {
-  const { device, viewport } = cobalt;
-  const GAME_WIDTH = viewport.width / viewport.zoom;
-  const GAME_HEIGHT = viewport.height / viewport.zoom;
-  const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10, 10);
-  vec3.set(-round(viewport.position[0]), -round(viewport.position[1]), 0, _tmpVec33);
-  const view = mat4.translation(_tmpVec33);
-  device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer);
-  device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer);
 }
 
 // src/fb-texture/fb-texture.js
@@ -14616,7 +14628,7 @@ var fb_texture_default = {
   onRun: function(cobalt, node, webGpuCommandEncoder) {
   },
   onDestroy: function(cobalt, node) {
-    destroy10(data);
+    destroy8(data);
   },
   onResize: function(cobalt, node) {
     resize5(cobalt, node);
@@ -14630,12 +14642,12 @@ async function init12(cobalt, node) {
   const { format, label, mip_count, usage, viewportScale } = node.options;
   return createTexture(device, label, cobalt.viewport.width * viewportScale, cobalt.viewport.height * viewportScale, mip_count, format, usage);
 }
-function destroy10(node) {
+function destroy8(node) {
   node.data.texture.destroy();
 }
 function resize5(cobalt, node) {
   const { device } = cobalt;
-  destroy10(node);
+  destroy8(node);
   const { width, height } = cobalt.viewport;
   const { options } = node;
   const scale = node.options.viewportScale;
@@ -14675,12 +14687,12 @@ async function init13(ctx, viewportWidth, viewportHeight) {
     "cobalt:spritesheet": spritesheet_default,
     "cobalt:fbTexture": fb_texture_default,
     // builtin run nodes
+    "cobalt:sprite": sprite_default4,
     "cobalt:bloom": bloom_default2,
     "cobalt:composite": scene_composite_default2,
-    "cobalt:sprite": sprite_default,
-    "cobalt:tile": tile_default,
+    "cobalt:spriteHDR": sprite_default2,
+    "cobalt:tileHDR": tile_default,
     "cobalt:displacement": displacement_default2,
-    "cobalt:overlay": overlay_default2,
     "cobalt:fbBlit": fb_blit_default2,
     "cobalt:primitives": primitives_default2,
     "cobalt:light": light_default

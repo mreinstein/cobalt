@@ -1,4 +1,4 @@
-import uuid           from '../uuid.js'
+import uuid     from '../uuid.js'
 import { vec2, vec4 } from 'wgpu-matrix'
 
 
@@ -8,15 +8,15 @@ export function addSprite (cobalt, renderPass, name, position, scale, tint, opac
     const { idByName } = renderPass.refs.spritesheet.data
 
     renderPass.data.sprites.push({
-		position: vec2.clone(position),
-		sizeX: 1, sizeY: 1,
-		scale: vec2.clone(scale),
-		rotation,
-		opacity,
-		tint: vec4.clone(tint),
-		spriteID: idByName.get(name),
-		id: uuid(),
-	});
+        position: vec2.clone(position),
+        sizeX: 1, sizeY: 1,
+        scale: vec2.clone(scale),
+        rotation,
+        opacity,
+        tint: vec4.clone(tint),
+        spriteID: idByName.get(name),
+        id: uuid(),
+    });
 
 	return renderPass.data.sprites.at(-1).id
 }

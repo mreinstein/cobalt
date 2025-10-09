@@ -6,17 +6,17 @@ export { default as createTextureFromBuffer } from './create-texture-from-buffer
 // built-in run nodes
 import bloomNode        from './bloom/bloom.js'
 import compositeNode    from './scene-composite/scene-composite.js'
-import spriteNode       from './sprite/sprite.js'
-import tileNode         from './tile/tile.js'
+import spriteHDRNode    from './sprite-hdr/sprite.js'
+import tileHDRNode      from './tile-hdr/tile.js'
 import displacementNode from './displacement/displacement.js'
-import overlayNode      from './overlay/overlay.js'    
 import fbBlitNode       from './fb-blit/fb-blit.js'  
 import primitivesNode   from './primitives/primitives.js'
 import lightNode        from './light/light.js'
+import spriteNode      from './sprite/sprite.js'
 
 // built-in resource nodes
-import tileAtlasNode    from './tile/atlas.js'
-import spritesheetNode  from './sprite/spritesheet.js'
+import tileAtlasNode    from './tile-hdr/atlas.js'
+import spritesheetNode  from './spritesheet/spritesheet.js'
 import fbTextureNode    from './fb-texture/fb-texture.js'
 
 
@@ -70,12 +70,12 @@ export async function init (ctx, viewportWidth, viewportHeight) {
         'cobalt:fbTexture': fbTextureNode,
 
         // builtin run nodes
+        'cobalt:sprite': spriteNode,
         'cobalt:bloom': bloomNode,
         'cobalt:composite': compositeNode,
-        'cobalt:sprite': spriteNode,
-        'cobalt:tile': tileNode,
+        'cobalt:spriteHDR': spriteHDRNode,
+        'cobalt:tileHDR': tileHDRNode,
         'cobalt:displacement': displacementNode,
-        'cobalt:overlay': overlayNode,
         'cobalt:fbBlit': fbBlitNode,
         'cobalt:primitives': primitivesNode,
         'cobalt:light': lightNode,

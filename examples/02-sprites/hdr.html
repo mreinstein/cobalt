@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title class="titleText">WebGPU - Cobalt bloom postprocessing</title>
+        <title class="titleText">WebGPU - Cobalt HDR sprite rendering</title>
         <meta name="description" content="Web GPU 2d cobalt" />
         <meta name="author" content="Michael Reinstein" />
         <meta name="viewport" content="width=device-width" />
@@ -14,7 +14,7 @@
         <style>
             
             body {
-                padding-inline: 40px;
+                padding: 0;
                 margin: 0;
                 overscroll-behavior: none;
             }
@@ -54,10 +54,7 @@
         </style>
     </head>
     <body>
-        <h1>Bloom Node</h1>
-        <p>
-            That classic beautiful glow.
-        </p>
+        
         <div class="viewport-container">
             <canvas id="viewport" width="480" height="270"></canvas>
         </div>
@@ -83,6 +80,16 @@ async function main () {
     Global.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
     // instantiate all resource nodes
+    const spritesheet = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:spritesheet',
+        refs: { },
+        options: {
+            spriteSheetJsonUrl: './assets/spritesheet.json',
+            colorTextureUrl: 'assets/spritesheet.png',
+            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
+        }
+    })
+
     const hdrTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
@@ -92,16 +99,6 @@ async function main () {
             mip_count: 1,
             viewportScale: 1.0,
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const spritesheet = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:spritesheet',
-        refs: { },
-        options: {
-            spriteSheetJsonUrl: './assets/spritesheet.json',
-            colorTextureUrl: 'assets/spritesheet.png',
-            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
         }
     })
 
@@ -129,7 +126,47 @@ async function main () {
         }
     })
 
+    const bloomNode = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:bloom',
+        refs: {
+            // key is the var name defined in this node
+            // value is the var name in the cobalt resources dictionary
+            emissive: emissiveTex,
+            hdr: hdrTex,
+            bloom: bloomTex
+        },
+        options: {
+            // any extra options you want to pass to this node
+            bloom_intensity: 0.0,
+            bloom_knee: 0.0,
+            bloom_threshold: 0.1, // 1.0
+            /*
+            // sprite instance 1
+            sprite_instances: [
+                {
+                    emissive_intensity: 1.0,
+                },
+                {
+                    emissive_intensity: 0.5,
+                },
+            ],
+            */
+        }
+    })
 
+    const tmpTex = await Cobalt.initNode(Global.renderer, {
+        type: 'cobalt:fbTexture',
+        refs: { },
+        options: {
+            label: 'bloom + hdr compositing',
+            format: 'PREFERRED_TEXTURE_FORMAT',
+            mip_count: 1,
+            viewportScale: 1.0,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        }
+    })
+
+    // instantiate all runnable nodes
     const spriteNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:spriteHDR',
         refs: {
@@ -145,46 +182,6 @@ async function main () {
     })
 
 
-    const bloomNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:bloom',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            emissive: emissiveTex,
-            hdr: hdrTex,
-            bloom: bloomTex
-        },
-        options: {
-            // any extra options you want to pass to this node
-            bloom_intensity: 45.0,
-            bloom_combine_constant: 0.3,
-            bloom_knee: 0.2,
-            bloom_threshold: 0.1, // 1.0
-
-            // sprite instance 1
-            sprite_instances: [
-                {
-                    emissive_intensity: 1.0,
-                },
-                {
-                    emissive_intensity: 0.5,
-                },
-            ],
-        }
-    })
-    
-    const tmpTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'bloom + hdr compositing',
-            format: 'PREFERRED_TEXTURE_FORMAT',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
     const compositeNode = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:composite',
         refs: {
@@ -192,7 +189,9 @@ async function main () {
             bloom: bloomTex,
             combined: tmpTex,
         },
-        options: { }
+        options: {
+            bloom_combine_constant: 0.0,
+        },
     })
 
 
@@ -206,7 +205,6 @@ async function main () {
     })
 
 
-
     // use resizeViewport to init values on load:
     resizeViewport(Global.renderer, window.innerWidth, window.innerHeight)
 
@@ -217,49 +215,6 @@ async function main () {
 
     window.addEventListener('resize', debouncedResize, { passive: true })
 
-    const gui = new dat.GUI()
-
-    const config = bloomNode.options
-
-    gui.add(config, 'bloom_intensity', 0, 200).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_combine_constant', 0.0, 1.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_knee', 0.0, 50.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    gui.add(config, 'bloom_threshold', 0.0, 1.0).onChange((v) => {
-        updateFinalParams(config.bloom_intensity, config.bloom_combine_constant, config.bloom_knee, config.bloom_threshold)
-    })
-
-    const updateFinalParams = function (bloom_intensity=40.0, bloom_combine_constant=0.68, bloom_knee=0.2, bloom_threshold=0.1) {
-        const { device } = Global.renderer
-        
-        device.queue.writeBuffer(
-            compositeNode.data.params_buf,
-            0,
-            new Float32Array([ bloom_intensity, bloom_combine_constant ])
-        )
-
-        device.queue.writeBuffer(
-            bloomNode.data.params_buf,
-            0,
-            new Float32Array([ bloom_threshold,
-                                bloom_threshold - bloom_knee,
-                                bloom_knee * 2.0,
-                                0.25 / bloom_knee,
-                                bloom_combine_constant,
-                                // require byte alignment bs
-                                0,
-                                0,
-                                0, ])
-        )
-    }
 
     
     const world = ECS.createWorld()
@@ -273,9 +228,6 @@ async function main () {
             const x = (Math.sin(elapsed / 2000) * 0.5 + 0.5) * 128
             const y = (Math.sin(elapsed / 5000) * 0.5 + 0.5) * 170
 
-            //const { tileScale } = Global.renderer.tile
-
-            //console.log(x, y)
             Cobalt.setViewportPosition(Global.renderer, [ x, y ])
         }
 
@@ -287,26 +239,38 @@ async function main () {
     // test sprites
     const s2 = spriteEntity(world, {
         name: 'health_empty-0.png',
-        position: [ 50, 50 ],
-        zIndex: 4,
-        emissiveIntensity: 0.5,
+        position: [ 50, 20 ],
+        tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
+        opacity: 1,
         spriteNode,
     })
 
     const s = spriteEntity(world, {
         name: 'health-0.png',
-        position: [ 240, 135 ],
-        zIndex: 4,
-        emissiveIntensity: 0.5,
+        position: [ 260, 135 ],
+        tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
+        opacity: 0.2,
         spriteNode,
     })
 
+    const s3 = spriteEntity(world, {
+        name: 'health-0.png',
+        position: [ 128, 90 ],
+        tint: [ 0, 0, 0, 0 ],
+        scale: [ 1, 1 ],
+        rotation: 0,
+        opacity: 1,
+        spriteNode,
+    })
 
     const gameLoop = function () {
         tick(Global)
         requestAnimationFrame(gameLoop)
     }
-
 
     requestAnimationFrame(gameLoop)
 }

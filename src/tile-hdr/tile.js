@@ -1,9 +1,10 @@
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
+import getPreferredFormat      from '../get-preferred-format.js'
 
 
 /*
-Tile layers are totally static, and there are usually many of them in a grid, in several layers.
+Tile layers are totally static, and there are usually many of them on several layers.
 
 These use a `TileRenderPass` data structure which provides 100% GPU hardware based tile rendering, making them _almost_ free CPU-wise.
 
@@ -17,9 +18,10 @@ Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gp
 
 
 export default {
-    type: 'cobalt:tile',
+    type: 'cobalt:tileHDR',
     refs: [
-        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'write' },
+        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'read' },
+        { name: "hdr", type: "textureView", format: "rgba16float", access: "write", },
     ],
 
     // @params Object cobalt renderer world object
@@ -53,7 +55,7 @@ export default {
 
             destroy(node)
 
-            const format = node.options.format || 'rgba8unorm'
+            const format = node.options.format || getPreferredFormat(cobalt)
 
             let material
 
@@ -99,7 +101,7 @@ async function init (cobalt, nodeData) {
 
     let material
 
-    const format = nodeData.options.format || 'rgba8unorm'
+    const format = nodeData.options.format || getPreferredFormat(cobalt)
 
     // build the tile layer and add it to the cobalt data structure
     if (canvas) {
@@ -172,7 +174,8 @@ function draw (cobalt, nodeData, commandEncoder) {
         label: 'tile',
         colorAttachments: [
             {
-                view: nodeData.refs.hdr.data.view,
+                //    hdr is passsed as a node     ||  FRAME_TEXTURE_VIEW
+                view: nodeData.refs.hdr.data?.view ||  nodeData.refs.hdr, 
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store'

@@ -2,6 +2,7 @@
 // copied into the renderer's vertex buffer
 //
 // @return Float32Array vertices (interleaved positions and uvs)
+/*
 export default function readSpriteSheet (spritesheetJson) {
 
     // a sprite is a quad (2 triangles) so it has 6 vertices
@@ -13,15 +14,6 @@ export default function readSpriteSheet (spritesheetJson) {
     
     const vertices = new Float32Array(spriteCount * spriteFloatCount)
 
-    /*
-    stores mapping between sprite name and first vertex index. e.g.,
-        [
-            'hero_run-0',      // 1st vertex index is at 0
-            'bullet_travel-0'  // 1st vertex index is at 6
-            'bob_idle-1'       // 1st vertex index is at 12
-        ]
-    these will alway be multiples of 6, because there are 6 vertices per sprite
-    */
     const locations = [ ]
 
     const spriteMeta = { }
@@ -86,7 +78,49 @@ export default function readSpriteSheet (spritesheetJson) {
         i += spriteFloatCount
     }
 
-    return { /*spriteCount, */ spriteMeta, locations, vertices }
+    return { spriteMeta, locations, vertices }
+}
+*/
+
+
+/**
+ *  ------------------------------ TexturePacker (no rotation) ------------------------------
+ * Accepts the "Hash" JSON format from TexturePacker. Assumes rotated=false.
+ * 
+ * texturepacker frame structure:
+   "f2.png":
+    {
+        "frame": {"x":15,"y":1,"w":10,"h":15},
+        "rotated": false,
+        "trimmed": true,
+        "spriteSourceSize": {"x":22,"y":17,"w":10,"h":15},
+        "sourceSize": {"w":32,"h":32}
+    },
+*/
+export default function buildSpriteTableFromTexturePacker (doc) {
+    const atlasW = doc.meta.size.w;
+    const atlasH = doc.meta.size.h;
+    const names = Object.keys(doc.frames).sort();
+    const descs = new Array(names.length);
+
+    for (let i=0; i<names.length; i++) {
+        const fr = doc.frames[names[i]];
+
+        const fx = fr.frame.x, fy = fr.frame.y, fw = fr.frame.w, fh = fr.frame.h;
+        const offX = fx / atlasW, offY = fy / atlasH;
+        const spanX = fw / atlasW, spanY = fh / atlasH;
+        const sw = fr.sourceSize.w, sh = fr.sourceSize.h;
+        const ox = fr.spriteSourceSize.x, oy = fr.spriteSourceSize.y;
+        const cx = (ox + fw*0.5) - (sw*0.5);
+        const cy = (oy + fh*0.5) - (sh*0.5);
+        descs[i] = {
+            UvOrigin: [offX, offY],
+            UvSpan: [spanX, spanY],
+            FrameSize:[fw, fh],
+            CenterOffset:[cx, cy],
+        };
+    }
+    return { descs, names };
 }
 
 
