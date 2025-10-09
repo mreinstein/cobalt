@@ -302,12 +302,15 @@ function draw (cobalt, node, commandEncoder) {
         if (!d)
             continue;
 
-        const sx = (d.FrameSize[0] * (s.sizeX) * s.scale[0]) * 0.5;
-        const sy = (d.FrameSize[1] * (s.sizeY) * s.scale[1]) * 0.5;
-        const rad = Math.hypot(sx, sy);
-        const x = s.position[0], y = s.position[1];
-        if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
-            continue
+        // avoid sprite viewport culling when drawing in screenspace mode (typically ui/hud layers)
+        if (!node.options.isScreenSpace) {
+            const sx = (d.FrameSize[0] * (s.sizeX) * s.scale[0]) * 0.5;
+            const sy = (d.FrameSize[1] * (s.sizeY) * s.scale[1]) * 0.5;
+            const rad = Math.hypot(sx, sy);
+            const x = s.position[0], y = s.position[1];
+            if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+                continue
+        }
 
         node.data.visible[node.data.visibleCount] = s
         node.data.visibleCount++

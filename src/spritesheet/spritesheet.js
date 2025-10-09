@@ -1,4 +1,3 @@
-import createSpriteQuads       from './create-sprite-quads.js'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
 import createTextureFromUrl    from '../create-texture-from-url.js'
 import readSpriteSheet         from './read-spritesheet.js'
@@ -58,17 +57,11 @@ async function init (cobalt, node) {
     }
 
     // Map sprite name → ID
-    const idByName = new Map(spritesheet.locations.map((n,i)=>[n,i]))
-
-    const quads = createSpriteQuads(device, spritesheet)
+    const idByName = new Map(spritesheet.names.map((n,i)=>[n,i]))
     
     return {
-       // pipeline,
-        //uniformBuffer, // perspective and view matrices for the camera
-        quads,
         colorTexture,
         emissiveTexture,
-        //bindGroupLayout,
         spritesheet,
         idByName,
     }
@@ -78,6 +71,5 @@ async function init (cobalt, node) {
 function destroy (node) {
     node.data.quads.buffer.destroy()
     node.data.colorTexture.buffer.destroy()
-    //node.data.uniformBuffer.destroy()
     node.data.emissiveTexture.texture.destroy()
 }

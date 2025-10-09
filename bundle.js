@@ -11377,13 +11377,13 @@ var {
 function addSprite(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
   const { idByName } = renderPass.refs.spritesheet.data;
   renderPass.data.sprites.push({
-    position,
+    position: vec2.clone(position),
     sizeX: 1,
     sizeY: 1,
-    scale,
+    scale: vec2.clone(scale),
     rotation,
     opacity,
-    tint,
+    tint: vec4.clone(tint),
     spriteID: idByName.get(name),
     id: _uuid()
   });
@@ -11417,7 +11417,7 @@ function setSpriteTint(cobalt, renderPass, id, tint) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
   if (!sprite)
     return;
-  sprite.tint = tint;
+  vec4.copy(tint, sprite.tint);
 }
 function setSpriteOpacity(cobalt, renderPass, id, opacity) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
@@ -11694,12 +11694,14 @@ function draw3(cobalt, node, commandEncoder) {
     const d = descs[s.spriteID];
     if (!d)
       continue;
-    const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
-    const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
-    const rad = Math.hypot(sx, sy);
-    const x = s.position[0], y = s.position[1];
-    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
-      continue;
+    if (!node.options.isScreenSpace) {
+      const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+      const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
+      const rad = Math.hypot(sx, sy);
+      const x = s.position[0], y = s.position[1];
+      if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+        continue;
+    }
     node.data.visible[node.data.visibleCount] = s;
     node.data.visibleCount++;
   }
@@ -14015,13 +14017,13 @@ __export(public_api_exports3, {
 function addSprite2(cobalt, renderPass, name, position, scale, tint, opacity, rotation) {
   const { idByName } = renderPass.refs.spritesheet.data;
   renderPass.data.sprites.push({
-    position,
+    position: vec2.clone(position),
     sizeX: 1,
     sizeY: 1,
-    scale,
+    scale: vec2.clone(scale),
     rotation,
     opacity,
-    tint,
+    tint: vec4.clone(tint),
     spriteID: idByName.get(name),
     id: _uuid()
   });
@@ -14055,7 +14057,7 @@ function setSpriteTint2(cobalt, renderPass, id, tint) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
   if (!sprite)
     return;
-  sprite.tint = tint;
+  vec4.copy(tint, sprite.tint);
 }
 function setSpriteOpacity2(cobalt, renderPass, id, opacity) {
   const sprite = renderPass.data.sprites.find((s) => s.id === id);
@@ -14309,12 +14311,14 @@ function draw9(cobalt, node, commandEncoder) {
     const d = descs[s.spriteID];
     if (!d)
       continue;
-    const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
-    const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
-    const rad = Math.hypot(sx, sy);
-    const x = s.position[0], y = s.position[1];
-    if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
-      continue;
+    if (!node.options.isScreenSpace) {
+      const sx = d.FrameSize[0] * s.sizeX * s.scale[0] * 0.5;
+      const sy = d.FrameSize[1] * s.sizeY * s.scale[1] * 0.5;
+      const rad = Math.hypot(sx, sy);
+      const x = s.position[0], y = s.position[1];
+      if (x + rad < viewRect.x || x - rad > viewRect.x + viewRect.w || y + rad < viewRect.y || y - rad > viewRect.y + viewRect.h)
+        continue;
+    }
     node.data.visible[node.data.visibleCount] = s;
     node.data.visibleCount++;
   }
@@ -14538,88 +14542,7 @@ function _writeTileBuffer(c, nodeData) {
   c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, 8);
 }
 
-// src/spritesheet/create-sprite-quads.js
-function createSpriteQuads(device, spritesheet) {
-  const vertices = spritesheet.vertices;
-  const usage = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
-  const descriptor = {
-    size: vertices.byteLength,
-    usage,
-    // make this memory space accessible from the CPU (host visible)
-    mappedAtCreation: true
-  };
-  const buffer = device.createBuffer(descriptor);
-  new Float32Array(buffer.getMappedRange()).set(vertices);
-  buffer.unmap();
-  const bufferLayout = {
-    arrayStride: 16,
-    stepMode: "vertex",
-    attributes: [
-      // position
-      {
-        shaderLocation: 0,
-        format: "float32x2",
-        offset: 0
-      },
-      // uv
-      {
-        shaderLocation: 1,
-        format: "float32x2",
-        offset: 8
-      }
-    ]
-  };
-  return {
-    buffer,
-    bufferLayout
-  };
-}
-
 // src/spritesheet/read-spritesheet.js
-function readSpriteSheet(spritesheetJson) {
-  const spriteFloatCount = 4 * 6;
-  const spriteCount = Object.keys(spritesheetJson.frames).length;
-  const vertices = new Float32Array(spriteCount * spriteFloatCount);
-  const locations = [];
-  const spriteMeta = {};
-  let i = 0;
-  for (const frameName in spritesheetJson.frames) {
-    const frame = spritesheetJson.frames[frameName];
-    locations.push(frameName);
-    spriteMeta[frameName] = frame.sourceSize;
-    const minX = -0.5 + frame.spriteSourceSize.x / frame.sourceSize.w;
-    const minY = -0.5 + frame.spriteSourceSize.y / frame.sourceSize.h;
-    const maxX = -0.5 + (frame.spriteSourceSize.x + frame.spriteSourceSize.w) / frame.sourceSize.w;
-    const maxY = -0.5 + (frame.spriteSourceSize.y + frame.spriteSourceSize.h) / frame.sourceSize.h;
-    const p0 = [minX, minY];
-    const p1 = [minX, maxY];
-    const p2 = [maxX, maxY];
-    const p3 = [maxX, minY];
-    const minU = 0 + frame.frame.x / spritesheetJson.meta.size.w;
-    const minV = 0 + frame.frame.y / spritesheetJson.meta.size.h;
-    const maxU = 0 + (frame.frame.x + frame.frame.w) / spritesheetJson.meta.size.w;
-    const maxV = 0 + (frame.frame.y + frame.frame.h) / spritesheetJson.meta.size.h;
-    const uv0 = [minU, minV];
-    const uv1 = [minU, maxV];
-    const uv2 = [maxU, maxV];
-    const uv3 = [maxU, minV];
-    vertices.set(p0, i);
-    vertices.set(uv0, i + 2);
-    vertices.set(p1, i + 4);
-    vertices.set(uv1, i + 6);
-    vertices.set(p2, i + 8);
-    vertices.set(uv2, i + 10);
-    vertices.set(p0, i + 12);
-    vertices.set(uv0, i + 14);
-    vertices.set(p2, i + 16);
-    vertices.set(uv2, i + 18);
-    vertices.set(p3, i + 20);
-    vertices.set(uv3, i + 22);
-    i += spriteFloatCount;
-  }
-  const { descs, names } = buildSpriteTableFromTexturePacker(spritesheetJson);
-  return { spriteMeta, locations, vertices, descs, names };
-}
 function buildSpriteTableFromTexturePacker(doc) {
   const atlasW = doc.meta.size.w;
   const atlasH = doc.meta.size.h;
@@ -14670,24 +14593,19 @@ async function init11(cobalt, node) {
   if (canvas) {
     spritesheet = await fetch(node.options.spriteSheetJsonUrl);
     spritesheet = await spritesheet.json();
-    spritesheet = readSpriteSheet(spritesheet);
+    spritesheet = buildSpriteTableFromTexturePacker(spritesheet);
     colorTexture = await createTextureFromUrl(cobalt, "sprite", node.options.colorTextureUrl, format);
     emissiveTexture = await createTextureFromUrl(cobalt, "emissive sprite", node.options.emissiveTextureUrl, format);
     canvas.style.imageRendering = "pixelated";
   } else {
-    spritesheet = readSpriteSheet(node.options.spriteSheetJson);
+    spritesheet = buildSpriteTableFromTexturePacker(node.options.spriteSheetJson);
     colorTexture = await createTextureFromBuffer(cobalt, "sprite", node.options.colorTexture, format);
     emissiveTexture = await createTextureFromBuffer(cobalt, "emissive sprite", node.options.emissiveTexture, format);
   }
-  const idByName = new Map(spritesheet.locations.map((n, i) => [n, i]));
-  const quads = createSpriteQuads(device, spritesheet);
+  const idByName = new Map(spritesheet.names.map((n, i) => [n, i]));
   return {
-    // pipeline,
-    //uniformBuffer, // perspective and view matrices for the camera
-    quads,
     colorTexture,
     emissiveTexture,
-    //bindGroupLayout,
     spritesheet,
     idByName
   };

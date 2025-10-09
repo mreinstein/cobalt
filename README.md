@@ -5,12 +5,6 @@
 A 2D Web GPU renderer.
 
 
-TODO:
-* integration test in crossroads before publishing
-* spritesheet: remove unneeded variables/state
-* publish 0.7.0
-
-
 ## Goals
 
 * pure WebGpu: no fallbacks to WebGl or canvas

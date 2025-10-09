@@ -2,6 +2,7 @@
 // copied into the renderer's vertex buffer
 //
 // @return Float32Array vertices (interleaved positions and uvs)
+/*
 export default function readSpriteSheet (spritesheetJson) {
 
     // a sprite is a quad (2 triangles) so it has 6 vertices
@@ -13,15 +14,6 @@ export default function readSpriteSheet (spritesheetJson) {
     
     const vertices = new Float32Array(spriteCount * spriteFloatCount)
 
-    /*
-    stores mapping between sprite name and first vertex index. e.g.,
-        [
-            'hero_run-0',      // 1st vertex index is at 0
-            'bullet_travel-0'  // 1st vertex index is at 6
-            'bob_idle-1'       // 1st vertex index is at 12
-        ]
-    these will alway be multiples of 6, because there are 6 vertices per sprite
-    */
     const locations = [ ]
 
     const spriteMeta = { }
@@ -86,10 +78,9 @@ export default function readSpriteSheet (spritesheetJson) {
         i += spriteFloatCount
     }
 
-    const { descs, names } = buildSpriteTableFromTexturePacker(spritesheetJson);
-
-    return { spriteMeta, locations, vertices, descs, names }
+    return { spriteMeta, locations, vertices }
 }
+*/
 
 
 /**
@@ -106,13 +97,15 @@ export default function readSpriteSheet (spritesheetJson) {
         "sourceSize": {"w":32,"h":32}
     },
 */
-function buildSpriteTableFromTexturePacker (doc) {
+export default function buildSpriteTableFromTexturePacker (doc) {
     const atlasW = doc.meta.size.w;
     const atlasH = doc.meta.size.h;
     const names = Object.keys(doc.frames).sort();
     const descs = new Array(names.length);
-    for (let i=0;i<names.length;i++){
+
+    for (let i=0; i<names.length; i++) {
         const fr = doc.frames[names[i]];
+
         const fx = fr.frame.x, fy = fr.frame.y, fw = fr.frame.w, fh = fr.frame.h;
         const offX = fx / atlasW, offY = fy / atlasH;
         const spanX = fw / atlasW, spanY = fh / atlasH;
