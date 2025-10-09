@@ -11463,7 +11463,7 @@ var sprite_default2 = {
   refs: [
     { name: "spritesheet", type: "customResource", access: "read" },
     {
-      name: "hdr",
+      name: "color",
       type: "textureView",
       format: "rgba16float",
       access: "write"
@@ -11731,7 +11731,7 @@ function draw3(cobalt, node, commandEncoder) {
     colorAttachments: [
       // color
       {
-        view: node.refs.hdr.data.view,
+        view: node.refs.color.data.view,
         clearValue: cobalt.clearValue,
         loadOp,
         storeOp: "store"
