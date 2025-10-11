@@ -1,6 +1,5 @@
-import blitWGSL           from './fb-blit.wgsl'
 import getPreferredFormat from '../get-preferred-format.js'
-
+import blitWGSL from './fb-blit.wgsl'
 
 // blit a source texture into a destination texture
 
@@ -13,7 +12,7 @@ export default {
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -31,11 +30,10 @@ export default {
         resize(cobalt, node)
     },
 
-    onViewportPosition: function (cobalt, node) { },
+    onViewportPosition: function (cobalt, node) {},
 }
 
-
-async function init (cobalt, node) {
+async function init(cobalt, node) {
     const { device } = cobalt
 
     const bindGroupLayout = device.createBindGroupLayout({
@@ -43,13 +41,13 @@ async function init (cobalt, node) {
             {
                 binding: 0,
                 visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
+                texture: {},
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            }
+                sampler: {},
+            },
         ],
     })
 
@@ -58,32 +56,34 @@ async function init (cobalt, node) {
         entries: [
             {
                 binding: 0,
-                resource: node.refs.in.data.view
+                resource: node.refs.in.data.view,
             },
             {
                 binding: 1,
-                resource: node.refs.in.data.sampler
-            }
-        ]
+                resource: node.refs.in.data.sampler,
+            },
+        ],
     })
 
     const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
+        bindGroupLayouts: [bindGroupLayout],
     })
 
     const pipeline = device.createRenderPipeline({
         label: 'fb-blit',
         vertex: {
             module: device.createShaderModule({
-                code: blitWGSL
+                code: blitWGSL,
             }),
             entryPoint: 'vs_main',
-            buffers: [ /*quad.bufferLayout*/ ]
+            buffers: [
+                /*quad.bufferLayout*/
+            ],
         },
 
         fragment: {
             module: device.createShaderModule({
-                code: blitWGSL
+                code: blitWGSL,
             }),
             entryPoint: 'fs_main',
             targets: [
@@ -96,18 +96,18 @@ async function init (cobalt, node) {
                         },
                         alpha: {
                             srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                }
-            ]
+                            dstFactor: 'one',
+                        },
+                    },
+                },
+            ],
         },
 
         primitive: {
-            topology: 'triangle-list'
+            topology: 'triangle-list',
         },
 
-        layout: pipelineLayout
+        layout: pipelineLayout,
     })
 
     return {
@@ -117,10 +117,9 @@ async function init (cobalt, node) {
     }
 }
 
-
-function draw (cobalt, node, commandEncoder) {
+function draw(cobalt, node, commandEncoder) {
     const { device } = cobalt
-    
+
     const renderpass = commandEncoder.beginRenderPass({
         label: 'fb-blit',
         colorAttachments: [
@@ -128,9 +127,9 @@ function draw (cobalt, node, commandEncoder) {
                 view: node.refs.out,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
-                storeOp: 'store'
-            }
-        ]
+                storeOp: 'store',
+            },
+        ],
     })
 
     renderpass.setPipeline(node.data.pipeline)
@@ -142,8 +141,7 @@ function draw (cobalt, node, commandEncoder) {
     renderpass.end()
 }
 
-
-function resize (cobalt, node) {
+function resize(cobalt, node) {
     const { device } = cobalt
 
     // re-build the bind group
@@ -152,12 +150,12 @@ function resize (cobalt, node) {
         entries: [
             {
                 binding: 0,
-                resource: node.refs.in.data.view
+                resource: node.refs.in.data.view,
             },
             {
                 binding: 1,
-                resource: node.refs.in.data.sampler
-            }
-        ]
+                resource: node.refs.in.data.sampler,
+            },
+        ],
     })
 }

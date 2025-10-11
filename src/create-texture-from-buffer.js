@@ -1,12 +1,13 @@
-import createTexture      from './create-texture.js'
+import createTexture from './create-texture.js'
 import getPreferredFormat from './get-preferred-format.js'
 
-
-export default function createTextureFromBuffer (c, label, image, format) {
-
+export default function createTextureFromBuffer(c, label, image, format) {
     format = format || getPreferredFormat(c)
 
-    const usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT
+    const usage =
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT
     const mip_count = 1
     const t = createTexture(c.device, label, image.width, image.height, mip_count, format, usage)
 
@@ -24,8 +25,8 @@ export default function createTextureFromBuffer (c, label, image, format) {
         { texture: t.texture },
         image.data,
         { bytesPerRow: 4 * image.width },
-        { width: image.width, height: image.height }
-    ) 
+        { width: image.width, height: image.height },
+    )
 
     // nearest neighbor filtering is good for da pixel art
     const samplerDescriptor = {
@@ -34,7 +35,7 @@ export default function createTextureFromBuffer (c, label, image, format) {
         magFilter: 'nearest',
         minFilter: 'nearest',
         mipmapFilter: 'nearest',
-        maxAnisotropy: 1
+        maxAnisotropy: 1,
     }
 
     t.sampler = c.device.createSampler(samplerDescriptor)

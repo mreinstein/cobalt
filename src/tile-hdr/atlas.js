@@ -1,21 +1,19 @@
+import round from 'round-half-up-symmetric'
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
-import createTextureFromUrl    from '../create-texture-from-url.js'
-import getPreferredFormat      from '../get-preferred-format.js'
-import tileWGSL                from './tile.wgsl'
-import round                   from 'round-half-up-symmetric'
-
+import createTextureFromUrl from '../create-texture-from-url.js'
+import getPreferredFormat from '../get-preferred-format.js'
+import tileWGSL from './tile.wgsl'
 
 const _buf = new Float32Array(8) //(136)  // tile instance data stored in a UBO
-
 
 // shared tile atlas resource, used by each tile render node
 export default {
     type: 'cobalt:tileAtlas',
-    refs: [ ],
+    refs: [],
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -38,8 +36,7 @@ export default {
     },
 }
 
-
-async function init (cobalt, nodeData) {
+async function init(cobalt, nodeData) {
     const { canvas, device } = cobalt
 
     const format = nodeData.options.format || 'rgba8unorm'
@@ -48,16 +45,25 @@ async function init (cobalt, nodeData) {
 
     if (canvas) {
         // browser (canvas) path
-        atlasMaterial = await createTextureFromUrl(cobalt, 'tile atlas', nodeData.options.textureUrl, format)
-    }
-    else {
+        atlasMaterial = await createTextureFromUrl(
+            cobalt,
+            'tile atlas',
+            nodeData.options.textureUrl,
+            format,
+        )
+    } else {
         // sdl + gpu path
-        atlasMaterial = await createTextureFromBuffer(cobalt, 'tile atlas', nodeData.options.texture, format)
+        atlasMaterial = await createTextureFromBuffer(
+            cobalt,
+            'tile atlas',
+            nodeData.options.texture,
+            format,
+        )
     }
 
     const uniformBuffer = device.createBuffer({
         size: 32, //32 + (16 * 32), // in bytes.  32 for common data + (32 max tile layers * 16 bytes per tile layer)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
     const atlasBindGroupLayout = device.createBindGroupLayout({
@@ -65,18 +71,18 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { }
+                buffer: {},
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
-                texture:  { }
+                texture: {},
             },
             {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
-            }
+                sampler: {},
+            },
         ],
     })
 
@@ -86,18 +92,18 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 resource: {
-                    buffer: uniformBuffer
-                }
+                    buffer: uniformBuffer,
+                },
             },
             {
                 binding: 1,
-                resource: atlasMaterial.view
+                resource: atlasMaterial.view,
             },
             {
                 binding: 2,
-                resource: atlasMaterial.sampler
-            }
-        ]
+                resource: atlasMaterial.sampler,
+            },
+        ],
     })
 
     const tileBindGroupLayout = device.createBindGroupLayout({
@@ -105,38 +111,38 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: { }
+                buffer: {},
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                texture:  { }
+                texture: {},
             },
             {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
-                sampler: { }
+                sampler: {},
             },
         ],
     })
 
     const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ tileBindGroupLayout, atlasBindGroupLayout ]
+        bindGroupLayouts: [tileBindGroupLayout, atlasBindGroupLayout],
     })
 
     const pipeline = device.createRenderPipeline({
         label: 'tileatlas',
         vertex: {
             module: device.createShaderModule({
-                code: tileWGSL
+                code: tileWGSL,
             }),
             entryPoint: 'vs_main',
-            buffers: [ ]
+            buffers: [],
         },
 
         fragment: {
             module: device.createShaderModule({
-                code: tileWGSL
+                code: tileWGSL,
             }),
             entryPoint: 'fs_main',
             targets: [
@@ -149,24 +155,24 @@ async function init (cobalt, nodeData) {
                         },
                         alpha: {
                             srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
-                }
-            ]
+                            dstFactor: 'one',
+                        },
+                    },
+                },
+            ],
         },
 
         primitive: {
-            topology: 'triangle-list'
+            topology: 'triangle-list',
         },
 
-        layout: pipelineLayout
+        layout: pipelineLayout,
     })
 
     return {
         pipeline,
         uniformBuffer,
-        atlasBindGroup,   // tile atlas texture, transform UBO
+        atlasBindGroup, // tile atlas texture, transform UBO
         atlasMaterial,
 
         tileBindGroupLayout,
@@ -176,14 +182,12 @@ async function init (cobalt, nodeData) {
     }
 }
 
-
-function destroy (data) {
+function destroy(data) {
     data.atlasMaterial.texture.destroy()
     data.atlasMaterial.texture = undefined
 }
 
-
-function _writeTileBuffer (c, nodeData) {
+function _writeTileBuffer(c, nodeData) {
     // c.viewport.position is the top left visible corner of the level
     _buf[0] = round(c.viewport.position[0])
     _buf[1] = round(c.viewport.position[1])
@@ -194,14 +198,14 @@ function _writeTileBuffer (c, nodeData) {
     const GAME_WIDTH = c.viewport.width / c.viewport.zoom
     const GAME_HEIGHT = c.viewport.height / c.viewport.zoom
 
-    _buf[2] = GAME_WIDTH / tileScale          // viewportSize[0]
-    _buf[3] = GAME_HEIGHT / tileScale         // viewportSize[1]
+    _buf[2] = GAME_WIDTH / tileScale // viewportSize[0]
+    _buf[3] = GAME_HEIGHT / tileScale // viewportSize[1]
 
-    _buf[4] = 1 / tile.atlasMaterial.texture.width  // inverseAtlasTextureSize[0]
+    _buf[4] = 1 / tile.atlasMaterial.texture.width // inverseAtlasTextureSize[0]
     _buf[5] = 1 / tile.atlasMaterial.texture.height // inverseAtlasTextureSize[1]
 
     _buf[6] = tileSize
-    _buf[7] = 1.0 / tileSize                            // inverseTileSize
-    
+    _buf[7] = 1.0 / tileSize // inverseTileSize
+
     c.device.queue.writeBuffer(tile.uniformBuffer, 0, _buf, 0, 8)
 }

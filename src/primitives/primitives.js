@@ -1,29 +1,24 @@
-import getPreferredFormat         from '../get-preferred-format.js'
-import primitivesWGSL             from './primitives.wgsl'
-import publicAPI                  from './public-api.js'
-import { FLOAT32S_PER_SPRITE }    from './constants.js'
-import round                      from 'round-half-up-symmetric'
-import { mat4, mat3, vec2, vec3 } from 'wgpu-matrix'
-
+import round from 'round-half-up-symmetric'
+import { mat3, mat4, vec2, vec3 } from 'wgpu-matrix'
+import getPreferredFormat from '../get-preferred-format.js'
+import { FLOAT32S_PER_SPRITE } from './constants.js'
+import primitivesWGSL from './primitives.wgsl'
+import publicAPI from './public-api.js'
 
 // a graphics primitives renderer (lines, boxes, etc.)
-
 
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
 
-
 export default {
     type: 'cobalt:primitives',
-    refs: [
-        { name: 'color', type: 'textView', format: 'PREFERRED_TEXTURE_VIEW', access: 'write' },
-    ],
+    refs: [{ name: 'color', type: 'textView', format: 'PREFERRED_TEXTURE_VIEW', access: 'write' }],
 
     // cobalt event handling functions
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -50,9 +45,8 @@ export default {
     customFunctions: publicAPI,
 }
 
-
 // This corresponds to a WebGPU render pass.  It handles 1 sprite layer.
-async function init (cobalt, node) {
+async function init(cobalt, node) {
     const { device } = cobalt
 
     // Define vertices and indices for your line represented as two triangles (a rectangle)
@@ -70,10 +64,9 @@ async function init (cobalt, node) {
     //new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
     //vertexBuffer.unmap()
 
-
     const uniformBuffer = device.createBuffer({
         size: 64 * 2, // 4x4 matrix with 4 bytes per float32, times 2 matrices (view, projection)
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
     // Shader modules
@@ -86,13 +79,13 @@ async function init (cobalt, node) {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX,
-                buffer: { }
+                buffer: {},
             },
         ],
     })
 
     const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [ bindGroupLayout ]
+        bindGroupLayouts: [bindGroupLayout],
     })
 
     const bindGroup = device.createBindGroup({
@@ -101,37 +94,39 @@ async function init (cobalt, node) {
             {
                 binding: 0,
                 resource: {
-                    buffer: uniformBuffer
-                }
+                    buffer: uniformBuffer,
+                },
             },
-        ]
+        ],
     })
 
     // Create render pipeline
     const pipeline = device.createRenderPipeline({
-        label: "primitives",
+        label: 'primitives',
         layout: pipelineLayout,
         vertex: {
             module: shaderModule,
             entryPoint: 'vs_main',
-            buffers: [{
-                arrayStride: 6 * Float32Array.BYTES_PER_ELEMENT, // 2 floats per vertex position + 4 floats per vertex color
-                //stepMode: 'vertex',
-                attributes: [
-                    // position
-                    {
-                        shaderLocation: 0,
-                        offset: 0,
-                        format: 'float32x2',
-                    },
-                    // color
-                    {
-                        shaderLocation: 1,
-                        format: 'float32x4',
-                        offset: 8
-                    }
-                ],
-            }],
+            buffers: [
+                {
+                    arrayStride: 6 * Float32Array.BYTES_PER_ELEMENT, // 2 floats per vertex position + 4 floats per vertex color
+                    //stepMode: 'vertex',
+                    attributes: [
+                        // position
+                        {
+                            shaderLocation: 0,
+                            offset: 0,
+                            format: 'float32x2',
+                        },
+                        // color
+                        {
+                            shaderLocation: 1,
+                            format: 'float32x4',
+                            offset: 8,
+                        },
+                    ],
+                },
+            ],
         },
         fragment: {
             module: shaderModule,
@@ -146,9 +141,9 @@ async function init (cobalt, node) {
                         },
                         alpha: {
                             srcFactor: 'zero',
-                            dstFactor: 'one'
-                        }
-                    }
+                            dstFactor: 'one',
+                        },
+                    },
                 },
             ],
         },
@@ -156,7 +151,6 @@ async function init (cobalt, node) {
             topology: 'triangle-list',
         },
     })
-
 
     return {
         uniformBuffer, // perspective and view matrices for the camera
@@ -173,14 +167,13 @@ async function init (cobalt, node) {
         // saving/restoring will push/pop transforms off of this stack.
         // works very similarly to HTML Canvas's transforms.
         // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Transformations
-        transforms: [ mat3.identity() ],
+        transforms: [mat3.identity()],
     }
 }
 
-
-function draw (cobalt, node, commandEncoder) {
-
-    if (node.data.vertexCount === 0) // no primitives to draw, bail
+function draw(cobalt, node, commandEncoder) {
+    if (node.data.vertexCount === 0)
+        // no primitives to draw, bail
         return
 
     const { device } = cobalt
@@ -198,13 +191,19 @@ function draw (cobalt, node, commandEncoder) {
             })
         }
 
-        let byteCount = node.data.vertexCount * stride
+        const byteCount = node.data.vertexCount * stride
         if (byteCount > node.data.vertexBuffer.size) {
             console.error('too many primitives, bailing')
             return
         }
-        
-        cobalt.device.queue.writeBuffer(node.data.vertexBuffer, 0, node.data.vertices.buffer, 0, byteCount)
+
+        cobalt.device.queue.writeBuffer(
+            node.data.vertexBuffer,
+            0,
+            node.data.vertices.buffer,
+            0,
+            byteCount,
+        )
     }
 
     const loadOp = node.options.loadOp || 'load'
@@ -217,20 +216,19 @@ function draw (cobalt, node, commandEncoder) {
                 view: node.refs.color, //node.refs.color.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp,
-                storeOp: 'store'
-            }
-        ]
+                storeOp: 'store',
+            },
+        ],
     })
 
     renderpass.setPipeline(node.data.pipeline)
     renderpass.setBindGroup(0, node.data.bindGroup)
     renderpass.setVertexBuffer(0, node.data.vertexBuffer)
-    renderpass.draw(node.data.vertexCount)  // Draw 18 vertices, forming six triangles
+    renderpass.draw(node.data.vertexCount) // Draw 18 vertices, forming six triangles
     renderpass.end()
 }
 
-
-function destroy (node) {
+function destroy(node) {
     node.data.vertexBuffer.destroy()
     node.data.vertexBuffer = null
     node.data.uniformBuffer.destroy()
@@ -238,20 +236,19 @@ function destroy (node) {
     node.data.transforms.length = 0
 }
 
-
-function _writeMatricesBuffer (cobalt, node) {
+function _writeMatricesBuffer(cobalt, node) {
     const { device } = cobalt
 
     const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom
     const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom
 
     //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0,    GAME_WIDTH,   GAME_HEIGHT,    0,   -10.0,   10.0)
+    const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10.0, 10.0)
 
     // TODO: 1.0 must be subtracted from both x and y values otherwise everything get shifted down and to the right
     //       when rendered.  This is true for both sdl and browser backed rendering.  I don't understand why though!!
-    vec3.set(-cobalt.viewport.position[0] - 1.0, -cobalt.viewport.position[1] - 1.0 , 0, _tmpVec3)
-    
+    vec3.set(-cobalt.viewport.position[0] - 1.0, -cobalt.viewport.position[1] - 1.0, 0, _tmpVec3)
+
     const view = mat4.translation(_tmpVec3)
 
     device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)

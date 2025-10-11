@@ -1,5 +1,4 @@
-export default function createTexture (device, label, width, height, mip_count, format, usage) {
-    
+export default function createTexture(device, label, width, height, mip_count, format, usage) {
     const texture = device.createTexture({
         label,
         size: { width, height },
@@ -12,19 +11,21 @@ export default function createTexture (device, label, width, height, mip_count, 
 
     const view = texture.createView()
 
-    const mip_view = [ ]
+    const mip_view = []
 
-    for (let i=0; i < mip_count; i++)
-        mip_view.push(texture.createView({
-            label,
-            format,
-            dimension: '2d',
-            aspect: 'all',
-            baseMipLevel: i,
-            mipLevelCount: 1,
-            baseArrayLayer: 0,
-            arrayLayerCount: 1,
-        }))
+    for (let i = 0; i < mip_count; i++)
+        mip_view.push(
+            texture.createView({
+                label,
+                format,
+                dimension: '2d',
+                aspect: 'all',
+                baseMipLevel: i,
+                mipLevelCount: 1,
+                baseArrayLayer: 0,
+                arrayLayerCount: 1,
+            }),
+        )
 
     const sampler = device.createSampler({
         label: `${label} sampler`,

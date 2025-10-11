@@ -1,0 +1,23 @@
+{
+    "files": {
+        "includes": ["src/**/*.js", "!src/cycle.js"]
+    },
+    "formatter": {
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 100
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "semicolons": "asNeeded"
+        }
+    },
+    "linter": {
+        "rules": {
+            "complexity": {
+                "useArrowFunction": "off"
+            }
+        }
+    }
+}

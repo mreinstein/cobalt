@@ -1,17 +1,21 @@
 import getPreferredFormat from '../get-preferred-format.js'
 import sceneCompositeWGSL from './scene-composite.wgsl'
 
-
 export default {
     type: 'cobalt:bloom',
     refs: [
-        { name: 'hdr',      type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'bloom',    type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'combined', type: 'textureView', format: 'PREFERRED_TEXTURE_FORMAT', access: 'write' },
+        { name: 'hdr', type: 'textureView', format: 'rgba16', access: 'read' },
+        { name: 'bloom', type: 'textureView', format: 'rgba16', access: 'read' },
+        {
+            name: 'combined',
+            type: 'textureView',
+            format: 'PREFERRED_TEXTURE_FORMAT',
+            access: 'write',
+        },
     ],
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -30,24 +34,23 @@ export default {
         resize(cobalt, node)
     },
 
-    onViewportPosition: function (cobalt, node) { },
+    onViewportPosition: function (cobalt, node) {},
 }
 
-
-function init (cobalt, node) {
-  const { options, refs } = node
+function init(cobalt, node) {
+    const { options, refs } = node
 
     const { device } = cobalt
     const format = getPreferredFormat(cobalt) // bgra8unorm or bgra8unorm-srgb usually
 
     const bloom_intensity = options.bloom_intensity ?? 40.0
     const bloom_combine_constant = options.bloom_combine_constant ?? 0.68
-    const dat = new Float32Array([ bloom_intensity, bloom_combine_constant ])
+    const dat = new Float32Array([bloom_intensity, bloom_combine_constant])
     const params_buf = device.createBuffer({
         label: 'scene composite params buffer',
         size: dat.byteLength, // vec4<f32> and f32 and u32 with 4 bytes per float32 and 4 bytes per u32
         mappedAtCreation: true,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
     new Float32Array(params_buf.getMappedRange()).set(dat)
@@ -58,50 +61,50 @@ function init (cobalt, node) {
         label: 'scenecomposite',
         layout: 'auto',
         vertex: {
-          module: device.createShaderModule({
-            code: sceneCompositeWGSL,
-          }),
-          entryPoint: 'vert_main',
+            module: device.createShaderModule({
+                code: sceneCompositeWGSL,
+            }),
+            entryPoint: 'vert_main',
         },
         fragment: {
-          module: device.createShaderModule({
-            code: sceneCompositeWGSL,
-          }),
-          entryPoint: 'frag_main',
-          targets: [
-            {
-              format,
-            },
-          ],
+            module: device.createShaderModule({
+                code: sceneCompositeWGSL,
+            }),
+            entryPoint: 'frag_main',
+            targets: [
+                {
+                    format,
+                },
+            ],
         },
         primitive: {
-          topology: 'triangle-list',
+            topology: 'triangle-list',
         },
     })
 
     const bindGroup = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [
-          {
-            binding: 0,
-            resource: refs.hdr.data.sampler,
-          },
-          // color
-          {
-            binding: 1,
-            resource: refs.hdr.data.view,
-          },
-          // emissive
-          {
-            binding: 2,
-            resource: refs.bloom.data.mip_view[0],
-          },
-          {
-            binding: 3,
-            resource: {
-                buffer: params_buf,
+            {
+                binding: 0,
+                resource: refs.hdr.data.sampler,
             },
-          },
+            // color
+            {
+                binding: 1,
+                resource: refs.hdr.data.view,
+            },
+            // emissive
+            {
+                binding: 2,
+                resource: refs.bloom.data.mip_view[0],
+            },
+            {
+                binding: 3,
+                resource: {
+                    buffer: params_buf,
+                },
+            },
         ],
     })
 
@@ -112,20 +115,18 @@ function init (cobalt, node) {
     }
 }
 
-
 // combine bloom and color textures and draw to a fullscreen quad
-function draw (cobalt, node, commandEncoder) {
-
+function draw(cobalt, node, commandEncoder) {
     const passEncoder = commandEncoder.beginRenderPass({
-      label: 'scene-composite',
-      colorAttachments: [
-        {
-          view: node.refs.combined.data.view, //getCurrentTextureView(cobalt)
-          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
+        label: 'scene-composite',
+        colorAttachments: [
+            {
+                view: node.refs.combined.data.view, //getCurrentTextureView(cobalt)
+                clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+                loadOp: 'clear',
+                storeOp: 'store',
+            },
+        ],
     })
 
     const { pipeline, bindGroup } = node.data
@@ -136,35 +137,33 @@ function draw (cobalt, node, commandEncoder) {
     passEncoder.end()
 }
 
-
-function resize (cobalt, node) {
+function resize(cobalt, node) {
     const { pipeline, params_buf } = node.data
     const { device } = cobalt
 
     node.data.bindGroup = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [
-          {
-            binding: 0,
-            resource: node.refs.hdr.data.sampler,
-          },
-          // color
-          {
-            binding: 1,
-            resource: node.refs.hdr.data.view,
-          },
-          // emissive
-          {
-            binding: 2,
-            resource: node.refs.bloom.data.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
-          },
-          {
-            binding: 3,
-            resource: {
-                buffer: params_buf,
+            {
+                binding: 0,
+                resource: node.refs.hdr.data.sampler,
             },
-          },
+            // color
+            {
+                binding: 1,
+                resource: node.refs.hdr.data.view,
+            },
+            // emissive
+            {
+                binding: 2,
+                resource: node.refs.bloom.data.mip_view[0], //bloom_mat.bind_groups_textures[2].mip_view[0],
+            },
+            {
+                binding: 3,
+                resource: {
+                    buffer: params_buf,
+                },
+            },
         ],
     })
 }
-

@@ -1,9 +1,8 @@
-import getPreferredFormat from "../get-preferred-format.js";
+import getPreferredFormat from '../get-preferred-format.js'
+import { LightsBuffer } from './lights-buffer.js'
+import { LightsRenderer } from './lights-renderer.js'
 import * as publicAPI from './public-api.js'
-import { Viewport } from "./viewport";
-import { LightsRenderer } from './lights-renderer.js';
-import { LightsBuffer } from './lights-buffer.js';
-
+import { Viewport } from './viewport'
 
 /**
  * 2D lighting and Shadows
@@ -43,7 +42,7 @@ export default {
 
     onViewportPosition: function (cobalt, node) {
         // runs when the viewport position changes
-        node.data.viewport.setTopLeft(...cobalt.viewport.position);
+        node.data.viewport.setTopLeft(...cobalt.viewport.position)
     },
 
     // optional
@@ -52,15 +51,13 @@ export default {
     },
 }
 
-
 async function init(cobalt, node) {
-
     const { device } = cobalt
 
     // a 2048x2048 light texture with 4 channels (rgba) with each light lighting a 256x256 region can hold 256 lights
-    const MAX_LIGHT_COUNT = 256;
-    const MAX_LIGHT_SIZE = 256;
-    const lightsBuffer = new LightsBuffer(device, MAX_LIGHT_COUNT);
+    const MAX_LIGHT_COUNT = 256
+    const MAX_LIGHT_SIZE = 256
+    const lightsBuffer = new LightsBuffer(device, MAX_LIGHT_COUNT)
 
     const viewport = new Viewport({
         viewportSize: {
@@ -69,13 +66,13 @@ async function init(cobalt, node) {
         },
         center: cobalt.viewport.position,
         zoom: cobalt.viewport.zoom,
-    });
+    })
 
     const lightsRenderer = new LightsRenderer({
         device,
         albedo: {
             view: node.refs.in.data.view,
-            sampler: node.refs.in.data.sampler
+            sampler: node.refs.in.data.sampler,
         },
         targetTexture: node.refs.out.data.texture,
         lightsBuffer,
@@ -83,10 +80,10 @@ async function init(cobalt, node) {
             resolutionPerLight: MAX_LIGHT_SIZE,
             maxLightSize: MAX_LIGHT_SIZE,
             antialiased: false,
-            filtering: "nearest",
+            filtering: 'nearest',
             textureFormat: getPreferredFormat(cobalt),
         },
-    });
+    })
 
     return {
         lightsBuffer,
@@ -101,20 +98,19 @@ async function init(cobalt, node) {
     }
 }
 
-
 function draw(cobalt, node, commandEncoder) {
     if (node.data.lightsBufferNeedsUpdate) {
-        const lightsBuffer = node.data.lightsBuffer;
-        lightsBuffer.setLights(node.data.lights);
-        node.data.lightsBufferNeedsUpdate = false;
-        node.data.lightsTextureNeedsUpdate = true;
+        const lightsBuffer = node.data.lightsBuffer
+        lightsBuffer.setLights(node.data.lights)
+        node.data.lightsBufferNeedsUpdate = false
+        node.data.lightsTextureNeedsUpdate = true
     }
 
-    const lightsRenderer = node.data.lightsRenderer;
+    const lightsRenderer = node.data.lightsRenderer
 
     if (node.data.lightsTextureNeedsUpdate) {
-        lightsRenderer.computeLightsTexture(commandEncoder);
-        node.data.lightsTextureNeedsUpdate = false;
+        lightsRenderer.computeLightsTexture(commandEncoder)
+        node.data.lightsTextureNeedsUpdate = false
     }
 
     const renderpass = commandEncoder.beginRenderPass({
@@ -124,28 +120,28 @@ function draw(cobalt, node, commandEncoder) {
                 view: node.refs.out.data.view,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
-                storeOp: 'store'
-            }
-        ]
+                storeOp: 'store',
+            },
+        ],
     })
 
-    node.data.viewport.setZoom(cobalt.viewport.zoom);
-    const invertVpMatrix = node.data.viewport.invertViewProjectionMatrix;
-    lightsRenderer.render(renderpass, invertVpMatrix);
+    node.data.viewport.setZoom(cobalt.viewport.zoom)
+    const invertVpMatrix = node.data.viewport.invertViewProjectionMatrix
+    lightsRenderer.render(renderpass, invertVpMatrix)
 
     renderpass.end()
 }
 
 function destroy(node) {
-    node.data.lightsBuffer.destroy();
-    node.data.lightsRenderer.destroy();
+    node.data.lightsBuffer.destroy()
+    node.data.lightsRenderer.destroy()
 }
 
 function resize(cobalt, node) {
     node.data.lightsRenderer.setAlbedo({
         view: node.refs.in.data.view,
-        sampler: node.refs.in.data.sampler
-    });
+        sampler: node.refs.in.data.sampler,
+    })
 
-    node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height);
+    node.data.viewport.setViewportSize(cobalt.viewport.width, cobalt.viewport.height)
 }

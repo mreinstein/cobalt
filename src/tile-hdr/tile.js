@@ -1,7 +1,6 @@
 import createTextureFromBuffer from '../create-texture-from-buffer.js'
-import createTextureFromUrl    from '../create-texture-from-url.js'
-import getPreferredFormat      from '../get-preferred-format.js'
-
+import createTextureFromUrl from '../create-texture-from-url.js'
+import getPreferredFormat from '../get-preferred-format.js'
 
 /*
 Tile layers are totally static, and there are usually many of them on several layers.
@@ -16,17 +15,16 @@ Because this processing can happen completely in the fragment shader, there's no
 Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html
 */
 
-
 export default {
     type: 'cobalt:tileHDR',
     refs: [
         { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'read' },
-        { name: "hdr", type: "textureView", format: "rgba16float", access: "write", },
+        { name: 'hdr', type: 'textureView', format: 'rgba16float', access: 'write' },
     ],
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
-    onInit: async function (cobalt, options={}) {
+    onInit: async function (cobalt, options = {}) {
         return init(cobalt, options)
     },
 
@@ -44,12 +42,10 @@ export default {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
     },
 
-    onViewportPosition: function (cobalt, node) {
-    },
+    onViewportPosition: function (cobalt, node) {},
 
     // optional
     customFunctions: {
-
         setTexture: async function (cobalt, node, texture) {
             const { canvas, device } = cobalt
 
@@ -63,8 +59,7 @@ export default {
                 // browser (canvas) path
                 node.options.textureUrl = texture
                 material = await createTextureFromUrl(cobalt, 'tile map', texture, format)
-            }
-            else {
+            } else {
                 // sdl + gpu path
                 material = await createTextureFromBuffer(cobalt, 'tile map', texture, format)
             }
@@ -75,18 +70,18 @@ export default {
                     {
                         binding: 0,
                         resource: {
-                            buffer: node.data.uniformBuffer
-                        }
+                            buffer: node.data.uniformBuffer,
+                        },
                     },
                     {
                         binding: 1,
-                        resource: material.view
+                        resource: material.view,
                     },
                     {
                         binding: 2,
-                        resource: material.sampler
+                        resource: material.sampler,
                     },
-                ]
+                ],
             })
 
             node.data.bindGroup = bindGroup
@@ -95,8 +90,7 @@ export default {
     },
 }
 
-
-async function init (cobalt, nodeData) {
+async function init(cobalt, nodeData) {
     const { canvas, device } = cobalt
 
     let material
@@ -106,14 +100,23 @@ async function init (cobalt, nodeData) {
     // build the tile layer and add it to the cobalt data structure
     if (canvas) {
         // browser (canvas) path
-        material = await createTextureFromUrl(cobalt, 'tile map', nodeData.options.textureUrl, format)
-    }
-    else {
+        material = await createTextureFromUrl(
+            cobalt,
+            'tile map',
+            nodeData.options.textureUrl,
+            format,
+        )
+    } else {
         // sdl + gpu path
-        material = await createTextureFromBuffer(cobalt, 'tile map', nodeData.options.texture, format)
+        material = await createTextureFromBuffer(
+            cobalt,
+            'tile map',
+            nodeData.options.texture,
+            format,
+        )
     }
 
-    const dat = new Float32Array([ nodeData.options.scrollScale, nodeData.options.scrollScale ])
+    const dat = new Float32Array([nodeData.options.scrollScale, nodeData.options.scrollScale])
 
     const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 
@@ -121,7 +124,7 @@ async function init (cobalt, nodeData) {
         size: dat.byteLength,
         usage,
         // make this memory space accessible from the CPU (host visible)
-        mappedAtCreation: true
+        mappedAtCreation: true,
     }
 
     const uniformBuffer = device.createBuffer(descriptor)
@@ -134,18 +137,18 @@ async function init (cobalt, nodeData) {
             {
                 binding: 0,
                 resource: {
-                    buffer: uniformBuffer
-                }
+                    buffer: uniformBuffer,
+                },
             },
             {
                 binding: 1,
-                resource: material.view
+                resource: material.view,
             },
             {
                 binding: 2,
-                resource: material.sampler
+                resource: material.sampler,
             },
-        ]
+        ],
     })
 
     return {
@@ -156,13 +159,10 @@ async function init (cobalt, nodeData) {
     }
 }
 
-
-function draw (cobalt, nodeData, commandEncoder) {
-
+function draw(cobalt, nodeData, commandEncoder) {
     // calling setTexture can cause the texture to be destroyed followed by this draw command
     // so check for the undefined texture first and bail for a frame.
-    if (!nodeData.data.material.texture)
-        return
+    if (!nodeData.data.material.texture) return
 
     const { device } = cobalt
 
@@ -170,17 +170,17 @@ function draw (cobalt, nodeData, commandEncoder) {
     // otherwise load it, so multiple sprite passes can build up data in the color and emissive textures
     const loadOp = nodeData.options.loadOp || 'load'
 
-	const renderpass = commandEncoder.beginRenderPass({
+    const renderpass = commandEncoder.beginRenderPass({
         label: 'tile',
         colorAttachments: [
             {
                 //    hdr is passsed as a node     ||  FRAME_TEXTURE_VIEW
-                view: nodeData.refs.hdr.data?.view ||  nodeData.refs.hdr, 
+                view: nodeData.refs.hdr.data?.view || nodeData.refs.hdr,
                 clearValue: cobalt.clearValue,
                 loadOp,
-                storeOp: 'store'
-            }
-        ]
+                storeOp: 'store',
+            },
+        ],
     })
 
     const tileAtlas = nodeData.refs.tileAtlas.data
@@ -197,9 +197,7 @@ function draw (cobalt, nodeData, commandEncoder) {
     renderpass.end()
 }
 
-
-function destroy (nodeData) {
+function destroy(nodeData) {
     nodeData.data.material.texture.destroy()
     nodeData.data.material.texture = undefined
 }
-
