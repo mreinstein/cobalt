@@ -205,8 +205,6 @@ async function init(cobalt, nodeData) {
         multisample: { count: 1 },
     })
 
-    const bindGroupLayout = bgl
-
     const bindGroup = device.createBindGroup({
         layout: bgl,
         entries: [
