@@ -23,7 +23,7 @@ export default {
 
     onDestroy: function (cobalt, node) {
         // any cleanup for your node should go here (releasing textures, etc.)
-        destroy(data)
+        destroy(node)
     },
 
     onResize: function (cobalt, node) {
