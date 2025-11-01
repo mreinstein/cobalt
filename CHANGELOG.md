@@ -1,3 +1,7 @@
+# 0.7.4
+* bugfix: make destroy method work for spritesheet nodes
+
+
 # 0.7.3
 * bugfix: make destroy method work for fb texture
 
