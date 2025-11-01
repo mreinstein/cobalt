@@ -1,3 +1,7 @@
+# 0.7.1
+* bugfix: make destroy method work on tileAtlas node
+
+
 # 0.7.0
 
 This release has several breaking changes:
