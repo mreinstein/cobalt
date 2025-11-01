@@ -1,3 +1,7 @@
+# 0.7.5
+* bugfix: fix texture teardown in spritesheet node
+
+
 # 0.7.4
 * bugfix: make destroy method work for spritesheet nodes
 

@@ -85,6 +85,6 @@ async function init(cobalt, node) {
 }
 
 function destroy(node) {
-    node.data.colorTexture.buffer.destroy()
+    node.data.colorTexture.texture.destroy()
     node.data.emissiveTexture.texture.destroy()
 }
