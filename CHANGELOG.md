@@ -1,3 +1,6 @@
+# 0.7.8
+* bugfix: more fixes in bloom node destroy
+
 # 0.7.7
 * bugfix: consistently call destroy bloom node
 

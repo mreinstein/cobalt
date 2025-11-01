@@ -485,7 +485,7 @@ function destroy(node) {
 
     for (const b of node.data.buffers) b.destroy()
 
-    bloom_mat.buffers.length = 0
+    node.data.buffers.length = 0
 
-    bloom_mat.bind_groups_textures.length = 0
+    node.data.bind_groups_textures.length = 0
 }
