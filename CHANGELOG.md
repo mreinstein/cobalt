@@ -1,3 +1,6 @@
+# 0.7.2
+* bugfix: make destroy method work for HDR tile nodes
+
 # 0.7.1
 * bugfix: make destroy method work on tileAtlas node
 

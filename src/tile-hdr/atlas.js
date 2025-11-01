@@ -182,9 +182,9 @@ async function init(cobalt, nodeData) {
     }
 }
 
-function destroy(data) {
-    data.atlasMaterial.texture.destroy()
-    data.atlasMaterial.texture = undefined
+function destroy(node) {
+    node.data.atlasMaterial.texture.destroy()
+    node.data.atlasMaterial.texture = undefined
 }
 
 function _writeTileBuffer(c, nodeData) {
