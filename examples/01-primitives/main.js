@@ -15,6 +15,28 @@ async function main () {
     const viewportHeight = constants.GAME_HEIGHT
     Global.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
 
+    // pasting about:gpucrash into a chrome tab causes all the webgpu contexts to crash.
+    // useful for testing context loss
+    Global.renderer.device.lost.then(async (info) => {
+        console.warn("WebGPU device lost.", info);
+        
+        Cobalt.reset(Global.renderer)
+
+        Global.renderer = await Cobalt.init(canvas, viewportWidth, viewportHeight)
+
+        const pNode = await Cobalt.initNode(Global.renderer, {
+            type: 'cobalt:primitives',
+            refs: {
+                // key is the var name defined in this node
+                // value is the var name in the cobalt resources dictionary
+                color: 'FRAME_TEXTURE_VIEW',
+            },
+            options: { }
+        })
+   
+        resizeViewport(Global.renderer, window.innerWidth, window.innerHeight)
+    })
+
     // instantiate all resource nodes
     
     const pNode = await Cobalt.initNode(Global.renderer, {

@@ -437,7 +437,7 @@ function get_mip_size(current_mip, texture) {
 function resize(cobalt, nodeData) {
     const { device } = cobalt
     const bloom_mat = nodeData.data
-    destroy(bloom_mat)
+    destroy(nodeData)
 
     bloom_mat.bind_groups_textures.push(
         createTexture(
