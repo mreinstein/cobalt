@@ -1,3 +1,7 @@
+# 0.7.6
+* bugfix: fix bloom teardown
+
+
 # 0.7.5
 * bugfix: fix texture teardown in spritesheet node
 

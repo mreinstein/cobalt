@@ -480,10 +480,10 @@ function resize(cobalt, nodeData) {
     set_all_bind_group(cobalt, bloom_mat, nodeData)
 }
 
-function destroy(bloom_mat) {
-    for (const t of bloom_mat.bind_groups_textures) t.texture.destroy()
+function destroy(node) {
+    for (const t of node.data.bind_groups_textures) t.texture.destroy()
 
-    for (const b of bloom_mat.buffers) b.destroy()
+    for (const b of node.data.buffers) b.destroy()
 
     bloom_mat.buffers.length = 0
 
