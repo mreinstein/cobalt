@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.51",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.0",
     "esbuild-plugin-glsl": "^1.1.0"
   },
   "dependencies": {
