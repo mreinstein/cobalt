@@ -1,63 +1,27 @@
-/// <reference types="@webgpu/types"/>
-
-import displacementWGSL    from './displacement.wgsl'
-import * as wgpuMatrix     from "wgpu-matrix";
-import { TrianglesBuffer } from "./triangles-buffer";
-
-
-type Viewport = {
-    readonly width: number;
-    readonly height: number;
-    readonly zoom: number;
-    readonly position: [number, number];
-};
-
-type Parameters = {
-    readonly device: GPUDevice;
-
-    readonly width: number;
-    readonly height: number;
-
-    readonly blurFactor: number;
-
-    readonly trianglesBuffer: TrianglesBuffer;
-};
-
-type TextureWithView = {
-    readonly texture: GPUTexture;
-    readonly view: GPUTextureView;
-};
+import displacementWGSL from './displacement.wgsl';
+import * as wgpuMatrix from "wgpu-matrix";
 
 class DisplacementTexture {
-    private readonly device: GPUDevice;
-    private readonly format: GPUTextureFormat = "r8unorm";
-    private readonly downsizeFactor: number;
-    private readonly multisample: number;
-
-    private textureSimple: TextureWithView;
-    private textureMultisampled: TextureWithView | null = null;
-
-    private readonly renderPipeline: GPURenderPipeline;
-    private readonly bindgroup: GPUBindGroup;
-    private readonly uniformsBuffer: GPUBuffer;
-
-    private readonly trianglesBuffer: TrianglesBuffer;
-
-    public constructor(params: Parameters) {
+    device;
+    format = "r8unorm";
+    downsizeFactor;
+    multisample;
+    textureSimple;
+    textureMultisampled = null;
+    renderPipeline;
+    bindgroup;
+    uniformsBuffer;
+    trianglesBuffer;
+    constructor(params) {
         this.device = params.device;
         this.downsizeFactor = params.blurFactor;
         this.multisample = this.downsizeFactor > 1 ? 4 : 1;
-
         [this.textureSimple, this.textureMultisampled] = this.createTextures(params.width, params.height);
-
         this.trianglesBuffer = params.trianglesBuffer;
-
         const shaderModule = this.device.createShaderModule({
             label: "DisplacementTexture shader module",
             code: displacementWGSL,
-
         });
-
         this.renderPipeline = this.device.createRenderPipeline({
             label: "DisplacementTexture renderpipeline",
             layout: "auto",
@@ -82,8 +46,8 @@ class DisplacementTexture {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: this.format,
-                }],
+                        format: this.format,
+                    }],
             },
             primitive: {
                 cullMode: "none",
@@ -93,13 +57,11 @@ class DisplacementTexture {
                 count: this.multisample,
             },
         });
-
         this.uniformsBuffer = this.device.createBuffer({
             label: "DisplacementTexture uniforms buffer",
             size: 64,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-
         this.bindgroup = this.device.createBindGroup({
             label: "DisplacementTexture bindgroup",
             layout: this.renderPipeline.getBindGroupLayout(0),
@@ -111,11 +73,9 @@ class DisplacementTexture {
             ],
         });
     }
-
-    public update(commandEncoder: GPUCommandEncoder): void {
+    update(commandEncoder) {
         const targetTexture = this.textureMultisampled ?? this.textureSimple;
-
-        const textureRenderpassColorAttachment: GPURenderPassColorAttachment = {
+        const textureRenderpassColorAttachment = {
             view: targetTexture.view,
             clearValue: [0, 0, 0, 1],
             loadOp: "clear",
@@ -124,12 +84,10 @@ class DisplacementTexture {
         if (this.textureMultisampled) {
             textureRenderpassColorAttachment.resolveTarget = this.textureSimple.view;
         }
-
         const renderpassEncoder = commandEncoder.beginRenderPass({
             label: "DisplacementTexture render to texture renderpass",
             colorAttachments: [textureRenderpassColorAttachment],
         });
-
         const [textureWidth, textureHeight] = [targetTexture.texture.width, targetTexture.texture.height];
         renderpassEncoder.setViewport(0, 0, textureWidth, textureHeight, 0, 1);
         renderpassEncoder.setScissorRect(0, 0, textureWidth, textureHeight);
@@ -138,50 +96,40 @@ class DisplacementTexture {
         renderpassEncoder.setVertexBuffer(0, this.trianglesBuffer.bufferGpu);
         renderpassEncoder.draw(3 * this.trianglesBuffer.spriteCount);
         renderpassEncoder.end();
-    };
-
-    public resize(width: number, height: number): void {
+    }
+    ;
+    resize(width, height) {
         this.textureSimple.texture.destroy();
         this.textureMultisampled?.texture.destroy();
-
         [this.textureSimple, this.textureMultisampled] = this.createTextures(width, height);
     }
-
-    public setViewport(viewport: Viewport): void {
+    setViewport(viewport) {
         const scaling = [1, 1, 1];
         const rotation = 0;
         const translation = [1, 1, 0];
-
         const modelMatrix = wgpuMatrix.mat4.identity();
         wgpuMatrix.mat4.multiply(wgpuMatrix.mat4.scaling(scaling), modelMatrix, modelMatrix);
         wgpuMatrix.mat4.multiply(wgpuMatrix.mat4.rotationZ(rotation), modelMatrix, modelMatrix);
         wgpuMatrix.mat4.multiply(wgpuMatrix.mat4.translation(translation), modelMatrix, modelMatrix);
-
         const viewMatrix = wgpuMatrix.mat4.translation([-viewport.position[0], -viewport.position[1], 0]);
-
-        const gameWidth = viewport.width / viewport.zoom
-        const gameHeight = viewport.height / viewport.zoom
+        const gameWidth = viewport.width / viewport.zoom;
+        const gameHeight = viewport.height / viewport.zoom;
         //                         left          right    bottom        top     near     far
-        const projectionMatrix = wgpuMatrix.mat4.ortho(0, gameWidth, gameHeight, 0, -10.0, 10.0)
-
+        const projectionMatrix = wgpuMatrix.mat4.ortho(0, gameWidth, gameHeight, 0, -10.0, 10.0);
         const mvpMatrix = wgpuMatrix.mat4.identity();
         wgpuMatrix.mat4.multiply(viewMatrix, modelMatrix, mvpMatrix);
         wgpuMatrix.mat4.multiply(projectionMatrix, mvpMatrix, mvpMatrix);
-
         this.device.queue.writeBuffer(this.uniformsBuffer, 0, mvpMatrix);
     }
-
-    public getView(): GPUTextureView {
+    getView() {
         return this.textureSimple.view;
     }
-
-    public destroy(): void {
+    destroy() {
         this.textureSimple.texture.destroy();
         this.textureMultisampled?.texture.destroy();
         this.uniformsBuffer.destroy();
     }
-
-    private createTextures(width: number, height: number): [TextureWithView, TextureWithView | null] {
+    createTextures(width, height) {
         const texture = this.device.createTexture({
             label: "DisplacementTexture texture",
             size: [
@@ -195,8 +143,7 @@ class DisplacementTexture {
             texture,
             view: texture.createView({ label: "DisplacementTexture texture view" }),
         };
-
-        let textureMultisampled: TextureWithView | null = null;
+        let textureMultisampled = null;
         if (this.multisample > 1) {
             const textureMulti = this.device.createTexture({
                 label: "DisplacementTexture texture multisampled",
@@ -210,12 +157,7 @@ class DisplacementTexture {
                 view: textureMulti.createView({ label: "DisplacementTexture texture multisampled view" }),
             };
         }
-
         return [textureSimple, textureMultisampled];
     }
 }
-
-export {
-    DisplacementTexture
-};
-
+export { DisplacementTexture };

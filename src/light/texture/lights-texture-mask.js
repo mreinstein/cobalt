@@ -1,37 +1,17 @@
-/// <reference types="@webgpu/types"/>
-
-import { LightsBuffer } from "../lights-buffer";
-import { type Point } from "../types";
-import { type ILightsTexture } from "./lights-texture";
-
-type LightObstacleSegment = [Point, Point];
+import { LightsBuffer } from "../lights-buffer.js";
 
 class LightsTextureMask {
-    private readonly device: GPUDevice;
-
-    private readonly renderPipeline: GPURenderPipeline;
-
-    private readonly renderBundleEncoderDescriptor: GPURenderBundleEncoderDescriptor;
-    private renderBundle: GPURenderBundle;
-
-    private readonly lightsBuffer: LightsBuffer;
-
-    private readonly indirectDrawing: {
-        readonly bufferCpu: ArrayBuffer;
-        readonly bufferGpu: GPUBuffer;
-    };
-
-    private obstacles: {
-        readonly positionsBufferGpu: GPUBuffer;
-        readonly indexBufferGpu: GPUBuffer;
-    } | null = null;
-
-    public constructor(device: GPUDevice, lightsBuffer: LightsBuffer, lightsTexture: ILightsTexture, uniformLightSize: number) {
+    device;
+    renderPipeline;
+    renderBundleEncoderDescriptor;
+    renderBundle;
+    lightsBuffer;
+    indirectDrawing;
+    obstacles = null;
+    constructor(device, lightsBuffer, lightsTexture, uniformLightSize) {
         this.device = device;
         this.lightsBuffer = lightsBuffer;
-
-        const obstaclesAreTwoWay = true as boolean;
-
+        const obstaclesAreTwoWay = true;
         const shaderModule = device.createShaderModule({
             label: "LightsTextureMask shader module",
             code: `
@@ -94,7 +74,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
             `,
         });
-
         this.renderPipeline = device.createRenderPipeline({
             label: "LightsTextureMask renderpipeline",
             layout: "auto",
@@ -135,20 +114,20 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: lightsTexture.format,
-                    blend: {
-                        color: {
-                            operation: "min",
-                            srcFactor: "one",
-                            dstFactor: "one",
+                        format: lightsTexture.format,
+                        blend: {
+                            color: {
+                                operation: "min",
+                                srcFactor: "one",
+                                dstFactor: "one",
+                            },
+                            alpha: {
+                                operation: "min",
+                                srcFactor: "one",
+                                dstFactor: "one",
+                            },
                         },
-                        alpha: {
-                            operation: "min",
-                            srcFactor: "one",
-                            dstFactor: "one",
-                        },
-                    },
-                }],
+                    }],
             },
             primitive: {
                 cullMode: obstaclesAreTwoWay ? "none" : "back",
@@ -158,7 +137,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 count: lightsTexture.sampleCount,
             },
         });
-
         this.indirectDrawing = {
             bufferCpu: new ArrayBuffer(20),
             bufferGpu: device.createBuffer({
@@ -168,7 +146,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             }),
         };
         this.uploadIndirectDrawingBuffer();
-
         this.renderBundleEncoderDescriptor = {
             label: "LightsTextureMask renderbundle encoder",
             colorFormats: [lightsTexture.format],
@@ -176,32 +153,18 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         };
         this.renderBundle = this.buildRenderBundle();
     }
-
-    public getRenderBundle(): GPURenderBundle {
+    getRenderBundle() {
         return this.renderBundle;
     }
-
-    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
-        const positions: number[] = [];
-        const indices: number[] = [];
+    setObstacles(segments) {
+        const positions = [];
+        const indices = [];
         for (const segment of segments) {
             const firstQuadIndex = positions.length / 3;
-
-            positions.push(
-                ...segment[0], 0,
-                ...segment[1], 0,
-                ...segment[0], 1,
-                ...segment[1], 1,
-            );
-
-            indices.push(
-                firstQuadIndex + 0, firstQuadIndex + 1, firstQuadIndex + 3,
-                firstQuadIndex + 0, firstQuadIndex + 3, firstQuadIndex + 2,
-            );
+            positions.push(...segment[0], 0, ...segment[1], 0, ...segment[0], 1, ...segment[1], 1);
+            indices.push(firstQuadIndex + 0, firstQuadIndex + 1, firstQuadIndex + 3, firstQuadIndex + 0, firstQuadIndex + 3, firstQuadIndex + 2);
         }
-
         let gpuBuffersChanged = false;
-
         const positionsArray = new Float32Array(positions);
         let positionsBufferGpu = this.obstacles?.positionsBufferGpu;
         if (!positionsBufferGpu || positionsBufferGpu.size < positionsArray.byteLength) {
@@ -214,7 +177,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             gpuBuffersChanged = true;
         }
         this.device.queue.writeBuffer(positionsBufferGpu, 0, positionsArray);
-
         const indicesArray = new Uint16Array(indices);
         let indexBufferGpu = this.obstacles?.indexBufferGpu;
         if (!indexBufferGpu || indexBufferGpu.size < indicesArray.byteLength) {
@@ -227,43 +189,35 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             gpuBuffersChanged = true;
         }
         this.device.queue.writeBuffer(indexBufferGpu, 0, indicesArray);
-
         this.obstacles = { positionsBufferGpu, indexBufferGpu };
-
         this.setIndirectIndexCount(indices.length);
-
         if (gpuBuffersChanged) {
             this.renderBundle = this.buildRenderBundle();
         }
     }
-
-    public setLightsCount(count: number): void {
+    setLightsCount(count) {
         this.setIndirectInstanceCount(count);
     }
-
-    public destroy(): void {
+    destroy() {
         this.indirectDrawing.bufferGpu.destroy();
         this.obstacles?.positionsBufferGpu.destroy();
         this.obstacles?.indexBufferGpu.destroy();
     }
-
-    private setIndirectIndexCount(indexCount: number): void {
+    setIndirectIndexCount(indexCount) {
         const drawIndexedIndirectParameters = new Uint32Array(this.indirectDrawing.bufferCpu);
         if (drawIndexedIndirectParameters[0] !== indexCount) {
             drawIndexedIndirectParameters[0] = indexCount;
             this.uploadIndirectDrawingBuffer();
         }
     }
-
-    private setIndirectInstanceCount(instanceCount: number): void {
+    setIndirectInstanceCount(instanceCount) {
         const drawIndexedIndirectParameters = new Uint32Array(this.indirectDrawing.bufferCpu);
         if (drawIndexedIndirectParameters[1] !== instanceCount) {
             drawIndexedIndirectParameters[1] = instanceCount;
             this.uploadIndirectDrawingBuffer();
         }
     }
-
-    private buildRenderBundle(): GPURenderBundle {
+    buildRenderBundle() {
         const renderBundleEncoder = this.device.createRenderBundleEncoder(this.renderBundleEncoderDescriptor);
         if (this.obstacles) {
             renderBundleEncoder.setPipeline(this.renderPipeline);
@@ -274,13 +228,8 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         }
         return renderBundleEncoder.finish({ label: "LightsTextureMask renderbundle" });
     }
-
-    private uploadIndirectDrawingBuffer(): void {
+    uploadIndirectDrawingBuffer() {
         this.device.queue.writeBuffer(this.indirectDrawing.bufferGpu, 0, this.indirectDrawing.bufferCpu);
     }
 }
-
-export {
-    LightsTextureMask, type LightObstacleSegment
-};
-
+export { LightsTextureMask };

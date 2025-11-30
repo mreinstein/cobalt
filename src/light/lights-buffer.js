@@ -1,9 +1,5 @@
-/// <reference types="@webgpu/types"/>
-
-import { type Light } from "./types";
-
 class LightsBuffer {
-    public static readonly structs = {
+    static structs = {
         definition: `
 struct Light {                //             align(16) size(48)
     color: vec3<f32>,         // offset(0)   align(16) size(12)
@@ -28,24 +24,16 @@ struct LightsBuffer {         //             align(16)
             lights: { offset: 16, stride: 48 },
         },
     };
-
-    private readonly device: GPUDevice;
-
-    public readonly maxLightsCount: number;
-    private currentLightsCount: number = 0;
-
-    private readonly buffer: {
-        readonly bufferCpu: ArrayBuffer;
-        readonly bufferGpu: GPUBuffer;
-    };
-    public get gpuBuffer(): GPUBuffer {
+    device;
+    maxLightsCount;
+    currentLightsCount = 0;
+    buffer;
+    get gpuBuffer() {
         return this.buffer.bufferGpu;
     }
-
-    public constructor(device: GPUDevice, maxLightsCount: number) {
+    constructor(device, maxLightsCount) {
         this.device = device;
         this.maxLightsCount = maxLightsCount;
-
         const bufferCpu = new ArrayBuffer(LightsBuffer.computeBufferBytesLength(maxLightsCount));
         const bufferGpu = device.createBuffer({
             label: "LightsBuffer buffer",
@@ -53,19 +41,15 @@ struct LightsBuffer {         //             align(16)
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX,
         });
         this.buffer = { bufferCpu, bufferGpu };
-
         this.setLights([]);
     }
-
-    public setLights(lights: ReadonlyArray<Light>): void {
+    setLights(lights) {
         if (lights.length > this.maxLightsCount) {
             throw new Error(`Too many lights "${lights.length}", max is "${this.maxLightsCount}".`);
         }
-
         const newBufferLength = LightsBuffer.computeBufferBytesLength(lights.length);
         new Uint32Array(this.buffer.bufferCpu, 0, 1).set([lights.length]);
-
-        lights.forEach((light: Light, index: number) => {
+        lights.forEach((light, index) => {
             new Float32Array(this.buffer.bufferCpu, LightsBuffer.structs.lightsBuffer.lights.offset + LightsBuffer.structs.lightsBuffer.lights.stride * index, 9).set([
                 ...light.color,
                 light.radius,
@@ -75,24 +59,17 @@ struct LightsBuffer {         //             align(16)
                 light.attenuationExp
             ]);
         });
-
         this.device.queue.writeBuffer(this.buffer.bufferGpu, 0, this.buffer.bufferCpu, 0, newBufferLength);
         this.currentLightsCount = lights.length;
     }
-
-    public get lightsCount(): number {
+    get lightsCount() {
         return this.currentLightsCount;
     }
-
-    public destroy(): void {
+    destroy() {
         this.buffer.bufferGpu.destroy();
     }
-
-    private static computeBufferBytesLength(lightsCount: number): number {
+    static computeBufferBytesLength(lightsCount) {
         return LightsBuffer.structs.lightsBuffer.lights.offset + LightsBuffer.structs.lightsBuffer.lights.stride * lightsCount;
     }
 }
-
-export {
-    LightsBuffer
-};
+export { LightsBuffer };

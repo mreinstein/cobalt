@@ -1,19 +1,12 @@
-/// <reference types="@webgpu/types"/>
-
-import { LightsBuffer } from "../lights-buffer";
-import { type ILightsTexture } from "./lights-texture";
+import { LightsBuffer } from "../lights-buffer.js";
 
 class LightsTextureInitializer {
-    private readonly lightsBuffer: LightsBuffer;
-
-    private readonly renderPipeline: GPURenderPipeline;
-    private readonly bindgroup: GPUBindGroup;
-
-    private readonly renderBundle: GPURenderBundle;
-
-    public constructor(device: GPUDevice, lightsBuffer: LightsBuffer, lightsTexture: ILightsTexture, maxLightSize: number) {
+    lightsBuffer;
+    renderPipeline;
+    bindgroup;
+    renderBundle;
+    constructor(device, lightsBuffer, lightsTexture, maxLightSize) {
         this.lightsBuffer = lightsBuffer;
-
         const shaderModule = device.createShaderModule({
             label: "LightsTextureInitializer shader module",
             code: `
@@ -130,7 +123,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
             `,
         });
-
         this.renderPipeline = device.createRenderPipeline({
             label: "LightsTextureInitializer renderpipeline",
             layout: "auto",
@@ -142,8 +134,8 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: lightsTexture.format,
-                }],
+                        format: lightsTexture.format,
+                    }],
             },
             primitive: {
                 cullMode: "none",
@@ -153,7 +145,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 count: lightsTexture.sampleCount,
             },
         });
-
         this.bindgroup = device.createBindGroup({
             label: "LightsTextureInitializer bindgroup 0",
             layout: this.renderPipeline.getBindGroupLayout(0),
@@ -164,7 +155,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 },
             ]
         });
-
         const renderBundleEncoder = device.createRenderBundleEncoder({
             label: "LightsTextureInitializer renderbundle encoder",
             colorFormats: [lightsTexture.format],
@@ -175,17 +165,11 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         renderBundleEncoder.draw(4);
         this.renderBundle = renderBundleEncoder.finish({ label: "LightsTextureInitializer renderbundle" });
     }
-
-    public getRenderBundle(): GPURenderBundle {
+    getRenderBundle() {
         return this.renderBundle;
     }
-
-    public destroy(): void {
+    destroy() {
         // nothing to do
     }
 }
-
-export {
-    LightsTextureInitializer
-};
-
+export { LightsTextureInitializer };

@@ -1,50 +1,27 @@
-/// <reference types="@webgpu/types"/>
-
-import { DisplacementParametersBuffer } from "./displacement-parameters-buffer";
-import compositionWGSL from "./composition.wgsl"
-
-type Parameters = {
-    readonly device: GPUDevice;
-    readonly targetFormat: GPUTextureFormat;
-
-    readonly colorTextureView: GPUTextureView;
-    readonly noiseMapTextureView: GPUTextureView;
-    readonly displacementTextureView: GPUTextureView;
-
-    readonly displacementParametersBuffer: DisplacementParametersBuffer;
-};
+import compositionWGSL from "./composition.wgsl";
 
 class DisplacementComposition {
-    private readonly device: GPUDevice;
-    private readonly targetFormat: GPUTextureFormat;
-    private readonly renderPipeline: GPURenderPipeline;
-
-    private readonly colorSampler: GPUSampler;
-    private readonly noiseSampler: GPUSampler;
-
-    private readonly displacementParametersBuffer: DisplacementParametersBuffer;
-
-    private renderBundle: GPURenderBundle | null = null;
-
-    private colorTextureView: GPUTextureView;
-    private noiseMapTextureView: GPUTextureView;
-    private displacementTextureView: GPUTextureView;
-
-    public constructor(params: Parameters) {
+    device;
+    targetFormat;
+    renderPipeline;
+    colorSampler;
+    noiseSampler;
+    displacementParametersBuffer;
+    renderBundle = null;
+    colorTextureView;
+    noiseMapTextureView;
+    displacementTextureView;
+    constructor(params) {
         this.device = params.device;
-
         this.targetFormat = params.targetFormat;
         this.colorTextureView = params.colorTextureView;
         this.noiseMapTextureView = params.noiseMapTextureView;
         this.displacementTextureView = params.displacementTextureView;
-
         this.displacementParametersBuffer = params.displacementParametersBuffer;
-
         const shaderModule = this.device.createShaderModule({
             label: "DisplacementComposition shader module",
             code: compositionWGSL,
         });
-
         this.renderPipeline = this.device.createRenderPipeline({
             label: "DisplacementComposition renderpipeline",
             layout: "auto",
@@ -56,15 +33,14 @@ class DisplacementComposition {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: params.targetFormat,
-                }],
+                        format: params.targetFormat,
+                    }],
             },
             primitive: {
                 cullMode: "none",
                 topology: "triangle-strip",
             },
         });
-
         this.noiseSampler = this.device.createSampler({
             label: "DisplacementComposition noisesampler",
             addressModeU: "repeat",
@@ -74,7 +50,6 @@ class DisplacementComposition {
             minFilter: "linear",
             mipmapFilter: "linear",
         });
-
         this.colorSampler = this.device.createSampler({
             label: "DisplacementComposition colorSampler",
             addressModeU: "clamp-to-edge",
@@ -85,34 +60,28 @@ class DisplacementComposition {
             mipmapFilter: "linear",
         });
     }
-
-    public getRenderBundle(): GPURenderBundle {
+    getRenderBundle() {
         if (!this.renderBundle) {
             this.renderBundle = this.buildRenderBundle();
         }
         return this.renderBundle;
     }
-
-    public destroy(): void {
+    destroy() {
         // nothing to do
     }
-
-    public setColorTextureView(textureView: GPUTextureView): void {
+    setColorTextureView(textureView) {
         this.colorTextureView = textureView;
         this.renderBundle = null;
     }
-
-    public setNoiseMapTextureView(textureView: GPUTextureView): void {
+    setNoiseMapTextureView(textureView) {
         this.noiseMapTextureView = textureView;
         this.renderBundle = null;
     }
-
-    public setDisplacementTextureView(textureView: GPUTextureView): void {
+    setDisplacementTextureView(textureView) {
         this.displacementTextureView = textureView;
         this.renderBundle = null;
     }
-
-    private buildRenderBundle(): GPURenderBundle {
+    buildRenderBundle() {
         const bindgroup = this.device.createBindGroup({
             label: "DisplacementComposition bindgroup 0",
             layout: this.renderPipeline.getBindGroupLayout(0),
@@ -143,7 +112,6 @@ class DisplacementComposition {
                 },
             ],
         });
-
         const renderBundleEncoder = this.device.createRenderBundleEncoder({
             label: "DisplacementComposition renderbundle encoder",
             colorFormats: [this.targetFormat],
@@ -154,8 +122,4 @@ class DisplacementComposition {
         return renderBundleEncoder.finish({ label: "DisplacementComposition renderbundle" });
     }
 }
-
-export {
-    DisplacementComposition
-};
-
+export { DisplacementComposition };

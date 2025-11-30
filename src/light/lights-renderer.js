@@ -1,57 +1,27 @@
-/// <reference types="@webgpu/types"/>
-
-import * as wgpuMatrix from "wgpu-matrix";
-import { LightsBuffer } from "./lights-buffer";
-import { LightsTexture, type LightsTextureProperties } from "./texture/lights-texture";
-import { type LightObstacleSegment } from "./texture/lights-texture-mask";
-
-type TextureSamplable = {
-    readonly view: GPUTextureView;
-    readonly sampler: GPUSampler;
-};
-
-type TextureRenderable = {
-    readonly format: GPUTextureFormat;
-};
-
-type Parameters = {
-    readonly device: GPUDevice;
-    readonly albedo: TextureSamplable;
-    readonly targetTexture: TextureRenderable;
-    readonly lightsBuffer: LightsBuffer;
-    readonly lightsTextureProperties: LightsTextureProperties;
-};
+import { LightsBuffer } from "./lights-buffer.js";
+import { LightsTexture } from "./texture/lights-texture.js";
 
 class LightsRenderer {
-    private readonly device: GPUDevice;
-
-    private ambientLight: [number, number, number] = [0.2, 0.2, 0.2];
-
-    private readonly targetTexture: TextureRenderable;
-
-    private readonly renderPipeline: GPURenderPipeline;
-    private readonly uniformsBufferGpu: GPUBuffer;
-    private readonly bindgroup0: GPUBindGroup;
-    private bindgroup1: GPUBindGroup;
-    private renderBundle: GPURenderBundle;
-
-    private readonly lightsBuffer: LightsBuffer;
-    private readonly lightsTexture: LightsTexture;
-
-    public constructor(params: Parameters) {
+    device;
+    ambientLight = [0.2, 0.2, 0.2];
+    targetTexture;
+    renderPipeline;
+    uniformsBufferGpu;
+    bindgroup0;
+    bindgroup1;
+    renderBundle;
+    lightsBuffer;
+    lightsTexture;
+    constructor(params) {
         this.device = params.device;
-
         this.targetTexture = params.targetTexture;
         this.lightsBuffer = params.lightsBuffer;
-
         this.lightsTexture = new LightsTexture(params.device, params.lightsBuffer, params.lightsTextureProperties);
-
         this.uniformsBufferGpu = params.device.createBuffer({
             label: "LightsRenderer uniforms buffer",
             size: 80,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-
         const shaderModule = params.device.createShaderModule({
             label: "LightsRenderer shader module",
             code: `
@@ -154,7 +124,6 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
 }
             `,
         });
-
         this.renderPipeline = params.device.createRenderPipeline({
             label: "LightsRenderer renderpipeline",
             layout: "auto",
@@ -166,17 +135,15 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 module: shaderModule,
                 entryPoint: "main_fragment",
                 targets: [{
-                    format: this.targetTexture.format,
-                }],
+                        format: this.targetTexture.format,
+                    }],
             },
             primitive: {
                 cullMode: "none",
                 topology: "triangle-strip",
             },
         });
-
         const bindgroupLayout = this.renderPipeline.getBindGroupLayout(0);
-
         this.bindgroup0 = params.device.createBindGroup({
             label: "LightsRenderer bindgroup 0",
             layout: bindgroupLayout,
@@ -205,44 +172,34 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
                 },
             ]
         });
-
         this.bindgroup1 = this.buildBindgroup1(params.albedo);
         this.renderBundle = this.buildRenderBundle();
     }
-
-    public computeLightsTexture(commandEncoder: GPUCommandEncoder): void {
+    computeLightsTexture(commandEncoder) {
         this.lightsTexture.update(commandEncoder);
     }
-
-    public render(renderpassEncoder: GPURenderPassEncoder, invertVpMatrix: wgpuMatrix.Mat4Arg): void {
+    render(renderpassEncoder, invertVpMatrix) {
         const uniformsBufferCpu = new ArrayBuffer(80);
         new Float32Array(uniformsBufferCpu, 0, 16).set(invertVpMatrix);
         new Float32Array(uniformsBufferCpu, 64, 3).set(this.ambientLight);
         this.device.queue.writeBuffer(this.uniformsBufferGpu, 0, uniformsBufferCpu);
-
         renderpassEncoder.executeBundles([this.renderBundle]);
     }
-
-    public setAlbedo(albedo: TextureSamplable): void {
+    setAlbedo(albedo) {
         this.bindgroup1 = this.buildBindgroup1(albedo);
         this.renderBundle = this.buildRenderBundle();
     }
-
-    public setAmbientLight(color: [number, number, number]): void {
+    setAmbientLight(color) {
         this.ambientLight = [...color];
     }
-
-    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
+    setObstacles(segments) {
         this.lightsTexture.setObstacles(segments);
     }
-
-    public destroy(): void {
+    destroy() {
         this.uniformsBufferGpu.destroy();
-
         this.lightsTexture.destroy();
     }
-
-    private buildBindgroup1(albedo: TextureSamplable): GPUBindGroup {
+    buildBindgroup1(albedo) {
         return this.device.createBindGroup({
             label: "LightsRenderer bindgroup 1",
             layout: this.renderPipeline.getBindGroupLayout(1),
@@ -258,8 +215,7 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
             ]
         });
     }
-
-    private buildRenderBundle(): GPURenderBundle {
+    buildRenderBundle() {
         const renderBundleEncoder = this.device.createRenderBundleEncoder({
             label: "LightsRenderer renderbundle encoder",
             colorFormats: [this.targetTexture.format],
@@ -271,8 +227,4 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
         return renderBundleEncoder.finish({ label: "LightsRenderer renderbundle" });
     }
 }
-
-export {
-    LightsRenderer
-};
-
+export { LightsRenderer };

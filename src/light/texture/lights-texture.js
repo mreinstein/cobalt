@@ -1,37 +1,16 @@
-/// <reference types="@webgpu/types"/>
-
-import { type LightsBuffer } from "../lights-buffer";
-import { LightsTextureInitializer } from "./lights-texture-initializer";
-import { type LightObstacleSegment, LightsTextureMask } from "./lights-texture-mask";
-
-type ILightsTexture = {
-    readonly gridSize: { readonly x: number, readonly y: number };
-    readonly format: GPUTextureFormat;
-    readonly sampleCount: number;
-};
-
-type LightsTextureProperties = {
-    readonly resolutionPerLight: number;
-    readonly maxLightSize: number;
-    readonly antialiased: boolean;
-    readonly filtering: GPUFilterMode;
-};
+import { LightsTextureInitializer } from "./lights-texture-initializer.js";
+import { LightsTextureMask } from "./lights-texture-mask.js";
 
 class LightsTexture {
-    private readonly lightsBuffer: LightsBuffer;
-
-    public readonly texture: GPUTexture;
-    public readonly gridSize: { readonly x: number, readonly y: number };
-
-    private readonly textureMultisampled: GPUTexture | null = null;
-    private readonly textureRenderpassDescriptor: GPURenderPassDescriptor;
-
-    private readonly textureInitializer: LightsTextureInitializer;
-    private readonly textureMask: LightsTextureMask;
-
-    public constructor(device: GPUDevice, lightsBuffer: LightsBuffer, lightsTextureProperties: LightsTextureProperties) {
+    lightsBuffer;
+    texture;
+    gridSize;
+    textureMultisampled = null;
+    textureRenderpassDescriptor;
+    textureInitializer;
+    textureMask;
+    constructor(device, lightsBuffer, lightsTextureProperties) {
         this.lightsBuffer = lightsBuffer;
-
         const cellsCount = this.lightsBuffer.maxLightsCount / 4;
         const gridSize = {
             x: Math.ceil(Math.sqrt(cellsCount)),
@@ -39,12 +18,10 @@ class LightsTexture {
         };
         gridSize.y = Math.ceil(cellsCount / gridSize.x);
         this.gridSize = gridSize;
-
         const lightTextureSize = {
             width: gridSize.x * lightsTextureProperties.resolutionPerLight,
             height: gridSize.y * lightsTextureProperties.resolutionPerLight,
         };
-
         const format = lightsTextureProperties.textureFormat;
         this.texture = device.createTexture({
             label: "LightsTextureMask texture",
@@ -52,7 +29,6 @@ class LightsTexture {
             format,
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
         });
-
         if (lightsTextureProperties.antialiased) {
             this.textureMultisampled = device.createTexture({
                 label: "LightsTextureMask texture multisampled",
@@ -62,10 +38,8 @@ class LightsTexture {
                 sampleCount: 4,
             });
         }
-
         const textureToRenderTo = this.textureMultisampled ?? this.texture;
-
-        const textureRenderpassColorAttachment: GPURenderPassColorAttachment = {
+        const textureRenderpassColorAttachment = {
             view: textureToRenderTo.createView(),
             clearValue: [0, 0, 0, 1],
             loadOp: "load",
@@ -78,8 +52,7 @@ class LightsTexture {
             label: "lights-renderer render to texture renderpass",
             colorAttachments: [textureRenderpassColorAttachment],
         };
-
-        const lightsTexture: ILightsTexture = {
+        const lightsTexture = {
             gridSize,
             format,
             sampleCount: this.textureMultisampled?.sampleCount ?? 1,
@@ -87,10 +60,8 @@ class LightsTexture {
         this.textureInitializer = new LightsTextureInitializer(device, lightsBuffer, lightsTexture, lightsTextureProperties.maxLightSize);
         this.textureMask = new LightsTextureMask(device, lightsBuffer, lightsTexture, lightsTextureProperties.maxLightSize);
     }
-
-    public update(commandEncoder: GPUCommandEncoder): void {
+    update(commandEncoder) {
         this.textureMask.setLightsCount(this.lightsBuffer.lightsCount);
-
         const renderpassEncoder = commandEncoder.beginRenderPass(this.textureRenderpassDescriptor);
         const [textureWidth, textureHeight] = [this.texture.width, this.texture.height];
         renderpassEncoder.setViewport(0, 0, textureWidth, textureHeight, 0, 1);
@@ -101,21 +72,14 @@ class LightsTexture {
         ]);
         renderpassEncoder.end();
     }
-
-    public setObstacles(segments: ReadonlyArray<LightObstacleSegment>): void {
+    setObstacles(segments) {
         this.textureMask.setObstacles(segments);
     }
-
-    public destroy(): void {
+    destroy() {
         this.texture.destroy();
         this.textureMultisampled?.destroy();
-
         this.textureInitializer.destroy();
         this.textureMask.destroy();
     }
 }
-
-export {
-    LightsTexture, type ILightsTexture, type LightsTextureProperties
-};
-
+export { LightsTexture };
