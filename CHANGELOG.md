@@ -1,5 +1,11 @@
+# 0.8.0
+* update esbuild
+* update scene-composite webgpu label
+
+
 # 0.7.8
 * bugfix: more fixes in bloom node destroy
+
 
 # 0.7.7
 * bugfix: consistently call destroy bloom node

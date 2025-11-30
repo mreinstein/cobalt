@@ -1,6 +1,6 @@
 {
   "name": "@footgun/cobalt",
-  "version": "0.7.8",
+  "version": "0.8.0",
   "type": "module",
   "main": "bundle.js",
   "description": "A 2D WebGpu renderer",
