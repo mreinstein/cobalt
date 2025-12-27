@@ -1,3 +1,7 @@
+# 0.8.1
+* expose cobalt.getPreferredFormat
+
+
 # 0.8.0
 * update esbuild
 * update scene-composite webgpu label

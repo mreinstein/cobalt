@@ -1,6 +1,7 @@
 export { default as createTexture } from './create-texture.js'
 export { default as createTextureFromBuffer } from './create-texture-from-buffer.js'
 export { default as createTextureFromUrl } from './create-texture-from-url.js'
+export { default as getPreferredFormat } from './get-preferred-format.js'
 
 // built-in run nodes
 import bloomNode from './bloom/bloom.js'
