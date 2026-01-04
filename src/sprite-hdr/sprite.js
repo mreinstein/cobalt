@@ -5,6 +5,8 @@ import spriteWGSL from './sprite.wgsl'
 
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
+const _projection = mat4.identity()
+const _view = mat4.identity()
 
 // Packed instance layout: 48 bytes (aligned for vec4 fetch)
 const INSTANCE_STRIDE = 64
@@ -76,11 +78,11 @@ export default {
     },
 
     onResize: function (cobalt, node) {
-        _writeSpriteBuffer(cobalt, node)
+        writeCameraBuffer(cobalt, node)
     },
 
     onViewportPosition: function (cobalt, node) {
-        _writeSpriteBuffer(cobalt, node)
+        writeCameraBuffer(cobalt, node)
     },
 
     // optional
@@ -383,14 +385,14 @@ function draw(cobalt, node, commandEncoder) {
     pass.end()
 }
 
-function _writeSpriteBuffer(cobalt, node) {
+function writeCameraBuffer(cobalt, node) {
     const { device, viewport } = cobalt
 
     const GAME_WIDTH = viewport.width / viewport.zoom
     const GAME_HEIGHT = viewport.height / viewport.zoom
 
-    //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10.0, 10.0)
+    //      left    right       bottom   top   near   far
+    mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10.0, 10.0, _projection)
 
     // set 3d camera position
     if (node.options.isScreenSpace) {
@@ -408,8 +410,8 @@ function _writeSpriteBuffer(cobalt, node) {
         //vec3.set(-viewport.position[0], -viewport.position[1], 0, _tmpVec3)
     }
 
-    const view = mat4.translation(_tmpVec3)
+    mat4.translation(_tmpVec3, _view)
 
-    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
-    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, _view.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, _projection.buffer)
 }

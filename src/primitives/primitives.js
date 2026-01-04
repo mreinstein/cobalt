@@ -9,6 +9,8 @@ import publicAPI from './public-api.js'
 
 // temporary variables, allocated once to avoid garbage collection
 const _tmpVec3 = vec3.create(0, 0, 0)
+const _projection = mat4.identity()
+const _view = mat4.identity()
 
 export default {
     type: 'cobalt:primitives',
@@ -34,11 +36,11 @@ export default {
 
     onResize: function (cobalt, node) {
         // do whatever you need when the dimensions of the renderer change (resize textures, etc.)
-        _writeMatricesBuffer(cobalt, node)
+        writeCameraBuffer(cobalt, node)
     },
 
     onViewportPosition: function (cobalt, node) {
-        _writeMatricesBuffer(cobalt, node)
+        writeCameraBuffer(cobalt, node)
     },
 
     // optional
@@ -236,21 +238,21 @@ function destroy(node) {
     node.data.transforms.length = 0
 }
 
-function _writeMatricesBuffer(cobalt, node) {
+function writeCameraBuffer(cobalt, node) {
     const { device } = cobalt
 
     const GAME_WIDTH = cobalt.viewport.width / cobalt.viewport.zoom
     const GAME_HEIGHT = cobalt.viewport.height / cobalt.viewport.zoom
 
-    //                         left          right    bottom        top     near     far
-    const projection = mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10.0, 10.0)
+    //      left    right       bottom   top   near   far
+    mat4.ortho(0, GAME_WIDTH, GAME_HEIGHT, 0, -10.0, 10.0, _projection)
 
     // TODO: 1.0 must be subtracted from both x and y values otherwise everything get shifted down and to the right
     //       when rendered.  This is true for both sdl and browser backed rendering.  I don't understand why though!!
     vec3.set(-cobalt.viewport.position[0] - 1.0, -cobalt.viewport.position[1] - 1.0, 0, _tmpVec3)
 
-    const view = mat4.translation(_tmpVec3)
+    mat4.translation(_tmpVec3, _view)
 
-    device.queue.writeBuffer(node.data.uniformBuffer, 0, view.buffer)
-    device.queue.writeBuffer(node.data.uniformBuffer, 64, projection.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 0, _view.buffer)
+    device.queue.writeBuffer(node.data.uniformBuffer, 64, _projection.buffer)
 }
