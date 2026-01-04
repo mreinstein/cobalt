@@ -35,46 +35,73 @@ export function clear(cobalt, renderPass) {
 }
 
 export function setSpriteName(cobalt, renderPass, id, name) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    if (!sprite) return
-
-    const { idByName } = renderPass.refs.spritesheet.data
-
-    sprite.spriteID = idByName.get(name)
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            sprites[i].spriteID = renderPass.refs.spritesheet.data.idByName.get(name)
+            return
+        }
+    }
 }
 
 export function setSpritePosition(cobalt, renderPass, id, position) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
-    if (!sprite) return
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    vec2.copy(position, sprite.position)
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            vec2.copy(position, sprites[i].position)
+            return
+        }
+    }
 }
 
 export function setSpriteTint(cobalt, renderPass, id, tint) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
-    if (!sprite) return
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    vec4.copy(tint, sprite.tint)
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            vec4.copy(tint, sprites[i].tint)
+            return
+        }
+    }
 }
 
 export function setSpriteOpacity(cobalt, renderPass, id, opacity) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
-    if (!sprite) return
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    sprite.opacity = opacity
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            sprites[i].opacity = opacity
+            return
+        }
+    }
 }
 
 export function setSpriteRotation(cobalt, renderPass, id, rotation) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
-    if (!sprite) return
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    sprite.rotation = rotation
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            sprites[i].rotation = rotation
+            return
+        }
+    }
 }
 
 export function setSpriteScale(cobalt, renderPass, id, scale) {
-    const sprite = renderPass.data.sprites.find((s) => s.id === id)
-    if (!sprite) return
+    const sprites = renderPass.data.sprites
+    const len = sprites.length
 
-    vec2.copy(scale, sprite.scale)
+    for (let i = 0; i < len; i++) {
+        if (sprites[i].id === id) {
+            vec2.copy(scale, sprites[i].scale)
+            return
+        }
+    }
 }
