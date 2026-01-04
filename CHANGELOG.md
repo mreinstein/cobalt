@@ -1,3 +1,8 @@
+# 0.9.0
+* improve CPU performance in sprite node
+* reduce memory gc churn by re-using static variables in several node types
+
+
 # 0.8.1
 * expose cobalt.getPreferredFormat
 
