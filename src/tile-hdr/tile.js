@@ -18,7 +18,7 @@ Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gp
 /**
  * Refs:
  *   tileAtlas (textureView, rgba8unorm, read) - tile atlas texture
- *   hdr (textureView, rgba16float, write) - HDR render target
+ *   out (textureView, rgba16float, write) - render target
  */
 export default {
     type: 'cobalt:tileHDR',
@@ -175,8 +175,8 @@ function draw(cobalt, nodeData, commandEncoder) {
         label: 'tile',
         colorAttachments: [
             {
-                //    hdr is passsed as a node     ||  FRAME_TEXTURE_VIEW
-                view: nodeData.refs.hdr.data?.view || nodeData.refs.hdr,
+                //    out is passsed as a node     ||  FRAME_TEXTURE_VIEW
+                view: nodeData.refs.out.data?.view || nodeData.refs.out,
                 clearValue: cobalt.clearValue,
                 loadOp,
                 storeOp: 'store',

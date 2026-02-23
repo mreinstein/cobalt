@@ -103,89 +103,11 @@ async function main () {
         }
     })
 
-    /*
-    const hdrTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr color texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const emissiveTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr emissive texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr bloom texture',
-            format: 'rgba16float',
-            mip_count: 7,
-            viewportScale: 0.5,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:bloom',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            emissive: emissiveTex,
-            hdr: hdrTex,
-            bloom: bloomTex
-        },
-        options: {
-            // any extra options you want to pass to this node
-            bloom_intensity: 45.0,
-            bloom_combine_constant: 0.3,
-            bloom_knee: 0.2,
-            bloom_threshold: 0.1, // 1.0
-
-            // sprite instance 1
-            sprite_instances: [
-                {
-                    emissive_intensity: 1.0,
-                },
-                {
-                    emissive_intensity: 0.5,
-                },
-            ],
-        }
-    })
-
-    const tmpTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'bloom + hdr compositing',
-            format: 'PREFERRED_TEXTURE_FORMAT',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-    */
-
      const tileNodeBG = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:tileHDR',
         refs: {
             tileAtlas: tileAtlasNode,
-            hdr: 'FRAME_TEXTURE_VIEW',
+            out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP4DwQACfsD/Wj6HMwAAAAASUVORK5CYII=',
@@ -199,7 +121,7 @@ async function main () {
         type: 'cobalt:tileHDR',
         refs: {
             tileAtlas: tileAtlasNode,
-            hdr: 'FRAME_TEXTURE_VIEW',
+            out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'assets/spelunky1.png',
@@ -211,36 +133,13 @@ async function main () {
         type: 'cobalt:tileHDR',
         refs: {
             tileAtlas: tileAtlasNode,
-            hdr: 'FRAME_TEXTURE_VIEW',
+            out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             textureUrl: 'assets/spelunky0.png',
             scrollScale: 1.0,
         }
     })
-
-
-    /*
-    const compositeNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:composite',
-        refs: {
-            hdr: hdrTex,
-            bloom: bloomTex,
-            combined: tmpTex,
-        },
-        options: { }
-    })
-
-
-    const b = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbBlit',
-        refs: {
-            in: tmpTex,
-            out: 'FRAME_TEXTURE_VIEW',
-        },
-        options: { }
-    })
-    */
 
 
     // use resizeViewport to init values on load:
