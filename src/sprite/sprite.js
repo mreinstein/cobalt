@@ -9,7 +9,7 @@ const _tmpVec3 = vec3.create(0, 0, 0)
 const _projection = mat4.identity()
 const _view = mat4.identity()
 
-// Packed instance layout: 48 bytes (aligned for vec4 fetch)
+// Packed instance layout: 52 bytes (aligned for vec4 fetch)
 const INSTANCE_STRIDE = 64
 
 // Offsets inside one instance (bytes)
@@ -21,17 +21,13 @@ const OFF_SPRITEID = 40 // uint32 (4B)
 const OFF_OPACITY = 44 // float32 (4B)
 const OFF_ROT = 48 // float32 (4B)
 
+/**
+ * Refs:
+ *   spritesheet (customResource, read) - spritesheet to source frames from
+ *   color (textureView, rgba8unorm, write) - render target
+ */
 export default {
     type: 'cobalt:sprite',
-    refs: [
-        { name: 'spritesheet', type: 'customResource', access: 'read' },
-        {
-            name: 'color',
-            type: 'textureView',
-            format: 'rgba8unorm',
-            access: 'write',
-        },
-    ],
 
     // cobalt event handling functions
 

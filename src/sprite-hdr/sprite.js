@@ -20,23 +20,14 @@ const OFF_SPRITEID = 40 // uint32 (4B)
 const OFF_OPACITY = 44 // float32 (4B)
 const OFF_ROT = 48 // float32 (4B)
 
+/**
+ * Refs:
+ *   spritesheet (customResource, read) - spritesheet to source frames from
+ *   color (textureView, rgba16float, write) - HDR color render target
+ *   emissive (textureView, rgba16float, write) - emissive render target
+ */
 export default {
     type: 'cobalt:spriteHDR',
-    refs: [
-        { name: 'spritesheet', type: 'customResource', access: 'read' },
-        {
-            name: 'color',
-            type: 'textureView',
-            format: 'rgba16float',
-            access: 'write',
-        },
-        {
-            name: 'emissive',
-            type: 'textureView',
-            format: 'rgba16float',
-            access: 'write',
-        },
-    ],
 
     // cobalt event handling functions
 

@@ -21,9 +21,11 @@ export function addSprite(cobalt, renderPass, name, position, scale, tint, opaci
 }
 
 export function removeSprite(cobalt, renderPass, id) {
-    for (let i = 0; i < renderPass.data.sprites.length; i++) {
-        if (renderPass.data.sprites[i].id === id) {
-            renderPass.data.sprites.splice(i, 1)
+    const sprites = renderPass.data.sprites
+    for (let i = 0; i < sprites.length; i++) {
+        if (sprites[i].id === id) {
+            sprites[i] = sprites[sprites.length - 1]
+            sprites.pop()
             return
         }
     }

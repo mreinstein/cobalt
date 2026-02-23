@@ -6,18 +6,14 @@ import { TrianglesBuffer } from './triangles-buffer.js'
 
 // adapted to webgpu from https://github.com/pixijs/pixijs/tree/dev/packages/filter-displacement
 
+/**
+ * Refs:
+ *   color (textureView, bgra8unorm, read) - input framebuffer texture with the scene drawn
+ *   map (cobaltTexture, bgra8unorm, read) - displacement map (perlin noise texture works well here)
+ *   out (textureView, bgra8unorm, write) - result texture
+ */
 export default {
     type: 'cobalt:displacement',
-    refs: [
-        // input framebuffer texture with the scene drawn
-        { name: 'color', type: 'textureView', format: 'bgra8unorm', access: 'read' },
-
-        // displacement map (perlin noise texture works well here)
-        { name: 'map', type: 'cobaltTexture', format: 'bgra8unorm', access: 'read' },
-
-        // result we're writing to
-        { name: 'out', type: 'textureView', format: 'bgra8unorm', access: 'write' },
-    ],
 
     // cobalt event handling functions
 

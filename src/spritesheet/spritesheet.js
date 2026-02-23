@@ -6,7 +6,6 @@ import readSpriteSheet from './read-spritesheet.js'
 
 export default {
     type: 'cobalt:spritesheet',
-    refs: [],
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node

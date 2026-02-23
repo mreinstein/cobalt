@@ -3,12 +3,13 @@ import blitWGSL from './fb-blit.wgsl'
 
 // blit a source texture into a destination texture
 
+/**
+ * Refs:
+ *   in (cobaltTexture, PREFERRED_TEXTURE_FORMAT, read) - source texture to blit from
+ *   out (cobaltTexture, PREFERRED_TEXTURE_FORMAT, write) - destination texture to blit into
+ */
 export default {
     type: 'cobalt:fbBlit',
-    refs: [
-        { name: 'in', type: 'cobaltTexture', format: 'PREFERRED_TEXTURE_FORMAT', access: 'read' },
-        { name: 'out', type: 'cobaltTexture', format: 'PREFERRED_TEXTURE_FORMAT', access: 'write' },
-    ],
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node

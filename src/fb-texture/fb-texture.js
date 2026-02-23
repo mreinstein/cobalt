@@ -4,8 +4,7 @@ import getPreferredFormat from '../get-preferred-format.js'
 // Frame buffer textures automatically resize to match the cobalt viewport.
 
 export default {
-    type: 'fbTexture',
-    refs: [],
+    type: 'cobalt:fbTexture',
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node

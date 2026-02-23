@@ -1,3 +1,6 @@
+# 0.9.1
+* minor documentation cleanup
+
 # 0.9.0
 * improve CPU performance in sprite node
 * reduce memory gc churn by re-using static variables in several node types

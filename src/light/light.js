@@ -2,20 +2,17 @@ import getPreferredFormat from '../get-preferred-format.js'
 import { LightsBuffer } from './lights-buffer.js'
 import { LightsRenderer } from './lights-renderer.js'
 import * as publicAPI from './public-api.js'
-import { Viewport } from './viewport'
+import { Viewport } from './viewport.js'
 
 /**
  * 2D lighting and Shadows
+ *
+ * Refs:
+ *   in (textureView, rgba16float, read) - albedo input texture
+ *   out (textureView, rgba16float, write) - lit output texture
  */
-
 export default {
     type: 'cobalt:light',
-
-    // the inputs and outputs to this node
-    refs: [
-        { name: 'in', type: 'textureView', format: 'rgba16float', access: 'read' },
-        { name: 'out', type: 'textureView', format: 'rgba16float', access: 'write' },
-    ],
 
     // cobalt event handling functions
 

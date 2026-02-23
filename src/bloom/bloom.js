@@ -13,13 +13,15 @@ const MODE_DOWNSAMPLE = 1
 const MODE_UPSAMPLE_FIRST = 2
 const MODE_UPSAMPLE = 3
 
+/**
+ * Refs:
+ *   emissive (textureView, rgba16float, read) - emissive source texture
+ *   hdr (textureView, rgba16float, read) - HDR color source texture
+ *   bloom (textureView, rgba16float, readwrite) - bloom output texture
+ */
 export default {
     type: 'cobalt:bloom',
-    refs: [
-        { name: 'emissive', type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'hdr', type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'bloom', type: 'textureView', format: 'rgba16', access: 'readwrite' },
-    ],
+
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
     onInit: async function (cobalt, options = {}) {
@@ -28,7 +30,7 @@ export default {
 
     onRun: function (cobalt, node, webGpuCommandEncoder) {
         // do whatever you need for this node. webgpu renderpasses, etc.
-        draw(cobalt, node.data, webGpuCommandEncoder)
+        draw(cobalt, node, webGpuCommandEncoder)
     },
 
     onDestroy: function (cobalt, node) {
@@ -367,7 +369,8 @@ function create_bloom_bind_group(
     })
 }
 
-function draw(cobalt, bloom_mat, commandEncoder) {
+function draw(cobalt, node, commandEncoder) {
+    const bloom_mat = node.data
     const MODE_PREFILTER = 0
     const MODE_DOWNSAMPLE = 1
     const MODE_UPSAMPLE_FIRST = 2

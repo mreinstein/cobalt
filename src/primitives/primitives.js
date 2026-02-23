@@ -12,9 +12,12 @@ const _tmpVec3 = vec3.create(0, 0, 0)
 const _projection = mat4.identity()
 const _view = mat4.identity()
 
+/**
+ * Refs:
+ *   color (textureView, PREFERRED_TEXTURE_FORMAT, write) - render target
+ */
 export default {
     type: 'cobalt:primitives',
-    refs: [{ name: 'color', type: 'textView', format: 'PREFERRED_TEXTURE_VIEW', access: 'write' }],
 
     // cobalt event handling functions
 

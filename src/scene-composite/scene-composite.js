@@ -1,18 +1,15 @@
 import getPreferredFormat from '../get-preferred-format.js'
 import sceneCompositeWGSL from './scene-composite.wgsl'
 
+/**
+ * Refs:
+ *   hdr (textureView, rgba16float, read) - HDR color source
+ *   bloom (textureView, rgba16float, read) - bloom source
+ *   combined (textureView, PREFERRED_TEXTURE_FORMAT, write) - tonemapped output
+ */
 export default {
-    type: 'cobalt:bloom',
-    refs: [
-        { name: 'hdr', type: 'textureView', format: 'rgba16', access: 'read' },
-        { name: 'bloom', type: 'textureView', format: 'rgba16', access: 'read' },
-        {
-            name: 'combined',
-            type: 'textureView',
-            format: 'PREFERRED_TEXTURE_FORMAT',
-            access: 'write',
-        },
-    ],
+    type: 'cobalt:composite',
+
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
     onInit: async function (cobalt, options = {}) {

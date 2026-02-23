@@ -15,12 +15,13 @@ Because this processing can happen completely in the fragment shader, there's no
 Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gpu.html
 */
 
+/**
+ * Refs:
+ *   tileAtlas (textureView, rgba8unorm, read) - tile atlas texture
+ *   hdr (textureView, rgba16float, write) - HDR render target
+ */
 export default {
     type: 'cobalt:tileHDR',
-    refs: [
-        { name: 'tileAtlas', type: 'textureView', format: 'rgba8unorm', access: 'read' },
-        { name: 'hdr', type: 'textureView', format: 'rgba16float', access: 'write' },
-    ],
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node
