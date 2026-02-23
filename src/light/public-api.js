@@ -1,5 +1,4 @@
-import { vec2 } from 'wgpu-matrix'
-import uuid from '../uuid.js'
+import { setMaskObstacles } from './texture/lights-texture-mask.js'
 
 // public API to interact with a lighting/shadows node.
 
@@ -9,10 +8,10 @@ export function setLights(cobalt, node, lights) {
 }
 
 export function setAmbientLight(cobalt, node, color) {
-    node.data.lightsRenderer.setAmbientLight(color)
+    node.data.ambientLight = [...color]
 }
 
 export function setOccluders(cobalt, node, segmentsList) {
-    node.data.lightsRenderer.setObstacles(segmentsList)
+    setMaskObstacles(cobalt.device, node.data, segmentsList)
     node.data.lightsTextureNeedsUpdate = true
 }

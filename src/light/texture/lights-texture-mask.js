@@ -1,20 +1,13 @@
-import { LightsBuffer } from "../lights-buffer.js";
+import { LIGHTS_BUFFER_STRUCTS } from '../lights-buffer.js'
 
-class LightsTextureMask {
-    device;
-    renderPipeline;
-    renderBundleEncoderDescriptor;
-    renderBundle;
-    lightsBuffer;
-    indirectDrawing;
-    obstacles = null;
-    constructor(device, lightsBuffer, lightsTexture, uniformLightSize) {
-        this.device = device;
-        this.lightsBuffer = lightsBuffer;
-        const obstaclesAreTwoWay = true;
-        const shaderModule = device.createShaderModule({
-            label: "LightsTextureMask shader module",
-            code: `
+// Creates the shadow/occlusion mask pass resources.
+// Returns a plain object with all mask state; mutate it via the free functions below.
+export function createLightsTextureMask(device, lightsBufferGpu, lightsTexture, uniformLightSize) {
+    const obstaclesAreTwoWay = true
+
+    const shaderModule = device.createShaderModule({
+        label: 'LightsTextureMask shader module',
+        code: `
 struct VertexIn {
     @builtin(instance_index) lightIndex: u32,
     @location(0) position: vec3<f32>,
@@ -72,164 +65,191 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     out.color = in.color;
     return out;
 }
-            `,
-        });
-        this.renderPipeline = device.createRenderPipeline({
-            label: "LightsTextureMask renderpipeline",
-            layout: "auto",
-            vertex: {
-                module: shaderModule,
-                entryPoint: "main_vertex",
-                buffers: [
-                    {
-                        attributes: [
-                            {
-                                shaderLocation: 0,
-                                offset: 0,
-                                format: "float32x3",
-                            },
-                        ],
-                        arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-                        stepMode: "vertex",
-                    },
-                    {
-                        attributes: [
-                            {
-                                shaderLocation: 1,
-                                offset: LightsBuffer.structs.light.radius.offset,
-                                format: "float32",
-                            },
-                            {
-                                shaderLocation: 2,
-                                offset: LightsBuffer.structs.light.position.offset,
-                                format: "float32x2",
-                            },
-                        ],
-                        arrayStride: LightsBuffer.structs.lightsBuffer.lights.stride,
-                        stepMode: "instance",
-                    },
-                ],
-            },
-            fragment: {
-                module: shaderModule,
-                entryPoint: "main_fragment",
-                targets: [{
-                        format: lightsTexture.format,
-                        blend: {
-                            color: {
-                                operation: "min",
-                                srcFactor: "one",
-                                dstFactor: "one",
-                            },
-                            alpha: {
-                                operation: "min",
-                                srcFactor: "one",
-                                dstFactor: "one",
-                            },
+        `,
+    })
+
+    const maskPipeline = device.createRenderPipeline({
+        label: 'LightsTextureMask renderpipeline',
+        layout: 'auto',
+        vertex: {
+            module: shaderModule,
+            entryPoint: 'main_vertex',
+            buffers: [
+                {
+                    attributes: [
+                        {
+                            shaderLocation: 0,
+                            offset: 0,
+                            format: 'float32x3',
                         },
-                    }],
-            },
-            primitive: {
-                cullMode: obstaclesAreTwoWay ? "none" : "back",
-                topology: "triangle-list",
-            },
-            multisample: {
-                count: lightsTexture.sampleCount,
-            },
-        });
-        this.indirectDrawing = {
-            bufferCpu: new ArrayBuffer(20),
-            bufferGpu: device.createBuffer({
-                label: "LightsTextureMask indirect buffer",
-                size: 20,
-                usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
-            }),
-        };
-        this.uploadIndirectDrawingBuffer();
-        this.renderBundleEncoderDescriptor = {
-            label: "LightsTextureMask renderbundle encoder",
-            colorFormats: [lightsTexture.format],
-            sampleCount: lightsTexture.sampleCount,
-        };
-        this.renderBundle = this.buildRenderBundle();
+                    ],
+                    arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+                    stepMode: 'vertex',
+                },
+                {
+                    attributes: [
+                        {
+                            shaderLocation: 1,
+                            offset: LIGHTS_BUFFER_STRUCTS.light.radius.offset,
+                            format: 'float32',
+                        },
+                        {
+                            shaderLocation: 2,
+                            offset: LIGHTS_BUFFER_STRUCTS.light.position.offset,
+                            format: 'float32x2',
+                        },
+                    ],
+                    arrayStride: LIGHTS_BUFFER_STRUCTS.lightsBuffer.lights.stride,
+                    stepMode: 'instance',
+                },
+            ],
+        },
+        fragment: {
+            module: shaderModule,
+            entryPoint: 'main_fragment',
+            targets: [
+                {
+                    format: lightsTexture.format,
+                    blend: {
+                        color: {
+                            operation: 'min',
+                            srcFactor: 'one',
+                            dstFactor: 'one',
+                        },
+                        alpha: {
+                            operation: 'min',
+                            srcFactor: 'one',
+                            dstFactor: 'one',
+                        },
+                    },
+                },
+            ],
+        },
+        primitive: {
+            cullMode: obstaclesAreTwoWay ? 'none' : 'back',
+            topology: 'triangle-list',
+        },
+        multisample: {
+            count: lightsTexture.sampleCount,
+        },
+    })
+
+    const maskIndirectBufferCpu = new ArrayBuffer(20)
+    const maskIndirectBufferGpu = device.createBuffer({
+        label: 'LightsTextureMask indirect buffer',
+        size: 20,
+        usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
+    })
+
+    const maskRenderBundleDescriptor = {
+        label: 'LightsTextureMask renderbundle encoder',
+        colorFormats: [lightsTexture.format],
+        sampleCount: lightsTexture.sampleCount,
     }
-    getRenderBundle() {
-        return this.renderBundle;
+
+    const mask = {
+        maskPipeline,
+        maskRenderBundleDescriptor,
+        maskRenderBundle: null,
+        maskIndirectBufferCpu,
+        maskIndirectBufferGpu,
+        maskObstacles: null,
+        lightsBufferGpu,
     }
-    setObstacles(segments) {
-        const positions = [];
-        const indices = [];
-        for (const segment of segments) {
-            const firstQuadIndex = positions.length / 3;
-            positions.push(...segment[0], 0, ...segment[1], 0, ...segment[0], 1, ...segment[1], 1);
-            indices.push(firstQuadIndex + 0, firstQuadIndex + 1, firstQuadIndex + 3, firstQuadIndex + 0, firstQuadIndex + 3, firstQuadIndex + 2);
-        }
-        let gpuBuffersChanged = false;
-        const positionsArray = new Float32Array(positions);
-        let positionsBufferGpu = this.obstacles?.positionsBufferGpu;
-        if (!positionsBufferGpu || positionsBufferGpu.size < positionsArray.byteLength) {
-            positionsBufferGpu?.destroy();
-            positionsBufferGpu = this.device.createBuffer({
-                label: "LightsTextureMask positions buffer",
-                size: positionsArray.byteLength,
-                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-            });
-            gpuBuffersChanged = true;
-        }
-        this.device.queue.writeBuffer(positionsBufferGpu, 0, positionsArray);
-        const indicesArray = new Uint16Array(indices);
-        let indexBufferGpu = this.obstacles?.indexBufferGpu;
-        if (!indexBufferGpu || indexBufferGpu.size < indicesArray.byteLength) {
-            indexBufferGpu?.destroy();
-            indexBufferGpu = this.device.createBuffer({
-                label: "LightsTextureMask index buffer",
-                size: indicesArray.byteLength,
-                usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-            });
-            gpuBuffersChanged = true;
-        }
-        this.device.queue.writeBuffer(indexBufferGpu, 0, indicesArray);
-        this.obstacles = { positionsBufferGpu, indexBufferGpu };
-        this.setIndirectIndexCount(indices.length);
-        if (gpuBuffersChanged) {
-            this.renderBundle = this.buildRenderBundle();
-        }
+
+    uploadMaskIndirectBuffer(device, mask)
+    mask.maskRenderBundle = buildMaskRenderBundle(device, mask)
+
+    return mask
+}
+
+export function setMaskObstacles(device, data, segments) {
+    const positions = []
+    const indices = []
+    for (const segment of segments) {
+        const firstQuadIndex = positions.length / 3
+        positions.push(...segment[0], 0, ...segment[1], 0, ...segment[0], 1, ...segment[1], 1)
+        indices.push(
+            firstQuadIndex + 0,
+            firstQuadIndex + 1,
+            firstQuadIndex + 3,
+            firstQuadIndex + 0,
+            firstQuadIndex + 3,
+            firstQuadIndex + 2,
+        )
     }
-    setLightsCount(count) {
-        this.setIndirectInstanceCount(count);
+
+    let gpuBuffersChanged = false
+
+    const positionsArray = new Float32Array(positions)
+    let positionsBufferGpu = data.maskObstacles?.positionsBufferGpu
+    if (!positionsBufferGpu || positionsBufferGpu.size < positionsArray.byteLength) {
+        positionsBufferGpu?.destroy()
+        positionsBufferGpu = device.createBuffer({
+            label: 'LightsTextureMask positions buffer',
+            size: positionsArray.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        })
+        gpuBuffersChanged = true
     }
-    destroy() {
-        this.indirectDrawing.bufferGpu.destroy();
-        this.obstacles?.positionsBufferGpu.destroy();
-        this.obstacles?.indexBufferGpu.destroy();
+    device.queue.writeBuffer(positionsBufferGpu, 0, positionsArray)
+
+    const indicesArray = new Uint16Array(indices)
+    let indexBufferGpu = data.maskObstacles?.indexBufferGpu
+    if (!indexBufferGpu || indexBufferGpu.size < indicesArray.byteLength) {
+        indexBufferGpu?.destroy()
+        indexBufferGpu = device.createBuffer({
+            label: 'LightsTextureMask index buffer',
+            size: indicesArray.byteLength,
+            usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        })
+        gpuBuffersChanged = true
     }
-    setIndirectIndexCount(indexCount) {
-        const drawIndexedIndirectParameters = new Uint32Array(this.indirectDrawing.bufferCpu);
-        if (drawIndexedIndirectParameters[0] !== indexCount) {
-            drawIndexedIndirectParameters[0] = indexCount;
-            this.uploadIndirectDrawingBuffer();
-        }
+    device.queue.writeBuffer(indexBufferGpu, 0, indicesArray)
+
+    data.maskObstacles = { positionsBufferGpu, indexBufferGpu }
+
+    const params = new Uint32Array(data.maskIndirectBufferCpu)
+    if (params[0] !== indices.length) {
+        params[0] = indices.length
+        uploadMaskIndirectBuffer(device, data)
     }
-    setIndirectInstanceCount(instanceCount) {
-        const drawIndexedIndirectParameters = new Uint32Array(this.indirectDrawing.bufferCpu);
-        if (drawIndexedIndirectParameters[1] !== instanceCount) {
-            drawIndexedIndirectParameters[1] = instanceCount;
-            this.uploadIndirectDrawingBuffer();
-        }
-    }
-    buildRenderBundle() {
-        const renderBundleEncoder = this.device.createRenderBundleEncoder(this.renderBundleEncoderDescriptor);
-        if (this.obstacles) {
-            renderBundleEncoder.setPipeline(this.renderPipeline);
-            renderBundleEncoder.setVertexBuffer(0, this.obstacles.positionsBufferGpu);
-            renderBundleEncoder.setVertexBuffer(1, this.lightsBuffer.gpuBuffer, LightsBuffer.structs.lightsBuffer.lights.offset);
-            renderBundleEncoder.setIndexBuffer(this.obstacles.indexBufferGpu, "uint16");
-            renderBundleEncoder.drawIndexedIndirect(this.indirectDrawing.bufferGpu, 0);
-        }
-        return renderBundleEncoder.finish({ label: "LightsTextureMask renderbundle" });
-    }
-    uploadIndirectDrawingBuffer() {
-        this.device.queue.writeBuffer(this.indirectDrawing.bufferGpu, 0, this.indirectDrawing.bufferCpu);
+
+    if (gpuBuffersChanged) {
+        data.maskRenderBundle = buildMaskRenderBundle(device, data)
     }
 }
-export { LightsTextureMask };
+
+export function setMaskLightsCount(device, data, count) {
+    const params = new Uint32Array(data.maskIndirectBufferCpu)
+    if (params[1] !== count) {
+        params[1] = count
+        uploadMaskIndirectBuffer(device, data)
+    }
+}
+
+export function destroyMask(data) {
+    data.maskIndirectBufferGpu.destroy()
+    data.maskObstacles?.positionsBufferGpu.destroy()
+    data.maskObstacles?.indexBufferGpu.destroy()
+}
+
+function buildMaskRenderBundle(device, data) {
+    const renderBundleEncoder = device.createRenderBundleEncoder(data.maskRenderBundleDescriptor)
+    if (data.maskObstacles) {
+        renderBundleEncoder.setPipeline(data.maskPipeline)
+        renderBundleEncoder.setVertexBuffer(0, data.maskObstacles.positionsBufferGpu)
+        renderBundleEncoder.setVertexBuffer(
+            1,
+            data.lightsBufferGpu,
+            LIGHTS_BUFFER_STRUCTS.lightsBuffer.lights.offset,
+        )
+        renderBundleEncoder.setIndexBuffer(data.maskObstacles.indexBufferGpu, 'uint16')
+        renderBundleEncoder.drawIndexedIndirect(data.maskIndirectBufferGpu, 0)
+    }
+    return renderBundleEncoder.finish({ label: 'LightsTextureMask renderbundle' })
+}
+
+function uploadMaskIndirectBuffer(device, data) {
+    device.queue.writeBuffer(data.maskIndirectBufferGpu, 0, data.maskIndirectBufferCpu)
+}

@@ -51,6 +51,13 @@
                 display: none;
             }
 
+            /* pin dat.gui to top-left so it doesn't fight the canvas */
+            .dg.ac {
+                top: 8px !important;
+                left: 8px !important;
+                right: auto !important;
+            }
+
         </style>
     </head>
     <body>
@@ -294,6 +301,55 @@ async function main () {
     light.setLights(lights)
 
 
+    // ---- dat.gui tweakable panel ----
+
+    const gui = new dat.GUI({ name: 'Lighting' })
+
+    // ambient light (dat.gui color expects a hex string)
+    const ambientParams = { color: '#4d4d4d' }
+    const hexToRgb01 = hex => {
+        const n = parseInt(hex.slice(1), 16)
+        return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]
+    }
+    const rgb01ToHex = ([r, g, b]) =>
+        '#' + [r, g, b].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('')
+
+    ambientParams.color = rgb01ToHex([0.3, 0.3, 0.3])
+    const ambientFolder = gui.addFolder('Ambient')
+    ambientFolder.addColor(ambientParams, 'color').name('color').onChange(v => {
+        light.setAmbientLight(hexToRgb01(v))
+    })
+    ambientFolder.open()
+
+    // helper: add a folder for a single light object
+    const addLightFolder = (folder, lightObj, colorHex) => {
+        const params = { color: colorHex }
+        folder.addColor(params, 'color').name('color').onChange(v => {
+            lightObj.color = hexToRgb01(v)
+        })
+        folder.add(lightObj, 'intensity', 0, 50).name('intensity')
+        folder.add(lightObj, 'radius', 1, 512).name('radius')
+        folder.add(lightObj, 'attenuationLinear', 0, 1).name('attn linear')
+        folder.add(lightObj, 'attenuationExp', 0, 200).name('attn exp')
+    }
+
+    const mouseLightFolder = gui.addFolder('Mouse light')
+    addLightFolder(mouseLightFolder, mouseLight, rgb01ToHex(mouseLight.color))
+    mouseLightFolder.open()
+
+    const redLightFolder = gui.addFolder('Red light')
+    addLightFolder(redLightFolder, movingRedLight, rgb01ToHex(movingRedLight.color))
+    const redAnim = { animated: true }
+    redLightFolder.add(redAnim, 'animated').name('animated')
+
+    const greenLightFolder = gui.addFolder('Green light')
+    addLightFolder(greenLightFolder, movingGreenLight, rgb01ToHex(movingGreenLight.color))
+    const greenAnim = { animated: true }
+    greenLightFolder.add(greenAnim, 'animated').name('animated')
+
+    // ---- end gui ----
+
+
     // use resizeViewport to init values on load:
     resizeViewport(Global.renderer, window.innerWidth, window.innerHeight)
 
@@ -313,15 +369,19 @@ async function main () {
 
             mouseLight.position = convertToWorldPosition(mouseViewportPosition);
 
-            movingGreenLight.position = [
-                80 * Math.cos(performance.now() / 500),
-                80 * Math.sin(performance.now() / 500),
-            ];
+            if (greenAnim.animated) {
+                movingGreenLight.position = [
+                    80 * Math.cos(performance.now() / 500),
+                    80 * Math.sin(performance.now() / 500),
+                ];
+            }
 
-            movingRedLight.position = [
-                40 * Math.cos(performance.now() / 500),
-                60,
-            ];
+            if (redAnim.animated) {
+                movingRedLight.position = [
+                    40 * Math.cos(performance.now() / 500),
+                    60,
+                ];
+            }
             light.setLights(lights)
 
             Cobalt.draw(Global.renderer)
