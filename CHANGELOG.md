@@ -1,5 +1,11 @@
+# 0.10.0
+* cobalt:sprite accepts an "out" ref instead of "hdr" since it never was an hdr texture
+* simplified lighting node and changed the output to clamp brightness to avoid overlighting
+
+
 # 0.9.1
 * minor documentation cleanup
+
 
 # 0.9.0
 * improve CPU performance in sprite node
