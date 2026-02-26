@@ -18,8 +18,8 @@ import {
  * 2D lighting and Shadows
  *
  * Refs:
- *   in (textureView, rgba16float, read) - albedo input texture
- *   out (textureView, rgba16float, write) - lit output texture
+ *   in (textureView, any color format, read) - albedo input texture
+ *   out (textureView or FRAME_TEXTURE_VIEW, any color format, write) - lit output texture
  */
 export default {
     type: 'cobalt:light',
@@ -236,7 +236,8 @@ fn main_fragment(in: VertexOut) -> FragmentOut {
     )
 
     // --- final composite render pipeline ---
-    const rendererTargetFormat = node.refs.out.data.texture.format
+    //   out ref is either a node (with .data.texture.format) or a raw GPUTextureView (FRAME_TEXTURE_VIEW)
+    const rendererTargetFormat = node.refs.out.data?.texture?.format || getPreferredFormat(cobalt)
 
     const rendererUniformsBufferGpu = device.createBuffer({
         label: 'LightsRenderer uniforms buffer',
@@ -486,7 +487,8 @@ function draw(cobalt, node, commandEncoder) {
         label: 'light',
         colorAttachments: [
             {
-                view: node.refs.out.data.view,
+                //    out is passed as a node     ||  FRAME_TEXTURE_VIEW
+                view: node.refs.out.data?.view || node.refs.out,
                 clearValue: cobalt.clearValue,
                 loadOp: 'load',
                 storeOp: 'store',

@@ -99,28 +99,15 @@ async function main () {
             tileSize: 16,
             tileScale: 1.0,
             textureUrl: 'assets/spelunky-tiles.png',
-            outputFormat: 'rgba16float',
         }
     })
 
-    const hdrTex = await Cobalt.initNode(Global.renderer, {
+    const colorTex = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:fbTexture',
         refs: { },
         options: {
-            label: 'hdr color texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const lightCompositeHdrTex = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr + lighting/shadows color texture',
-            format: 'rgba16float',
+            label: 'ldr color texture',
+            format: 'PREFERRED_TEXTURE_FORMAT',
             mip_count: 1,
             viewportScale: 1.0,
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
@@ -134,7 +121,7 @@ async function main () {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
             tileAtlas: tileAtlasNode,
-            out: hdrTex,
+            out: colorTex,
         },
         options: {
             textureUrl: 'assets/spelunky1.png',
@@ -148,7 +135,7 @@ async function main () {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
             tileAtlas: tileAtlasNode,
-            out: hdrTex,
+            out: colorTex,
         },
         options: {
             textureUrl: 'assets/spelunky0.png',
@@ -160,22 +147,12 @@ async function main () {
     const light = await Cobalt.initNode(Global.renderer, {
         type: 'cobalt:light',
         refs: {
-            in: hdrTex,
-            out: lightCompositeHdrTex,
+            in: colorTex,
+            out: 'FRAME_TEXTURE_VIEW',
         },
         options: {
         }
     })
-
-    const b = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:fbBlit',
-        refs: {
-            in: lightCompositeHdrTex,
-            out: 'FRAME_TEXTURE_VIEW',
-        },
-        options: { }
-    })
-
 
     light.setAmbientLight([0.3, 0.3, 0.3]);
 
