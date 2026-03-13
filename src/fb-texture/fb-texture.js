@@ -70,5 +70,6 @@ function resize(cobalt, node) {
         options.mip_count,
         options.format,
         options.usage,
+        options.filter,
     )
 }
