@@ -1,8 +1,13 @@
+# 0.11.1
+* add missing filter option in resize callback of fb-texture
+
+
 # 0.11.0
-* rever the lighting to what was in v0.9.1
+* revert the lighting to what was in v0.9.1
 * cobalt:sprite works with non-hdr pipelines now
 * cobalt:tileHDR renamed to cobalt:tile since it works with both hdr and non-hdr pipelines
 * make fbtexture and createTexture accept optional filter (defaults to 'linear')
+
 
 # 0.10.0
 * cobalt:sprite accepts an "out" ref instead of "hdr" since it never was an hdr texture
