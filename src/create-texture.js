@@ -1,4 +1,13 @@
-export default function createTexture(device, label, width, height, mip_count, format, usage) {
+export default function createTexture(
+    device,
+    label,
+    width,
+    height,
+    mip_count,
+    format,
+    usage,
+    filter = 'linear',
+) {
     const texture = device.createTexture({
         label,
         size: { width, height },
@@ -32,9 +41,9 @@ export default function createTexture(device, label, width, height, mip_count, f
         addressModeU: 'clamp-to-edge',
         addressModeV: 'clamp-to-edge',
         addressModeW: 'clamp-to-edge',
-        magFilter: 'linear',
-        minFilter: 'linear',
-        mipmapFilter: 'linear',
+        magFilter: filter,
+        minFilter: filter,
+        mipmapFilter: filter,
     })
 
     return {

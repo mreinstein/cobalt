@@ -47,6 +47,7 @@ async function init(cobalt, node) {
         mip_count,
         format,
         usage,
+        node.options.filter,
     )
 }
 
