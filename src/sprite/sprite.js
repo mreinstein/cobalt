@@ -185,7 +185,7 @@ async function init(cobalt, nodeData) {
             targets: [
                 // color
                 {
-                    format: getPreferredFormat(cobalt),
+                    format: nodeData.refs.color.data?.texture?.format || getPreferredFormat(cobalt),
                     blend: {
                         color: {
                             srcFactor: 'src-alpha',
@@ -339,7 +339,7 @@ function draw(cobalt, node, commandEncoder) {
         colorAttachments: [
             // color
             {
-                view: node.refs.color,
+                view: node.refs.color.data?.view || node.refs.color,
                 clearValue: cobalt.clearValue,
                 loadOp: loadOp,
                 storeOp: 'store',

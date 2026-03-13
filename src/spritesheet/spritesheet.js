@@ -45,13 +45,14 @@ async function init(cobalt, node) {
             node.options.colorTextureUrl,
             format,
         )
-        emissiveTexture = await createTextureFromUrl(
-            cobalt,
-            'emissive sprite',
-            node.options.emissiveTextureUrl,
-            format,
-        )
-
+        if (node.options.emissiveTextureUrl) {
+            emissiveTexture = await createTextureFromUrl(
+                cobalt,
+                'emissive sprite',
+                node.options.emissiveTextureUrl,
+                format,
+            )
+        }
         // for some reason this needs to be done _after_ creating the material, or the rendering will be blurry
         canvas.style.imageRendering = 'pixelated'
     } else {
@@ -64,12 +65,14 @@ async function init(cobalt, node) {
             node.options.colorTexture,
             format,
         )
-        emissiveTexture = await createTextureFromBuffer(
-            cobalt,
-            'emissive sprite',
-            node.options.emissiveTexture,
-            format,
-        )
+        if (node.options.emissiveTexture) {
+            emissiveTexture = await createTextureFromBuffer(
+                cobalt,
+                'emissive sprite',
+                node.options.emissiveTexture,
+                format,
+            )
+        }
     }
 
     // Map sprite name → ID
@@ -85,5 +88,5 @@ async function init(cobalt, node) {
 
 function destroy(node) {
     node.data.colorTexture.texture.destroy()
-    node.data.emissiveTexture.texture.destroy()
+    if (node.data.emissiveTexture) node.data.emissiveTexture.texture.destroy()
 }

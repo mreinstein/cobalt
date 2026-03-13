@@ -15,8 +15,8 @@ import spriteNode from './sprite/sprite.js'
 import spriteHDRNode from './sprite-hdr/sprite.js'
 import spritesheetNode from './spritesheet/spritesheet.js'
 // built-in resource nodes
-import tileAtlasNode from './tile-hdr/atlas.js'
-import tileHDRNode from './tile-hdr/tile.js'
+import tileAtlasNode from './tile/atlas.js'
+import tileNode from './tile/tile.js'
 
 // create and initialize a WebGPU renderer for a given canvas
 // returns the data structure containing all WebGPU related stuff
@@ -70,7 +70,7 @@ export async function init(ctx, viewportWidth, viewportHeight) {
         'cobalt:bloom': bloomNode,
         'cobalt:composite': compositeNode,
         'cobalt:spriteHDR': spriteHDRNode,
-        'cobalt:tileHDR': tileHDRNode,
+        'cobalt:tile': tileNode,
         'cobalt:displacement': displacementNode,
         'cobalt:fbBlit': fbBlitNode,
         'cobalt:primitives': primitivesNode,

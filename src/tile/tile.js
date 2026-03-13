@@ -21,7 +21,7 @@ Inspired by/ported from https://blog.tojicode.com/2012/07/sprite-tile-maps-on-gp
  *   out (textureView, rgba16float, write) - render target
  */
 export default {
-    type: 'cobalt:tileHDR',
+    type: 'cobalt:tile',
 
     // @params Object cobalt renderer world object
     // @params Object options optional data passed when initing this node

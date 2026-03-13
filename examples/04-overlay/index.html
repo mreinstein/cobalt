@@ -85,119 +85,19 @@ async function main () {
         options: {
             spriteSheetJsonUrl: './assets/spritesheet.json',
             colorTextureUrl: 'assets/spritesheet.png',
-            emissiveTextureUrl: 'assets/spritesheet_emissive.png'
-        }
-    })
-
-    const hdrTex = await Cobalt.initNode(renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr color texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const emissiveTex = await Cobalt.initNode(renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr emissive texture',
-            format: 'rgba16float',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomTex = await Cobalt.initNode(renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'hdr bloom texture',
-            format: 'rgba16float',
-            mip_count: 7,
-            viewportScale: 0.5,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
-        }
-    })
-
-    const bloomNode = await Cobalt.initNode(renderer, {
-        type: 'cobalt:bloom',
-        refs: {
-            // key is the var name defined in this node
-            // value is the var name in the cobalt resources dictionary
-            emissive: emissiveTex,
-            hdr: hdrTex,
-            bloom: bloomTex
-        },
-        options: {
-            // any extra options you want to pass to this node
-            bloom_intensity: 0.0,
-            bloom_knee: 0.0,
-            bloom_threshold: 0.1, // 1.0
-            /*
-            // sprite instance 1
-            sprite_instances: [
-                {
-                    emissive_intensity: 1.0,
-                },
-                {
-                    emissive_intensity: 0.5,
-                },
-            ],
-            */
-        }
-    })
-
-    const tmpTex = await Cobalt.initNode(renderer, {
-        type: 'cobalt:fbTexture',
-        refs: { },
-        options: {
-            label: 'bloom + hdr compositing',
-            format: 'PREFERRED_TEXTURE_FORMAT',
-            mip_count: 1,
-            viewportScale: 1.0,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
         }
     })
 
     const overlayNode = await Cobalt.initNode(renderer, {
-        type: 'cobalt:spriteHDR',
+        type: 'cobalt:sprite',
         refs: {
             spritesheet: spritesheet,
-            emissive: emissiveTex,
-            color: hdrTex,
+            color: 'FRAME_TEXTURE_VIEW',
         },
         options: {
             loadOp: 'clear',
             isScreenSpace: true
         }
-    })
-
-    const compositeNode = await Cobalt.initNode(renderer, {
-        type: 'cobalt:composite',
-        refs: {
-            hdr: hdrTex,
-            bloom: bloomTex,
-            combined: tmpTex,
-        },
-        options: {
-            bloom_combine_constant: 0.0,
-        },
-    })
-
-
-    const b = await Cobalt.initNode(renderer, {
-        type: 'cobalt:fbBlit',
-        refs: {
-            in: tmpTex,
-            out: 'FRAME_TEXTURE_VIEW',
-        },
-        options: { }
     })
 
 

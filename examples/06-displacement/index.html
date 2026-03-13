@@ -110,7 +110,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const tileNode = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:tileHDR',
+        type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary
@@ -124,7 +124,7 @@ async function main () {
     })
 
     const tileNode2 = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:tileHDR',
+        type: 'cobalt:tile',
         refs: {
             // key is the var name defined in this node
             // value is the var name in the cobalt resources dictionary

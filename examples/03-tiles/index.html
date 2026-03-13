@@ -104,7 +104,7 @@ async function main () {
     })
 
      const tileNodeBG = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:tileHDR',
+        type: 'cobalt:tile',
         refs: {
             tileAtlas: tileAtlasNode,
             out: 'FRAME_TEXTURE_VIEW',
@@ -118,7 +118,7 @@ async function main () {
 
     // instantiate all runnable nodes
     const tileNodeBg = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:tileHDR',
+        type: 'cobalt:tile',
         refs: {
             tileAtlas: tileAtlasNode,
             out: 'FRAME_TEXTURE_VIEW',
@@ -130,7 +130,7 @@ async function main () {
     })
 
     const tileNodeFg = await Cobalt.initNode(Global.renderer, {
-        type: 'cobalt:tileHDR',
+        type: 'cobalt:tile',
         refs: {
             tileAtlas: tileAtlasNode,
             out: 'FRAME_TEXTURE_VIEW',
