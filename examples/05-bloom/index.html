@@ -62,16 +62,27 @@
             <canvas id="viewport" width="480" height="270"></canvas>
         </div>
 
+<script type="importmap">
+{
+    "imports": {
+        "ecs": "https://esm.sh/ecs@0.21.0",
+        "wgpu-matrix": "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.js",
+        "dat.gui": "https://esm.sh/dat.gui@0.7.9",
+        "lodash.debounce": "https://esm.sh/lodash.debounce@4.0.8"
+    }
+}
+</script>
+
 <script type="module">
 import Global             from './Global.js'
 import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
-import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
-import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
-//import animationSystem  from './system-animation.js'
+import dat              from 'dat.gui'
+import debounce         from 'lodash.debounce'
 import rendererSystem   from './system-renderer.js'
 import spriteEntity     from './entity-sprite.js'
-import { ECS, vec2 }    from './deps.js'
+import ECS              from 'ecs'
+import { vec2 }         from 'wgpu-matrix'
 
 
 async function main () {

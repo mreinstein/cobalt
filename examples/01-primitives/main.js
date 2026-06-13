@@ -1,10 +1,11 @@
 import Global           from './Global.js'
 import * as Cobalt      from '../../bundle.js'
 import constants        from './constants.js'
-import dat              from 'https://cdn.skypack.dev/pin/dat.gui@v0.7.9-2wtQAdFH5SRwnJLDWGNz/mode=imports,min/optimized/dat.gui.js'
-import debounce         from 'https://cdn.skypack.dev/pin/lodash.debounce@v4.0.8-4GXU9B066R3Th6HmjZmO/lodash.debounce.js'
+import dat              from 'dat.gui'
+import debounce         from 'lodash.debounce'
 import rendererSystem   from './system-renderer.js'
-import { ECS, vec2 }    from './deps.js'
+import ECS              from 'ecs'
+import { vec2 }         from 'wgpu-matrix'
 
 
 async function main () {

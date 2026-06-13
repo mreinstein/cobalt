@@ -1,6 +1,6 @@
 import * as Cobalt from '../../bundle.js'
 import Global      from './Global.js'
-import { ECS }     from './deps.js'
+import ECS         from 'ecs'
 
 
 const SPRITE_QUERY = [ 'sprite' ]

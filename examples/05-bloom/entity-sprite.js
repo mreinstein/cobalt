@@ -1,7 +1,8 @@
 import * as Cobalt         from '../../bundle.js'
 import animationComponent  from './component-animation.js'
 import transformComponent  from './component-transform.js'
-import { ECS, vec3, vec4 } from './deps.js'
+import ECS from 'ecs'
+import { vec3, vec4 } from 'wgpu-matrix'
 
 
 export default function spriteEntity (world, opts) {

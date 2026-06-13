@@ -1,4 +1,4 @@
-import { vec3 } from './deps.js'
+import { vec3 } from 'wgpu-matrix'
 
 
 export default function componentTransform (obj) {
