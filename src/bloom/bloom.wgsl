@@ -1,4 +1,12 @@
+requires immediate_address_space;
 // Compute Shader
+
+struct myImmediate {
+	mode: u32,
+	lod: u32,
+};
+
+var<immediate> shaderMode: myImmediate; 
 
 const BLOOM_MIP_COUNT: i32 = 7;
 
@@ -16,22 +24,11 @@ struct bloom_param {
 	ferp: u32,
 }
 
-struct mode_lod_param {
-	mode_lod: u32,
-}
-
-
 @group(0) @binding(0) var output_texture: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(1) var input_texture: texture_2d<f32>;
 @group(0) @binding(2) var bloom_texture: texture_2d<f32>;
 @group(0) @binding(3) var samp: sampler;
 @group(0) @binding(4) var<uniform> param: bloom_param;
-@group(0) @binding(5) var<uniform> pc: mode_lod_param;
-
-
-// PushConstants don't work in webgpu in chrome because they've been removed from the spec for v1 :(
-// might be added after v1 though https://github.com/gpuweb/gpuweb/issues/75
-//var<push_constant> pc: PushConstants;
 
 
 // Quadratic color thresholding
@@ -129,8 +126,7 @@ fn combine(ex_color: vec3<f32>, color_to_add: vec3<f32>, combine_constant: f32) 
 @compute @workgroup_size(8, 4, 1)
 fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 {
-	let mode = pc.mode_lod >> 16u;
-	let lod = pc.mode_lod & 65535u;
+	let lod = shaderMode.lod;
 
 	let imgSize = textureDimensions(output_texture);
 
@@ -142,16 +138,16 @@ fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 		let texSize = vec2<f32>(textureDimensions(input_texture, i32(lod)));
 		var color: vec4<f32> = vec4<f32>(1.0);
 
-		if (mode == MODE_PREFILTER)
+		if (shaderMode.mode == MODE_PREFILTER)
 		{
 			color = vec4<f32>(DownsampleBox13(input_texture, f32(lod), texCoords, 1.0 / texSize), 1.0);
 			color = Prefilter(color, texCoords);
 		}
-		else if (mode == MODE_DOWNSAMPLE)
+		else if (shaderMode.mode == MODE_DOWNSAMPLE)
 		{
 			color = vec4<f32>(DownsampleBox13(input_texture, f32(lod), texCoords, 1.0 / texSize), 1.0);
 		}
-		else if (mode == MODE_UPSAMPLE_FIRST)
+		else if (shaderMode.mode == MODE_UPSAMPLE_FIRST)
 		{
 			let bloomTexSize = textureDimensions(input_texture, i32(lod) + 1);
 			let sampleScale = 1.0;
@@ -160,7 +156,7 @@ fn cs_main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>)
 			let existing = textureSampleLevel(input_texture, samp, texCoords, f32(lod)).rgb;
 			color = vec4<f32>(combine(existing, upsampledTexture, param.combine_constant), 1.0);
 		}
-		else if (mode == MODE_UPSAMPLE)
+		else if (shaderMode.mode == MODE_UPSAMPLE)
 		{
 			let bloomTexSize = textureDimensions(bloom_texture, i32(lod) + 1);
 			let sampleScale = 1.0;
