@@ -1,3 +1,7 @@
+# 0.12.0
+* modify bloom node to use setImmediates (aka push constants)
+
+
 # 0.11.1
 * add missing filter option in resize callback of fb-texture
 
