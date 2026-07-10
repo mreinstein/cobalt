@@ -101,14 +101,6 @@ function init(cobalt, nodeData) {
                     //minBindingSize: 24 // sizeOf(BloomParam)
                 },
             },
-            {
-                binding: 5,
-                visibility: GPUShaderStage.COMPUTE,
-                buffer: {
-                    type: 'uniform',
-                    //minBindingSize: 4 // sizeOf(lode_mode Param)
-                },
-            },
         ],
     })
 
@@ -155,6 +147,7 @@ function init(cobalt, nodeData) {
 
     const compute_pipeline_layout = device.createPipelineLayout({
         bindGroupLayouts: bloom_mat.bind_group_layout,
+        immediateSize: 8, // bytes reserved for var<immediate> shaderMode: u32
     })
 
     const compute_pipeline = device.createComputePipeline({
@@ -223,7 +216,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
             refs.hdr.data.view, // unused here, only for upsample passes
             refs.hdr.data.sampler,
             params_buf,
-            (MODE_PREFILTER << 16) | 0, // mode_lod value
         ),
     )
 
@@ -239,7 +231,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
                 refs.hdr.data.view, // unused here, only for upsample passes
                 refs.hdr.data.sampler,
                 params_buf,
-                (MODE_DOWNSAMPLE << 16) | (i - 1), // mode_lod value
             ),
         )
 
@@ -253,7 +244,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
                 refs.hdr.data.view, // unused here, only for upsample passes
                 refs.hdr.data.sampler,
                 params_buf,
-                (MODE_DOWNSAMPLE << 16) | i, // mode_lod value
             ),
         )
     }
@@ -268,7 +258,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
             refs.hdr.data.view, // unused here, only for upsample passes
             refs.hdr.data.sampler,
             params_buf,
-            (MODE_UPSAMPLE_FIRST << 16) | (BLOOM_MIP_COUNT - 2), // mode_lod value
         ),
     )
 
@@ -286,7 +275,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
                     bloom_mat.bind_groups_textures[2].view,
                     refs.hdr.data.sampler,
                     params_buf,
-                    (MODE_UPSAMPLE << 16) | i, // mode_lod value
                 ),
             )
             o = false
@@ -300,7 +288,6 @@ function set_all_bind_group(cobalt, bloom_mat, node) {
                     bloom_mat.bind_groups_textures[1].view,
                     refs.hdr.data.sampler,
                     params_buf,
-                    (MODE_UPSAMPLE << 16) | i, // mode_lod value
                 ),
             )
             o = true
@@ -359,12 +346,6 @@ function create_bloom_bind_group(
                     buffer: params_buf,
                 },
             },
-            {
-                binding: 5,
-                resource: {
-                    buffer: lod_buf,
-                },
-            },
         ],
     })
 }
@@ -390,6 +371,7 @@ function draw(cobalt, node, commandEncoder) {
 
     let mip_size = get_mip_size(0, bloom_mat.bind_groups_textures[0])
 
+    compute_pass.setImmediates(0, new Uint32Array([MODE_PREFILTER, 0]))
     compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
     // Downsample
@@ -399,11 +381,17 @@ function draw(cobalt, node, commandEncoder) {
         // Ping
         compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
         bind_group_index += 1
+
+        compute_pass.setImmediates(0, new Uint32Array([MODE_DOWNSAMPLE, i - 1]))
+
         compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
         // Pong
         compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
         bind_group_index += 1
+
+        compute_pass.setImmediates(0, new Uint32Array([MODE_DOWNSAMPLE, i]))
+
         compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
     }
 
@@ -411,6 +399,8 @@ function draw(cobalt, node, commandEncoder) {
     compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
     bind_group_index += 1
     mip_size = get_mip_size(BLOOM_MIP_COUNT - 1, bloom_mat.bind_groups_textures[2])
+    compute_pass.setImmediates(0, new Uint32Array([MODE_UPSAMPLE_FIRST, BLOOM_MIP_COUNT - 2]))
+
     compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
 
     // Upsample
@@ -419,6 +409,9 @@ function draw(cobalt, node, commandEncoder) {
 
         compute_pass.setBindGroup(0, bloom_mat.bind_group[bind_group_index])
         bind_group_index += 1
+
+        compute_pass.setImmediates(0, new Uint32Array([MODE_UPSAMPLE, i]))
+
         compute_pass.dispatchWorkgroups(mip_size.width / 8 + 1, mip_size.height / 4 + 1, 1)
     }
 
